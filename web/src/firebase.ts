@@ -16,12 +16,12 @@ import { getFirestore } from 'firebase/firestore';
  * and Firebase Auth Authorized Domains (not a billable Gemini key).
  */
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCXcozxGGW8VCLNGyW63lWEmSiu-KrsZJE',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'gen-lang-client-0879201853.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'gen-lang-client-0879201853',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'gen-lang-client-0879201853.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '974762479762',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:974762479762:android:74abd948afb7b26ef1564b'
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyBOvKwQ3e8CIMULz_iTf9YqPIfTxTXuz18',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'gen-lang-client-0335734929.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'gen-lang-client-0335734929',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'gen-lang-client-0335734929.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '871970680083',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:871970680083:android:29760be68580364f70fee6'
 };
 
 export const FIRESTORE_DATABASE_ID =
