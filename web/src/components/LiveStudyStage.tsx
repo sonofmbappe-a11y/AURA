@@ -1834,7 +1834,6 @@ export const LiveStudyStage: React.FC<Props> = ({
                     </button>
                   </div>
                 </div>
-              </div>
 
               {/* Live Participant Tiles */}
               <div className="space-y-2">
