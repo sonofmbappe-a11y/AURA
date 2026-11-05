@@ -68,20 +68,30 @@ export function detectBrowserPlatform(): 'IPHONE_WEB' | 'WEB_BROWSER' {
   return isIOS ? 'IPHONE_WEB' : 'WEB_BROWSER';
 }
 
-export function buildJitsiVoiceUrl(joinCode: string): string {
+export function buildJitsiVoiceUrl(joinCode: string, roomId = ''): string {
   const clean = joinCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'SCHOLARS';
-  return `https://meet.jit.si/AuraStudy-${clean}`;
+  const salt = roomId
+    ? `-${roomId.replace(/^room_/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}`
+    : '';
+  return `https://meet.jit.si/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.startWithAudioMuted=false&config.startWithVideoMuted=true&config.toolbarButtons=%5B'microphone','camera','desktop','hangup','chat','raisehand','tileview'%5D`;
 }
 
 export function normalizeJoinCode(raw: string): string {
   const trimmed = raw.trim();
-  const match = /[?&]room=([A-Za-z0-9]{4,8})/i.exec(trimmed);
-  if (match && match[1]) {
-    return match[1].toUpperCase();
+  if (!trimmed) return '';
+  const urlParamMatch = /[?&]room=([A-Za-z0-9_-]{4,16})/i.exec(trimmed);
+  if (urlParamMatch && urlParamMatch[1]) {
+    return urlParamMatch[1]
+      .toUpperCase()
+      .replace(/^ROOM_/, '')
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 12);
   }
-  return trimmed
+  const withoutLabel = trimmed.replace(/^CODE\s*:\s*/i, '');
+  return withoutLabel
     .toUpperCase()
     .replace(/^ROOM_/, '')
     .replace(/[^A-Z0-9]/g, '')
-    .slice(0, 8);
+    .slice(0, 12);
 }
+
