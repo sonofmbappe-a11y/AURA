@@ -716,16 +716,30 @@ export const LiveStudyStage: React.FC<Props> = ({
       let found: CloudStudyRoom | null = snap.exists() ? mapDocToRoom(snap.id, snap.data()) : null;
 
       if (!found && fallbackCode) {
-        const fallback = await getDocs(
-          query(
-            collection(db, 'study_rooms'),
-            where('visibility', '==', 'CAMPUS'),
-            where('joinCode', '==', fallbackCode),
-            limit(1)
-          )
-        );
-        if (!fallback.empty) {
-          found = mapDocToRoom(fallback.docs[0].id, fallback.docs[0].data());
+        const candidateId = `room_${fallbackCode.trim().toUpperCase()}`;
+        if (candidateId !== roomId) {
+          const directSnap = await getDoc(doc(db, 'study_rooms', candidateId));
+          if (directSnap.exists()) {
+            found = mapDocToRoom(directSnap.id, directSnap.data());
+          }
+        }
+      }
+
+      if (!found && fallbackCode) {
+        try {
+          const fallback = await getDocs(
+            query(
+              collection(db, 'study_rooms'),
+              where('visibility', '==', 'CAMPUS'),
+              where('joinCode', '==', fallbackCode.trim().toUpperCase()),
+              limit(1)
+            )
+          );
+          if (!fallback.empty) {
+            found = mapDocToRoom(fallback.docs[0].id, fallback.docs[0].data());
+          }
+        } catch {
+          // List query ignored if permission/index restricted
         }
       }
 
@@ -856,10 +870,14 @@ export const LiveStudyStage: React.FC<Props> = ({
       };
 
       setCityBadge(payload.cityBadge);
-      await upsertMyPresence(createdStub, 'FOCUSING', false, '🎙️', payload.cityBadge);
       setShowHostModal(false);
       setBoardDirty(false);
       setSelectedRoomId(roomId);
+      try {
+        await upsertMyPresence(createdStub, 'FOCUSING', false, '🎙️', payload.cityBadge);
+      } catch (presenceErr) {
+        console.warn('Initial presence upsert warning:', presenceErr);
+      }
       onNotify(`🎉 Room Live! Share Code ${code} or QR Link with Android & iPhone classmates.`);
     } catch (e: unknown) {
       const msg = (e as Error)?.message || 'Failed to create study session.';
