@@ -127,6 +127,7 @@ export interface CloudStudyRoom {
   activePollCorrectIndex: number;
   activePollRevealed: boolean;
   spotlightCardText: string;
+  muteAllTimestamp?: number;
 }
 
 export interface CloudParticipant {
@@ -142,6 +143,9 @@ export interface CloudParticipant {
   admissionStatus: string;
   pollVoteIndex: number;
   devicePlatform: string;
+  isMuted?: boolean;
+  cameraOn?: boolean;
+  isMutedByHost?: boolean;
 }
 
 export interface CloudRoomMessage {
