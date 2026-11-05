@@ -67,11 +67,11 @@ service cloud.firestore {
              data.institution is string && data.institution.size() <= 150 &&
              data.department is string && data.department.size() <= 150 &&
              data.targetGpa is number && data.targetGpa >= 0 && data.targetGpa <= 5 &&
-             data.coursesCount is int && data.coursesCount >= 0 && data.coursesCount <= 500 &&
-             data.lecturesCount is int && data.lecturesCount >= 0 && data.lecturesCount <= 1000 &&
-             data.assessmentsCount is int && data.assessmentsCount >= 0 && data.assessmentsCount <= 1000 &&
-             data.flashcardsCount is int && data.flashcardsCount >= 0 && data.flashcardsCount <= 5000 &&
-             data.totalFocusMinutes is int && data.totalFocusMinutes >= 0 && data.totalFocusMinutes <= 1000000 &&
+             (data.coursesCount is int || data.coursesCount is number) && data.coursesCount >= 0 && data.coursesCount <= 500 &&
+             (data.lecturesCount is int || data.lecturesCount is number) && data.lecturesCount >= 0 && data.lecturesCount <= 1000 &&
+             (data.assessmentsCount is int || data.assessmentsCount is number) && data.assessmentsCount >= 0 && data.assessmentsCount <= 1000 &&
+             (data.flashcardsCount is int || data.flashcardsCount is number) && data.flashcardsCount >= 0 && data.flashcardsCount <= 5000 &&
+             (data.totalFocusMinutes is int || data.totalFocusMinutes is number) && data.totalFocusMinutes >= 0 && data.totalFocusMinutes <= 1000000 &&
              isValidBoundedStringList(data.courseRecords, 50) &&
              isValidBoundedStringList(data.lectureRecords, 80) &&
              isValidBoundedStringList(data.assessmentRecords, 80) &&
@@ -91,25 +91,26 @@ service cloud.firestore {
              data.courseCode is string && data.courseCode.size() >= 1 && data.courseCode.size() <= 24 &&
              data.roomTitle is string && data.roomTitle.size() >= 2 && data.roomTitle.size() <= 120 &&
              data.focusTopic is string && data.focusTopic.size() <= 240 &&
-             data.activeMinutes is int && data.activeMinutes >= 1 && data.activeMinutes <= 720 &&
+             (data.activeMinutes is int || data.activeMinutes is number) && data.activeMinutes >= 1 && data.activeMinutes <= 720 &&
              isValidVisibility(data.visibility) &&
              data.status is string && data.status.size() <= 16 &&
              (data.status == 'ACTIVE' || data.status == 'COMPLETED') &&
              (!('joinCode' in data) || (data.joinCode is string && data.joinCode.size() <= 16)) &&
              (!('timerState' in data) || (data.timerState is string && data.timerState.size() <= 16 &&
                (data.timerState == 'IDLE' || data.timerState == 'RUNNING' || data.timerState == 'PAUSED'))) &&
-             (!('timerEndEpochMillis' in data) || (data.timerEndEpochMillis is int && data.timerEndEpochMillis >= 0)) &&
-             (!('timerRemainingSeconds' in data) || (data.timerRemainingSeconds is int && data.timerRemainingSeconds >= 0 && data.timerRemainingSeconds <= 43200)) &&
+             (!('timerEndEpochMillis' in data) || ((data.timerEndEpochMillis is int || data.timerEndEpochMillis is number) && data.timerEndEpochMillis >= 0)) &&
+             (!('timerRemainingSeconds' in data) || ((data.timerRemainingSeconds is int || data.timerRemainingSeconds is number) && data.timerRemainingSeconds >= 0 && data.timerRemainingSeconds <= 43200)) &&
              (!('sharedBoardNote' in data) || (data.sharedBoardNote is string && data.sharedBoardNote.size() <= 2000)) &&
              (!('waitingRoomEnabled' in data) || (data.waitingRoomEnabled is bool)) &&
              (!('whiteboardLocked' in data) || (data.whiteboardLocked is bool)) &&
              (!('coHostIds' in data) || isValidCoHostList(data.coHostIds)) &&
-             (!('voiceRoomUrl' in data) || (data.voiceRoomUrl is string && data.voiceRoomUrl.size() <= 200)) &&
+             (!('voiceRoomUrl' in data) || (data.voiceRoomUrl is string && data.voiceRoomUrl.size() <= 500)) &&
              (!('activePollQuestion' in data) || (data.activePollQuestion is string && data.activePollQuestion.size() <= 300)) &&
              (!('activePollOptions' in data) || isValidPollOptionsList(data.activePollOptions)) &&
-             (!('activePollCorrectIndex' in data) || (data.activePollCorrectIndex is int && data.activePollCorrectIndex >= -1 && data.activePollCorrectIndex <= 3)) &&
+             (!('activePollCorrectIndex' in data) || ((data.activePollCorrectIndex is int || data.activePollCorrectIndex is number) && data.activePollCorrectIndex >= -1 && data.activePollCorrectIndex <= 3)) &&
              (!('activePollRevealed' in data) || (data.activePollRevealed is bool)) &&
              (!('spotlightCardText' in data) || (data.spotlightCardText is string && data.spotlightCardText.size() <= 600)) &&
+             (!('muteAllTimestamp' in data) || ((data.muteAllTimestamp is int || data.muteAllTimestamp is number) && data.muteAllTimestamp >= 0)) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
              data.updatedAt is timestamp && data.updatedAt <= request.time;
     }
@@ -141,10 +142,13 @@ service cloud.firestore {
              (data.studyStatus == 'FOCUSING' || data.studyStatus == 'BREAK' || data.studyStatus == 'QUIZZING' || data.studyStatus == 'READY') &&
              data.handRaised is bool &&
              data.reactionEmoji is string && data.reactionEmoji.size() <= 16 &&
-             data.focusMinutesLogged is int && data.focusMinutesLogged >= 0 && data.focusMinutesLogged <= 10000 &&
+             (data.focusMinutesLogged is int || data.focusMinutesLogged is number) && data.focusMinutesLogged >= 0 && data.focusMinutesLogged <= 10000 &&
+             (!('isMuted' in data) || (data.isMuted is bool)) &&
+             (!('cameraOn' in data) || (data.cameraOn is bool)) &&
+             (!('isMutedByHost' in data) || (data.isMutedByHost is bool)) &&
              (!('admissionStatus' in data) || (data.admissionStatus is string && data.admissionStatus.size() <= 16 &&
                (data.admissionStatus == 'ADMITTED' || data.admissionStatus == 'WAITING' || data.admissionStatus == 'REMOVED'))) &&
-             (!('pollVoteIndex' in data) || (data.pollVoteIndex is int && data.pollVoteIndex >= -1 && data.pollVoteIndex <= 3)) &&
+             (!('pollVoteIndex' in data) || ((data.pollVoteIndex is int || data.pollVoteIndex is number) && data.pollVoteIndex >= -1 && data.pollVoteIndex <= 3)) &&
              (!('devicePlatform' in data) || (data.devicePlatform is string && data.devicePlatform.size() <= 24 &&
                (data.devicePlatform == 'ANDROID' || data.devicePlatform == 'IPHONE_WEB' || data.devicePlatform == 'WEB_BROWSER'))) &&
              data.createdAt is timestamp && data.createdAt <= request.time &&
@@ -182,7 +186,6 @@ service cloud.firestore {
       let parent = get(/databases/$(database)/documents/study_rooms/$(roomId)).data;
       return parent.status == 'ACTIVE' &&
              expectedOwnerId == parent.ownerId &&
-             expectedVisibility == parent.visibility &&
              (parent.visibility == 'CAMPUS' ||
               parent.visibility == 'UNLISTED' ||
               parent.ownerId == request.auth.uid) &&
@@ -193,7 +196,6 @@ service cloud.firestore {
       let parent = get(/databases/$(database)/documents/study_rooms/$(roomId)).data;
       return parent.status == 'ACTIVE' &&
              expectedOwnerId == parent.ownerId &&
-             expectedVisibility == parent.visibility &&
              (parent.visibility == 'CAMPUS' ||
               parent.visibility == 'UNLISTED' ||
               parent.ownerId == request.auth.uid);
@@ -281,7 +283,7 @@ service cloud.firestore {
                          'timerState', 'timerEndEpochMillis', 'timerRemainingSeconds',
                          'sharedBoardNote', 'waitingRoomEnabled', 'whiteboardLocked',
                          'coHostIds', 'voiceRoomUrl', 'activePollQuestion', 'activePollOptions',
-                         'activePollCorrectIndex', 'activePollRevealed', 'spotlightCardText',
+                         'activePollCorrectIndex', 'activePollRevealed', 'spotlightCardText', 'muteAllTimestamp',
                          'createdAt', 'updatedAt'
                        ]) &&
                        incoming().status == 'ACTIVE' &&
@@ -301,6 +303,7 @@ service cloud.firestore {
                             'sharedBoardNote', 'waitingRoomEnabled', 'whiteboardLocked',
                             'coHostIds', 'voiceRoomUrl', 'activePollQuestion', 'activePollOptions',
                             'activePollCorrectIndex', 'activePollRevealed', 'spotlightCardText',
+                            'muteAllTimestamp',
                             'updatedAt'
                           ])) ||
                          // Tier 1 Action B: Host completes study room (Terminal transition)
@@ -318,6 +321,7 @@ service cloud.firestore {
                             'activeMinutes', 'timerState', 'timerEndEpochMillis', 'timerRemainingSeconds',
                             'sharedBoardNote', 'activePollQuestion', 'activePollOptions',
                             'activePollCorrectIndex', 'activePollRevealed', 'spotlightCardText',
+                            'muteAllTimestamp',
                             'updatedAt'
                           ])) ||
                          // Tier 3 Action D: Admitted Remote/Campus/Browser Peer co-edits shared whiteboard ONLY when unlocked
@@ -422,7 +426,7 @@ service cloud.firestore {
                            'roomId', 'roomOwnerId', 'roomVisibility', 'userId', 'displayName',
                            'cityOrCampus', 'studyStatus', 'handRaised', 'reactionEmoji',
                            'focusMinutesLogged', 'admissionStatus', 'pollVoteIndex',
-                           'devicePlatform', 'createdAt', 'updatedAt'
+                           'devicePlatform', 'isMuted', 'cameraOn', 'isMutedByHost', 'createdAt', 'updatedAt'
                          ]) &&
                          (!('admissionStatus' in incoming()) || incoming().admissionStatus != 'REMOVED') &&
                          isValidRoomParticipantShape(incoming()) &&
@@ -448,12 +452,12 @@ service cloud.firestore {
                             incoming().diff(existing()).affectedKeys().hasOnly([
                               'displayName', 'cityOrCampus', 'studyStatus', 'handRaised',
                               'reactionEmoji', 'focusMinutesLogged', 'pollVoteIndex',
-                              'devicePlatform', 'updatedAt'
+                              'devicePlatform', 'isMuted', 'cameraOn', 'isMutedByHost', 'updatedAt'
                             ])) ||
                            // Action B: Host or Co-Host moderates participant (Admit from Waiting Room, Remove/Ban, or Lower Hand)
                            (isParentHostOrCoHost(roomId) &&
                             incoming().diff(existing()).affectedKeys().hasOnly([
-                              'admissionStatus', 'handRaised', 'updatedAt'
+                              'admissionStatus', 'handRaised', 'isMuted', 'isMutedByHost', 'cameraOn', 'updatedAt'
                             ]))
                          )
                        );
