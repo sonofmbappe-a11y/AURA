@@ -333,7 +333,7 @@ export const LiveStudyStage: React.FC<Props> = ({
   const startScreenCast = async () => {
     try {
       if (!navigator.mediaDevices?.getDisplayMedia) {
-        onNotify('Screen capture is supported in modern desktop browsers (Chrome, Edge, Safari 13+).');
+        onNotify('Screen capture is supported in Chrome, Edge, and Safari on desktop.');
         return;
       }
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -348,7 +348,15 @@ export const LiveStudyStage: React.FC<Props> = ({
       stream.getVideoTracks()[0].onended = () => {
         stopScreenCast();
       };
-      onNotify('🔴 Live Screen Cast started! Broadcasting your screen.');
+      if (liveRoom && user) {
+        try {
+          await updateDoc(doc(db, 'study_rooms', liveRoom.id), {
+            spotlightCardText: `🔴 Live Presentation: ${user.displayName || 'Host'} is broadcasting their screen/slides! Tap stage or theater mode to watch.`,
+            updatedAt: serverTimestamp()
+          });
+        } catch (_) {}
+      }
+      onNotify('🔴 Live Screen Cast started! Broadcasted to Android & Web scholars.');
     } catch (err) {
       if ((err as Error)?.name !== 'NotAllowedError') {
         onNotify('Screen casting cancelled.');
@@ -362,6 +370,12 @@ export const LiveStudyStage: React.FC<Props> = ({
     }
     setScreenStream(null);
     setIsCastingScreen(false);
+    if (liveRoom && liveRoom.spotlightCardText?.includes('Live Presentation')) {
+      updateDoc(doc(db, 'study_rooms', liveRoom.id), {
+        spotlightCardText: '',
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
+    }
     onNotify('Screen cast ended.');
   };
 
@@ -801,14 +815,31 @@ export const LiveStudyStage: React.FC<Props> = ({
     whiteboardLocked: boolean;
     cityBadge: string;
   }) => {
-    if (!user) return;
+    let currentUser = user;
+    if (!currentUser) {
+      setIsHostingRoom(true);
+      try {
+        currentUser = await signInWithGoogleBrowser();
+      } catch (authErr) {
+        const msg = (authErr as Error)?.message || 'Sign in with Google required to host a session.';
+        setHostModalError(msg);
+        onNotify('Please sign in with Google to host a live session.');
+        setIsHostingRoom(false);
+        return;
+      }
+      if (!currentUser) {
+        setHostModalError('Google sign in required to host a session.');
+        setIsHostingRoom(false);
+        return;
+      }
+    }
     setIsHostingRoom(true);
     setHostModalError('');
     const code = generateJoinCode();
     const roomId = `room_${code}`;
-    const mins = Math.round(Math.max(5, Math.min(360, payload.activeMinutes || 50)));
+    const mins = Math.trunc(Math.max(5, Math.min(360, Number(payload.activeMinutes) || 50)));
     const ownerName =
-      (user.displayName || vault.profile.name || 'Scholar').trim().slice(0, 80) || 'Scholar';
+      (currentUser.displayName || vault.profile.name || 'Scholar').trim().slice(0, 80) || 'Scholar';
     const voiceUrl = buildJitsiVoiceUrl(code, roomId);
     const welcomeBoard = `Welcome to ${payload.roomTitle}! Drop formulas, past-paper notes, or sprint goals here.`.slice(
       0,
@@ -817,7 +848,7 @@ export const LiveStudyStage: React.FC<Props> = ({
 
     try {
       await setDoc(doc(db, 'study_rooms', roomId), {
-        ownerId: user.uid,
+        ownerId: currentUser.uid,
         ownerName,
         courseCode: payload.courseCode.slice(0, 24),
         roomTitle: payload.roomTitle.slice(0, 120),
@@ -845,7 +876,7 @@ export const LiveStudyStage: React.FC<Props> = ({
 
       const createdStub: CloudStudyRoom = {
         id: roomId,
-        ownerId: user.uid,
+        ownerId: currentUser.uid,
         ownerName,
         courseCode: payload.courseCode,
         roomTitle: payload.roomTitle,
@@ -892,7 +923,6 @@ export const LiveStudyStage: React.FC<Props> = ({
    * 1-Click Instant Host: Launches a rapid 50m sprint immediately without opening a lengthy form
    */
   const handleInstantQuickHost = async () => {
-    if (!user) return;
     const defaultCourse = vault.courses[0]?.code || 'CS301';
     await handleHostCreateRoom({
       courseCode: defaultCourse,
@@ -1622,7 +1652,10 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                       {/* External Tab Popout */}
                       <a
-                        href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)).replace('https://meet.jit.si/', 'https://framatalk.org/')}
+                        href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                          .replace('https://meet.jit.si/', 'https://meet.element.io/')
+                          .replace('https://framatalk.org/', 'https://meet.element.io/')
+                          + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
                         target="_blank"
                         rel="noreferrer"
                         className="p-1.5 rounded-xl bg-black/60 text-white/80 hover:text-white border border-white/15"
@@ -1635,7 +1668,10 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                   {/* Embedded WebRTC Stage Iframe */}
                   <iframe
-                    src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)).replace('https://meet.jit.si/', 'https://framatalk.org/')}
+                    src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                      .replace('https://meet.jit.si/', 'https://meet.element.io/')
+                      .replace('https://framatalk.org/', 'https://meet.element.io/')
+                      + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
                     allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                     className="w-full h-full border-0 pt-8"
                     title={`AURA Live Stage - ${liveRoom.roomTitle}`}
