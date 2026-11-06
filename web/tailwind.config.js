@@ -6,8 +6,8 @@ export default {
     extend: {
       colors: {
         aura: {
-          obsidian: '#070E1B',
-          card: '#0F1B31',
+          obsidian: '#060B16',
+          card: '#0D172B',
           cyan: '#38BDF8',
           mint: '#34D399',
           violet: '#A78BFA',
@@ -15,8 +15,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace']
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
       }
     }
   },

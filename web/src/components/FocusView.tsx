@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { AuraLocalVault } from '../types';
 import { uidGen } from '../storage';
+import { AuraModal } from './AuraModal';
 
 interface Props {
   vault: AuraLocalVault;
@@ -244,7 +245,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs font-bold"
+            className="px-3.5 py-1.5 rounded-xl aura-input text-xs font-bold"
           >
             {vault.courses.map((c) => (
               <option key={c.id} value={c.code}>
@@ -391,7 +392,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             onChange={(e) => setDistractionInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
             placeholder="Park an intrusive thought or to-do here..."
-            className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="flex-1 px-3.5 py-2.5 rounded-xl aura-input text-xs"
           />
           <button
             onClick={addDistraction}
@@ -421,65 +422,67 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       </div>
 
       {/* Custom Time Picker Modal */}
-      {showCustomModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="aura-glass rounded-3xl p-5 w-full max-w-sm space-y-4 border border-violet-400/40">
-            <h3 className="font-extrabold text-base">Set Any Custom Focus Time</h3>
-            <p className="text-xs text-slate-400">
-              Choose any duration from 10 seconds up to 12 hours.
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-[11px] text-slate-400">Hours (0–12)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={12}
-                  value={customHours}
-                  onChange={(e) => setCustomHours(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-center font-mono font-bold"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-400">Mins (0–59)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={customMinutes}
-                  onChange={(e) => setCustomMinutes(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-center font-mono font-bold"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-400">Secs (0–59)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={customSecs}
-                  onChange={(e) => setCustomSecs(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-center font-mono font-bold"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCustomModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={applyCustomDuration}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
-              >
-                Apply Time
-              </button>
-            </div>
+      <AuraModal
+        open={showCustomModal}
+        onClose={() => setShowCustomModal(false)}
+        badge="CUSTOM SPRINT CLOCK"
+        title="Set Any Custom Focus Time"
+        subtitle="Choose any duration from 10 seconds up to 12 hours."
+        accentColor="violet"
+        maxWidthClass="max-w-sm"
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Hours (0–12)</label>
+            <input
+              type="number"
+              min={0}
+              max={12}
+              value={customHours}
+              onChange={(e) => setCustomHours(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Mins (0–59)</label>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={customMinutes}
+              onChange={(e) => setCustomMinutes(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Secs (0–59)</label>
+            <input
+              type="number"
+              min={0}
+              max={59}
+              value={customSecs}
+              onChange={(e) => setCustomSecs(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+            />
           </div>
         </div>
-      )}
+        <div className="flex gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setShowCustomModal(false)}
+            className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={applyCustomDuration}
+            className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+          >
+            Apply Time
+          </button>
+        </div>
+      </AuraModal>
     </div>
   );
 };

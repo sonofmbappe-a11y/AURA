@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged, type User } from 'firebase/auth';
 import {
   BookOpen,
   Calendar,
   Flame,
+  Moon,
   Sliders,
-  Video
+  Sparkles,
+  Sun,
+  Video,
+  X
 } from 'lucide-react';
 import { auth, normalizeJoinCode } from './firebase';
 import {
@@ -43,7 +47,7 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(''), 4500);
+    const t = window.setTimeout(() => setToast(''), 5200);
     return () => window.clearTimeout(t);
   }, [toast]);
 
@@ -67,8 +71,12 @@ export const App: React.FC = () => {
     }
   }, [vault.profile.isDarkTheme]);
 
-  // Listen to Firebase Google Auth & auto-import Cloud Backup once per UID
+  // Handle Google OAuth redirect fallback on iOS Safari & listen to Firebase Auth
   useEffect(() => {
+    getRedirectResult(auth).catch(() => {
+      // Ignore if no pending redirect
+    });
+
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
@@ -79,7 +87,7 @@ export const App: React.FC = () => {
             if (res) {
               setVault(res.updatedVault);
               saveLocalVault(res.updatedVault);
-              notify(`Welcome back! Auto-synced your Android Cloud Vault (${res.summary})`);
+              notify(`Welcome back! Auto-synced your Cloud Vault (${res.summary})`);
             }
           } catch {
             // Silent if offline or no backup yet
@@ -98,17 +106,49 @@ export const App: React.FC = () => {
     { id: 'TOOLS', label: 'Sync & Tools', icon: <Sliders className="w-4 h-4" /> }
   ];
 
+  const userInitial = (user?.displayName || vault.profile.name || 'A')
+    .trim()
+    .charAt(0)
+    .toUpperCase();
+
   return (
-    <div className="min-h-dvh flex flex-col max-w-4xl mx-auto px-3 sm:px-6 pb-24 pt-3">
-      {/* Top App Bar */}
-      <header className="aura-glass rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 via-sky-400 to-violet-500 flex items-center justify-center font-extrabold text-slate-950 text-sm shrink-0">
-            A
+    <div className="min-h-dvh flex flex-col max-w-4xl mx-auto px-3 sm:px-6 pb-28 pt-3">
+      {/* Floating Z-[100] Toast Notification (Always visible even over Modals) */}
+      {toast && (
+        <div className="fixed top-3 left-3 right-3 max-w-lg mx-auto z-[100] pointer-events-auto">
+          <div className="aura-glass rounded-2xl px-4 py-3 border border-emerald-400/60 shadow-2xl flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="text-xs font-bold leading-snug">{toast}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setToast('')}
+              aria-label="Dismiss notification"
+              className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Top App Bar */}
+      <header className="sticky top-2 z-30 aura-glass rounded-3xl px-4 py-3 mb-4 flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 via-sky-400 to-violet-500 p-[1.5px] shrink-0 shadow-lg shadow-emerald-500/20">
+            <div className="w-full h-full rounded-[14px] bg-slate-950/85 flex items-center justify-center font-extrabold text-emerald-300 text-sm">
+              A
+            </div>
           </div>
           <div className="min-w-0">
-            <div className="font-extrabold text-sm tracking-tight truncate">
-              AURA • Academic Companion
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-sm sm:text-base tracking-tight truncate">
+                AURA
+              </span>
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider">
+                Universal Study Suite
+              </span>
             </div>
             <div className="text-[11px] text-slate-400 truncate">
               {vault.profile.name} • {vault.profile.institution}
@@ -116,23 +156,48 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => setActiveTab('LIVE_STAGE')}
-          className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-xs font-extrabold shrink-0"
-        >
-          {user ? '🟢 Cloud Connected' : 'Join / Sign In'}
-        </button>
-      </header>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() =>
+              updateVault((prev) => ({
+                ...prev,
+                profile: { ...prev.profile, isDarkTheme: !prev.profile.isDarkTheme }
+              }))
+            }
+            aria-label="Toggle theme"
+            className="w-9 h-9 rounded-xl aura-subtle-surface flex items-center justify-center hover:border-sky-400/50 transition"
+          >
+            {vault.profile.isDarkTheme ? (
+              <Sun className="w-4 h-4 text-amber-300" />
+            ) : (
+              <Moon className="w-4 h-4 text-sky-600" />
+            )}
+          </button>
 
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          onClick={() => setToast('')}
-          className="mb-4 p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400 text-xs font-bold text-emerald-100 cursor-pointer"
-        >
-          {toast}
+          <button
+            type="button"
+            onClick={() => setActiveTab('LIVE_STAGE')}
+            className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition ${
+              user
+                ? 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/30'
+                : 'bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 shadow-md shadow-emerald-500/20'
+            }`}
+          >
+            {user ? (
+              <>
+                <span className="w-5 h-5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-extrabold flex items-center justify-center">
+                  {userInitial}
+                </span>
+                <span className="hidden xs:inline">Live Cloud</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </>
+            ) : (
+              <span>Join / Sign In</span>
+            )}
+          </button>
         </div>
-      )}
+      </header>
 
       {/* Main Content */}
       <main className="flex-1">
@@ -164,22 +229,23 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Liquid Glass Navigation Bar (iPhone Safe-Area Friendly) */}
+      {/* Bottom Liquid-Glass Navigation Bar (iPhone Safe-Area Friendly) */}
       <nav className="fixed bottom-3 left-3 right-3 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1.5 grid grid-cols-5 gap-1 shadow-2xl">
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition ${
+              className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                 active
-                  ? 'bg-emerald-500 text-slate-950 font-extrabold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gradient-to-br from-emerald-400 to-sky-400 text-slate-950 font-extrabold shadow-md shadow-emerald-500/25'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
               {item.icon}
-              <span className="text-[10px] leading-none">{item.label}</span>
+              <span className="text-[10px] leading-none tracking-tight">{item.label}</span>
             </button>
           );
         })}

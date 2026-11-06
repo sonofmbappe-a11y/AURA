@@ -1622,7 +1622,7 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                       {/* External Tab Popout */}
                       <a
-                        href={liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)}
+                        href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)).replace('https://meet.jit.si/', 'https://framatalk.org/')}
                         target="_blank"
                         rel="noreferrer"
                         className="p-1.5 rounded-xl bg-black/60 text-white/80 hover:text-white border border-white/15"
@@ -1635,7 +1635,7 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                   {/* Embedded WebRTC Stage Iframe */}
                   <iframe
-                    src={liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)}
+                    src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id)).replace('https://meet.jit.si/', 'https://framatalk.org/')}
                     allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                     className="w-full h-full border-0 pt-8"
                     title={`AURA Live Stage - ${liveRoom.roomTitle}`}

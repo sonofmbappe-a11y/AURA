@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { AuraLocalVault, WebCourse, WebLecture } from '../types';
 import { uidGen } from '../storage';
+import { AuraModal } from './AuraModal';
 
 interface Props {
   vault: AuraLocalVault;
@@ -503,175 +504,188 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       )}
 
       {/* Add / Edit Course Modal */}
-      {showCourseModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="aura-glass rounded-3xl p-5 w-full max-w-md space-y-3 border border-sky-400/40">
-            <h3 className="font-extrabold text-base">
-              {editingCourse ? 'Edit Course' : 'Add Semester Course'}
-            </h3>
-            <div className="grid grid-cols-3 gap-2">
-              <input
-                value={cCode}
-                onChange={(e) => setCCode(e.target.value)}
-                placeholder="Code (CS301)"
-                className="col-span-2 px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-              />
-              <input
-                type="number"
-                value={cCredits}
-                onChange={(e) => setCCredits(e.target.value)}
-                placeholder="Credits"
-                className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-              />
-            </div>
+      <AuraModal
+        open={showCourseModal}
+        onClose={() => setShowCourseModal(false)}
+        badge="SEMESTER CURRICULUM"
+        title={editingCourse ? 'Edit Course' : 'Add Semester Course'}
+        subtitle="Color-coded courses automatically sync across your daily & weekly timetable."
+        accentColor="sky"
+      >
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-2">
             <input
-              value={cName}
-              onChange={(e) => setCName(e.target.value)}
-              placeholder="Course Name (e.g. Operating Systems)"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
+              value={cCode}
+              onChange={(e) => setCCode(e.target.value)}
+              placeholder="Code (CS301)"
+              className="col-span-2 px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
             />
             <input
-              value={cLecturer}
-              onChange={(e) => setCLecturer(e.target.value)}
-              placeholder="Lecturer / Professor"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
+              type="number"
+              min={1}
+              max={12}
+              value={cCredits}
+              onChange={(e) => setCCredits(e.target.value)}
+              placeholder="Credits"
+              className="px-3 py-2.5 rounded-xl aura-input text-xs font-mono font-bold text-center"
             />
-            <input
-              value={cVenue}
-              onChange={(e) => setCVenue(e.target.value)}
-              placeholder="Default Lecture Hall / Venue"
-              className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-            />
-            <div className="flex items-center gap-2">
-              {PALETTE.map((hex) => (
-                <button
-                  key={hex}
-                  type="button"
-                  onClick={() => setCColor(hex)}
-                  className={`w-7 h-7 rounded-full border-2 ${
-                    cColor === hex ? 'border-white scale-110' : 'border-transparent opacity-75'
-                  }`}
-                  style={{ backgroundColor: hex }}
-                />
-              ))}
-            </div>
-            <div className="flex gap-2 pt-2">
+          </div>
+          <input
+            value={cName}
+            onChange={(e) => setCName(e.target.value)}
+            placeholder="Course Name (e.g. Operating Systems)"
+            className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+          />
+          <input
+            value={cLecturer}
+            onChange={(e) => setCLecturer(e.target.value)}
+            placeholder="Lecturer / Professor"
+            className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+          />
+          <input
+            value={cVenue}
+            onChange={(e) => setCVenue(e.target.value)}
+            placeholder="Default Lecture Hall / Venue"
+            className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+          />
+          <div className="flex items-center gap-2.5 pt-1">
+            <span className="text-[11px] font-bold text-slate-400">Color:</span>
+            {PALETTE.map((hex) => (
               <button
-                onClick={() => setShowCourseModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveCourse}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
-              >
-                Save Course
-              </button>
-            </div>
+                key={hex}
+                type="button"
+                onClick={() => setCColor(hex)}
+                className={`w-7 h-7 rounded-full border-2 transition ${
+                  cColor === hex ? 'border-white scale-110 shadow-md' : 'border-transparent opacity-75'
+                }`}
+                style={{ backgroundColor: hex }}
+              />
+            ))}
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowCourseModal(false)}
+              className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveCourse}
+              className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+            >
+              Save Course
+            </button>
           </div>
         </div>
-      )}
+      </AuraModal>
 
       {/* Add / Edit Class Slot Modal */}
-      {showLectureModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="aura-glass rounded-3xl p-5 w-full max-w-md space-y-3 border border-emerald-400/40">
-            <h3 className="font-extrabold text-base">
-              {editingLecture ? 'Edit Class Slot' : 'Add Weekly Class Slot'}
-            </h3>
+      <AuraModal
+        open={showLectureModal}
+        onClose={() => setShowLectureModal(false)}
+        badge="CLASS SCHEDULE"
+        title={editingLecture ? 'Edit Class Slot' : 'Add Weekly Class Slot'}
+        subtitle="Includes live countdown banners & walking buffer reminders."
+        accentColor="emerald"
+      >
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Course Code</label>
+            <input
+              list="aura-course-codes"
+              value={lCourseCode}
+              onChange={(e) => setLCourseCode(e.target.value)}
+              placeholder="e.g. CS301"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+            />
+            <datalist id="aura-course-codes">
+              {vault.courses.map((c) => (
+                <option key={c.id} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </datalist>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-400">Day of Week</label>
+            <select
+              value={lDay}
+              onChange={(e) => setLDay(Number(e.target.value))}
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
+            >
+              {DAYS.map((d) => (
+                <option key={d.num} value={d.num}>
+                  {d.full}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="text-[11px] text-slate-400">Course Code</label>
+              <label className="text-[11px] font-bold text-slate-400">Start Time</label>
               <input
-                list="aura-course-codes"
-                value={lCourseCode}
-                onChange={(e) => setLCourseCode(e.target.value)}
-                placeholder="e.g. CS301"
-                className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
+                type="time"
+                value={lStart}
+                onChange={(e) => setLStart(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-mono"
               />
-              <datalist id="aura-course-codes">
-                {vault.courses.map((c) => (
-                  <option key={c.id} value={c.code}>
-                    {c.name}
-                  </option>
-                ))}
-              </datalist>
             </div>
-
             <div className="space-y-1">
-              <label className="text-[11px] text-slate-400">Day of Week</label>
-              <select
-                value={lDay}
-                onChange={(e) => setLDay(Number(e.target.value))}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-sm"
-              >
-                {DAYS.map((d) => (
-                  <option key={d.num} value={d.num}>
-                    {d.full}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-slate-400">Start Time</label>
-                <input
-                  type="time"
-                  value={lStart}
-                  onChange={(e) => setLStart(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-400">End Time</label>
-                <input
-                  type="time"
-                  value={lEnd}
-                  onChange={(e) => setLEnd(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2">
-                <label className="text-[11px] text-slate-400">Venue / Room</label>
-                <input
-                  value={lVenue}
-                  onChange={(e) => setLVenue(e.target.value)}
-                  placeholder="Hall / Lab"
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-400">Walk (min)</label>
-                <input
-                  type="number"
-                  value={lWalk}
-                  onChange={(e) => setLWalk(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setShowLectureModal(false)}
-                className="flex-1 py-2.5 rounded-xl bg-white/10 text-xs font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveLecture}
-                className="flex-1 py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
-              >
-                Save Slot
-              </button>
+              <label className="text-[11px] font-bold text-slate-400">End Time</label>
+              <input
+                type="time"
+                value={lEnd}
+                onChange={(e) => setLEnd(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-mono"
+              />
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1">
+              <label className="text-[11px] font-bold text-slate-400">Venue / Room</label>
+              <input
+                value={lVenue}
+                onChange={(e) => setLVenue(e.target.value)}
+                placeholder="Hall / Lab"
+                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-400">Walk (min)</label>
+              <input
+                type="number"
+                min={0}
+                max={120}
+                value={lWalk}
+                onChange={(e) => setLWalk(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl aura-input text-xs font-mono text-center"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowLectureModal(false)}
+              className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveLecture}
+              className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+            >
+              Save Slot
+            </button>
+          </div>
         </div>
-      )}
+      </AuraModal>
     </div>
   );
 };

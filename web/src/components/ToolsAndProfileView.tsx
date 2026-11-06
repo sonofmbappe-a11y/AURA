@@ -227,7 +227,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Your Name"
-            className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
           />
           <input
             value={vault.profile.institution}
@@ -238,7 +238,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="University / Campus"
-            className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
           />
           <input
             value={vault.profile.programme}
@@ -249,7 +249,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Programme / Department"
-            className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
           />
           <input
             value={vault.profile.semester}
@@ -260,7 +260,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Semester"
-            className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
           />
         </div>
       </div>
@@ -275,7 +275,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             type="time"
             value={wakeTime}
             onChange={(e) => setWakeTime(e.target.value)}
-            className="px-2.5 py-1 rounded-xl bg-white/10 border border-white/15 text-xs font-mono"
+            className="px-3 py-1 rounded-xl aura-input text-xs font-mono"
           />
         </div>
         <p className="text-xs text-slate-400">
@@ -311,19 +311,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             value={gCode}
             onChange={(e) => setGCode(e.target.value)}
             placeholder="Course"
-            className="col-span-2 px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="col-span-2 px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
           />
           <input
             type="number"
             value={gCredits}
             onChange={(e) => setGCredits(e.target.value)}
             placeholder="Cr"
-            className="px-2 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+            className="px-2 py-2.5 rounded-xl aura-input text-xs font-mono text-center"
           />
           <select
             value={gLetter}
             onChange={(e) => setGLetter(e.target.value)}
-            className="px-2 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs font-bold"
+            className="px-2 py-2.5 rounded-xl aura-input text-xs font-bold"
           >
             {Object.keys(GRADE_SCALE).map((k) => (
               <option key={k} value={k}>

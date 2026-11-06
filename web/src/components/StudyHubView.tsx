@@ -289,12 +289,12 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 value={noteCourse}
                 onChange={(e) => setNoteCourse(e.target.value)}
                 placeholder="Course (e.g. CS301)"
-                className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
               />
               <select
                 value={noteCategory}
                 onChange={(e) => setNoteCategory(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
               >
                 <option value="Lecture">Lecture</option>
                 <option value="Formula">Formula</option>
@@ -306,14 +306,14 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="Note Title (e.g. Laplace Transform Identities)"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
             />
             <textarea
               rows={4}
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write lecture takeaways, proofs, or formulas..."
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
             />
             <button
               onClick={addNote}
@@ -487,20 +487,20 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={newCardCourse}
               onChange={(e) => setNewCardCourse(e.target.value)}
               placeholder="Course Code (e.g. CS301)"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
             />
             <input
               value={newCardQ}
               onChange={(e) => setNewCardQ(e.target.value)}
               placeholder="Question / Front of Card"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
             />
             <textarea
               rows={2}
               value={newCardA}
               onChange={(e) => setNewCardA(e.target.value)}
               placeholder="Verified Answer / Back of Card"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
             />
             <button
               onClick={addCard}
@@ -602,12 +602,12 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 value={examCourse}
                 onChange={(e) => setExamCourse(e.target.value)}
                 placeholder="Course Code"
-                className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
               />
               <select
                 value={examType}
                 onChange={(e) => setExamType(e.target.value as 'EXAM' | 'ASSIGNMENT' | 'QUIZ')}
-                className="px-3 py-2 rounded-xl bg-slate-900 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
               >
                 <option value="EXAM">EXAM</option>
                 <option value="QUIZ">QUIZ</option>
@@ -618,20 +618,20 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
               placeholder="Title (e.g. Final Paper 1 / Lab Report)"
-              className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="date"
                 value={examDate}
                 onChange={(e) => setExamDate(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
               />
               <input
                 value={examVenue}
                 onChange={(e) => setExamVenue(e.target.value)}
                 placeholder="Exam Hall / Venue"
-                className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs"
+                className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
               />
             </div>
             <button
@@ -725,7 +725,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={slideCourse}
               onChange={(e) => setSlideCourse(e.target.value)}
               placeholder="Course Code"
-              className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-xs w-36"
+              className="px-3.5 py-2 rounded-xl aura-input text-xs font-bold uppercase w-36"
             />
             <label className="px-3.5 py-2 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5">
               <Upload className="w-3.5 h-3.5" /> Load .txt / .md File
@@ -740,7 +740,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             placeholder={
               'Paste lecture text here...\nExample:\nDeadlock: A state where processes wait indefinitely for resources held by each other.\nMutex - Mutual exclusion lock ensuring single-thread critical section access.'
             }
-            className="w-full px-3 py-2.5 rounded-2xl bg-white/5 border border-white/15 text-xs"
+            className="w-full px-3.5 py-2.5 rounded-2xl aura-input text-xs"
           />
 
           <button
