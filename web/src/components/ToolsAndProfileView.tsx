@@ -14,7 +14,12 @@ import {
   Trash2,
   UserCircle
 } from 'lucide-react';
-import { signInWithGoogleBrowser, signOutBrowser } from '../firebase';
+import {
+  signInWithGoogleBrowser,
+  signOutBrowser,
+  signInWithEmailBrowser,
+  signUpWithEmailBrowser
+} from '../firebase';
 import {
   fetchAndMergeCloudBackupToWeb,
   saveCloudBackupFromWeb,
@@ -46,6 +51,10 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   onNotify
 }) => {
   const [busySync, setBusySync] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
 
   // REM Sleep Calculator
   const [wakeTime, setWakeTime] = useState('06:30');
@@ -146,18 +155,86 @@ export const ToolsAndProfileView: React.FC<Props> = ({
         </p>
 
         {!user ? (
-          <button
-            onClick={async () => {
-              try {
-                await signInWithGoogleBrowser();
-              } catch (e: unknown) {
-                onNotify((e as Error)?.message || 'Sign-in cancelled or domain not yet authorized.');
-              }
-            }}
-            className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs inline-flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" /> Sign in with Google
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={async () => {
+                try {
+                  await signInWithGoogleBrowser();
+                } catch (e: unknown) {
+                  onNotify((e as Error)?.message || 'Sign-in cancelled or domain not yet authorized.');
+                }
+              }}
+              className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs inline-flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" /> Sign in with Google
+            </button>
+
+            {/* Expandable Email/Password Option */}
+            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-300">
+                  {isRegister ? 'Create Scholar Account (Email)' : 'Sign In with Email & Password'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsRegister(!isRegister)}
+                  className="text-[10px] font-extrabold text-emerald-400 hover:underline"
+                >
+                  {isRegister ? 'Switch to Sign In' : 'Create Account'}
+                </button>
+              </div>
+
+              {isRegister && (
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Full Name"
+                  className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+                />
+              )}
+
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="scholar@university.edu"
+                className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+              />
+
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="•••••••• (min 6 characters)"
+                className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+              />
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email.trim() || password.length < 6) {
+                    onNotify('Please enter a valid email and minimum 6 character password.');
+                    return;
+                  }
+                  try {
+                    if (isRegister) {
+                      await signUpWithEmailBrowser(email, password, fullName.trim() || 'Scholar');
+                      onNotify('Account created successfully!');
+                    } else {
+                      await signInWithEmailBrowser(email, password);
+                      onNotify('Signed in successfully!');
+                    }
+                  } catch (err: unknown) {
+                    onNotify((err as Error)?.message || 'Authentication failed.');
+                  }
+                }}
+                className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs transition"
+              >
+                {isRegister ? 'Create Account' : 'Sign In'}
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
             <button

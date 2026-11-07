@@ -59,7 +59,9 @@ import {
   db,
   detectBrowserPlatform,
   normalizeJoinCode,
-  signInWithGoogleBrowser
+  signInWithGoogleBrowser,
+  signInWithEmailBrowser,
+  signUpWithEmailBrowser
 } from '../firebase';
 import { uidGen } from '../storage';
 import type {
@@ -219,6 +221,14 @@ export const LiveStudyStage: React.FC<Props> = ({
   const [showRecapModal, setShowRecapModal] = useState(false);
   const [moderatingParticipant, setModeratingParticipant] = useState<CloudParticipant | null>(null);
 
+  // Web Browser Auth Flow State (Dual Google + Scholar Email/Password)
+  const [authMode, setAuthMode] = useState<'GOOGLE' | 'EMAIL_SIGN_IN' | 'EMAIL_REGISTER'>('GOOGLE');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState('');
+
   // In-App Video Stage & Screen Cast State
   const [isCastingScreen, setIsCastingScreen] = useState(false);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
@@ -338,7 +348,7 @@ export const LiveStudyStage: React.FC<Props> = ({
       }
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { cursor: 'always' } as MediaTrackConstraints,
-        audio: false
+        audio: true
       });
       setScreenStream(stream);
       setIsCastingScreen(true);
@@ -351,12 +361,20 @@ export const LiveStudyStage: React.FC<Props> = ({
       if (liveRoom && user) {
         try {
           await updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-            spotlightCardText: `🔴 Live Presentation: ${user.displayName || 'Host'} is broadcasting their screen/slides! Tap stage or theater mode to watch.`,
+            spotlightCardText: `🔴 LIVE PRESENTATION: ${user.displayName || 'Host'} is presenting slides & screen! Click Stage or Theater mode to watch.`,
             updatedAt: serverTimestamp()
           });
         } catch (_) {}
       }
-      onNotify('🔴 Live Screen Cast started! Broadcasted to Android & Web scholars.');
+      // Focus Jitsi stage iframe so WebRTC key event 'd' or desktop share is engaged
+      const iframe = document.getElementById('jitsi_stage_iframe') as HTMLIFrameElement | null;
+      if (iframe) {
+        iframe.focus();
+        try {
+          iframe.contentWindow?.postMessage({ type: 'toggle-screenshare' }, '*');
+        } catch (_) {}
+      }
+      onNotify('🔴 Screen broadcast live! Tap the Desktop icon [🖥️] on the stage toolbar below or press "d" to stream directly through WebRTC to all connected phones!');
     } catch (err) {
       if ((err as Error)?.name !== 'NotAllowedError') {
         onNotify('Screen casting cancelled.');
@@ -1004,8 +1022,56 @@ export const LiveStudyStage: React.FC<Props> = ({
 
   // Sign-In Gate
   if (!user) {
+    const handleGoogleAuth = async () => {
+      setAuthBusy(true);
+      setAuthError('');
+      try {
+        await signInWithGoogleBrowser();
+      } catch (e: unknown) {
+        const msg = (e as Error)?.message || 'Google Sign-In failed.';
+        if (msg.includes('unauthorized-domain')) {
+          setAuthError('Notice: If Google popup closes on Vercel, use the Scholar Account (Email & Password) below for instant access on any domain!');
+        } else {
+          setAuthError(msg);
+        }
+        onNotify(msg);
+      } finally {
+        setAuthBusy(false);
+      }
+    };
+
+    const handleEmailAuthSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!authEmail.trim() || !authPassword.trim()) {
+        setAuthError('Please enter both email and password.');
+        return;
+      }
+      setAuthBusy(true);
+      setAuthError('');
+      try {
+        if (authMode === 'EMAIL_REGISTER') {
+          if (authPassword.length < 6) {
+            setAuthError('Password must be at least 6 characters.');
+            setAuthBusy(false);
+            return;
+          }
+          await signUpWithEmailBrowser(authEmail, authPassword, authName.trim() || 'Scholar');
+          onNotify('🎉 Scholar Account created! Welcome to AURA Live Stage.');
+        } else {
+          await signInWithEmailBrowser(authEmail, authPassword);
+          onNotify('👋 Welcome back! Signed into AURA Live Stage.');
+        }
+      } catch (err: unknown) {
+        const msg = (err as Error)?.message || 'Authentication failed.';
+        setAuthError(msg);
+        onNotify(msg);
+      } finally {
+        setAuthBusy(false);
+      }
+    };
+
     return (
-      <div className="aura-glass rounded-3xl p-6 sm:p-8 text-center space-y-5 border border-sky-400/35">
+      <div className="aura-glass rounded-3xl p-6 sm:p-8 text-center space-y-6 border border-sky-400/35 max-w-xl mx-auto shadow-2xl">
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-sky-500 to-violet-500 mx-auto flex items-center justify-center shadow-lg shadow-sky-500/25">
           <Users className="w-8 h-8 text-slate-950" />
         </div>
@@ -1015,26 +1081,117 @@ export const LiveStudyStage: React.FC<Props> = ({
           </span>
           <h2 className="text-xl sm:text-2xl font-extrabold pt-1">Universal Live Study Stage</h2>
           <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-            Sign in with Google to join Android or Web study sessions via 6-character code or QR link,
-            knock on Waiting Rooms, vote in live pop-quiz polls, co-edit the chalkboard, or host your own room.
+            Join Android & Web study rooms via 6-character code or QR link, knock on Waiting Rooms, share live slides & screen cast, or host your own session.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={async () => {
-            try {
-              await signInWithGoogleBrowser();
-            } catch (e: unknown) {
-              onNotify(
-                (e as Error)?.message ||
-                  'Google Sign-In failed. Ensure your Vercel domain is in Firebase Auth -> Settings -> Authorized Domains.'
-              );
-            }
-          }}
-          className="px-6 py-3.5 rounded-2xl aura-shimmer-btn text-slate-950 font-extrabold text-sm inline-flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-        >
-          <LogIn className="w-4 h-4" /> Sign in with Google
-        </button>
+
+        {authError && (
+          <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-xs text-rose-300 text-left">
+            {authError}
+          </div>
+        )}
+
+        {/* Primary 1-Click Google Sign-In */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={authBusy}
+            onClick={handleGoogleAuth}
+            className="w-full py-3.5 px-4 rounded-2xl aura-shimmer-btn text-slate-950 font-extrabold text-sm inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+          >
+            <LogIn className="w-4 h-4" />
+            {authBusy ? 'Connecting...' : 'Sign in with Google'}
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-white/10 w-full" />
+          <span className="bg-slate-900/90 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+            Or Use Scholar Account (Works on All Domains)
+          </span>
+          <div className="border-t border-white/10 w-full" />
+        </div>
+
+        {/* Tab switch between Sign In and Create Account */}
+        <div className="flex rounded-xl bg-white/5 p-1 border border-white/10">
+          <button
+            type="button"
+            onClick={() => { setAuthMode('EMAIL_SIGN_IN'); setAuthError(''); }}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+              authMode !== 'EMAIL_REGISTER'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAuthMode('EMAIL_REGISTER'); setAuthError(''); }}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+              authMode === 'EMAIL_REGISTER'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {/* Email/Password Form */}
+        <form onSubmit={handleEmailAuthSubmit} className="space-y-3 text-left">
+          {authMode === 'EMAIL_REGISTER' && (
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1">Scholar Full Name</label>
+              <input
+                type="text"
+                required
+                value={authName}
+                onChange={(e) => setAuthName(e.target.value)}
+                placeholder="e.g. Alex Morgan"
+                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              />
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1">Email Address</label>
+            <input
+              type="email"
+              required
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+              placeholder="scholar@university.edu"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1">Password</label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              placeholder="•••••••• (min 6 characters)"
+              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={authBusy}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 font-extrabold text-xs shadow-md shadow-sky-500/20 hover:brightness-110 transition disabled:opacity-50"
+          >
+            {authBusy
+              ? 'Authenticating...'
+              : authMode === 'EMAIL_REGISTER'
+              ? 'Create Account & Enter Stage'
+              : 'Sign In & Enter Stage'}
+          </button>
+        </form>
       </div>
     );
   }
@@ -1650,11 +1807,26 @@ export const LiveStudyStage: React.FC<Props> = ({
                         {isMeetingExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                       </button>
 
+                      {/* Audio Click-to-Activate */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const iframe = document.getElementById('jitsi_stage_iframe') as HTMLIFrameElement | null;
+                          if (iframe) iframe.focus();
+                          onNotify('🔊 Audio channel active and listening.');
+                        }}
+                        className="px-2 py-1 rounded-xl bg-black/60 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1 hover:bg-black/80"
+                        title="Click to activate audio if muted by browser autoplay"
+                      >
+                        <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="hidden sm:inline">Audio Active</span>
+                      </button>
+
                       {/* External Tab Popout */}
                       <a
                         href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                          .replace('https://meet.jit.si/', 'https://meet.element.io/')
-                          .replace('https://framatalk.org/', 'https://meet.element.io/')
+                          .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                          .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
                           + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
                         target="_blank"
                         rel="noreferrer"
@@ -1668,9 +1840,10 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                   {/* Embedded WebRTC Stage Iframe */}
                   <iframe
+                    id="jitsi_stage_iframe"
                     src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                      .replace('https://meet.jit.si/', 'https://meet.element.io/')
-                      .replace('https://framatalk.org/', 'https://meet.element.io/')
+                      .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                      .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
                       + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
                     allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                     className="w-full h-full border-0 pt-8"
@@ -1705,6 +1878,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                         className="w-full h-full object-contain"
                       />
                     </div>
+                    <p className="text-[11px] text-slate-300 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-400/25 leading-relaxed">
+                      💡 <strong>Broadcast Tip:</strong> To stream your screen directly over WebRTC to all joined Android phones & Web browsers, tap the <strong>Desktop [🖥️]</strong> icon on the bottom toolbar of the video stage above, or press <strong>"d"</strong> on your keyboard!
+                    </p>
                   </div>
                 )}
 
