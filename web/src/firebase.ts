@@ -98,7 +98,7 @@ export function buildJitsiVoiceUrl(joinCode: string, roomId = ''): string {
   const salt = roomId
     ? `-${roomId.replace(/^room_/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}`
     : '';
-  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.toolbarButtons=%5B'microphone','camera','desktop','hangup','chat','raisehand','tileview'%5D`;
+  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.hideConferenceTimer=true&config.hideConferenceSubject=true&config.toolbarButtons=%5B%5D&interfaceConfig.TOOLBAR_BUTTONS=%5B%5D`;
 }
 
 export function normalizeJoinCode(raw: string): string {

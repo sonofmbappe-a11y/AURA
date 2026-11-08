@@ -36,6 +36,7 @@ import {
   Minimize2,
   Monitor,
   Pause,
+  PhoneOff,
   Pin,
   Play,
   Plus,
@@ -81,6 +82,12 @@ import {
   SessionRecapModal,
   ShareFlashcardModal
 } from './LiveStageModals';
+
+declare global {
+  interface Window {
+    JitsiMeetExternalAPI?: any;
+  }
+}
 
 interface Props {
   user: User | null;
@@ -234,8 +241,11 @@ export const LiveStudyStage: React.FC<Props> = ({
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const screenVideoRef = useRef<HTMLVideoElement | null>(null);
   const [isMeetingExpanded, setIsMeetingExpanded] = useState(false);
+  const [showEndMeetingModal, setShowEndMeetingModal] = useState(false);
   const [isMyMicMuted, setIsMyMicMuted] = useState(false);
   const [isMyCameraOn, setIsMyCameraOn] = useState(false);
+  const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
+  const jitsiApiRef = useRef<any>(null);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; left: number }[]>([]);
   const [chatFilter, setChatFilter] = useState<'ALL' | 'QUESTION' | 'INSIGHT' | 'CHAT'>('ALL');
 
@@ -341,6 +351,13 @@ export const LiveStudyStage: React.FC<Props> = ({
   };
 
   const startScreenCast = async () => {
+    if (jitsiApiRef.current) {
+      try {
+        jitsiApiRef.current.executeCommand('toggleShareScreen');
+        onNotify('🔴 Broadcasting your screen live via WebRTC to all Android and Web scholars!');
+        return;
+      } catch {}
+    }
     try {
       if (!navigator.mediaDevices?.getDisplayMedia) {
         onNotify('Screen capture is supported in Chrome, Edge, and Safari on desktop.');
@@ -361,20 +378,12 @@ export const LiveStudyStage: React.FC<Props> = ({
       if (liveRoom && user) {
         try {
           await updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-            spotlightCardText: `🔴 LIVE PRESENTATION: ${user.displayName || 'Host'} is presenting slides & screen! Click Stage or Theater mode to watch.`,
+            spotlightCardText: `🔴 LIVE PRESENTATION: ${user.displayName || 'Host'} is presenting slides & screen!`,
             updatedAt: serverTimestamp()
           });
         } catch (_) {}
       }
-      // Focus Jitsi stage iframe so WebRTC key event 'd' or desktop share is engaged
-      const iframe = document.getElementById('jitsi_stage_iframe') as HTMLIFrameElement | null;
-      if (iframe) {
-        iframe.focus();
-        try {
-          iframe.contentWindow?.postMessage({ type: 'toggle-screenshare' }, '*');
-        } catch (_) {}
-      }
-      onNotify('🔴 Screen broadcast live! Tap the Desktop icon [🖥️] on the stage toolbar below or press "d" to stream directly through WebRTC to all connected phones!');
+      onNotify('🔴 Screen broadcast live to all connected devices!');
     } catch (err) {
       if ((err as Error)?.name !== 'NotAllowedError') {
         onNotify('Screen casting cancelled.');
@@ -383,12 +392,17 @@ export const LiveStudyStage: React.FC<Props> = ({
   };
 
   const stopScreenCast = () => {
+    if (jitsiApiRef.current) {
+      try {
+        jitsiApiRef.current.executeCommand('toggleShareScreen');
+      } catch {}
+    }
     if (screenStream) {
       screenStream.getTracks().forEach((t) => t.stop());
     }
     setScreenStream(null);
     setIsCastingScreen(false);
-    if (liveRoom && liveRoom.spotlightCardText?.includes('Live Presentation')) {
+    if (liveRoom && liveRoom.spotlightCardText?.includes('LIVE PRESENTATION')) {
       updateDoc(doc(db, 'study_rooms', liveRoom.id), {
         spotlightCardText: '',
         updatedAt: serverTimestamp()
@@ -398,6 +412,11 @@ export const LiveStudyStage: React.FC<Props> = ({
   };
 
   const toggleMyMic = async () => {
+    if (jitsiApiRef.current) {
+      try {
+        jitsiApiRef.current.executeCommand('toggleAudio');
+      } catch {}
+    }
     const nextMute = !isMyMicMuted;
     setIsMyMicMuted(nextMute);
     if (liveRoom && user) {
@@ -416,6 +435,11 @@ export const LiveStudyStage: React.FC<Props> = ({
   };
 
   const toggleMyCamera = async () => {
+    if (jitsiApiRef.current) {
+      try {
+        jitsiApiRef.current.executeCommand('toggleVideo');
+      } catch {}
+    }
     const nextCam = !isMyCameraOn;
     setIsMyCameraOn(nextCam);
     if (liveRoom && user) {
@@ -431,6 +455,26 @@ export const LiveStudyStage: React.FC<Props> = ({
       }
     }
   };
+
+  // Load Jitsi External API script on mount for WebRTC screen casting and control
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.JitsiMeetExternalAPI) return;
+    const script = document.createElement('script');
+    script.src = 'https://meet.element.io/external_api.js';
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
+  // Listen to remote room completion so participants auto-return to lobby
+  useEffect(() => {
+    if (liveRoom && liveRoom.status === 'COMPLETED') {
+      onNotify('🔴 The host has ended this meeting.');
+      const t = setTimeout(() => {
+        setSelectedRoomId(null);
+      }, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [liveRoom?.status]);
 
   useEffect(() => {
     if (isCastingScreen && screenStream && screenVideoRef.current) {
@@ -954,13 +998,43 @@ export const LiveStudyStage: React.FC<Props> = ({
     });
   };
 
+  const endMeetingForEveryone = async () => {
+    if (!liveRoom) return;
+    const rid = liveRoom.id;
+    try {
+      if (jitsiApiRef.current) {
+        try { jitsiApiRef.current.executeCommand('hangup'); } catch {}
+      }
+      await updateDoc(doc(db, 'study_rooms', rid), {
+        status: 'COMPLETED',
+        timerState: 'IDLE',
+        timerRemainingSeconds: 0,
+        updatedAt: serverTimestamp()
+      });
+      if (user) {
+        try {
+          await deleteDoc(doc(db, 'study_rooms', rid, 'participants', user.uid));
+        } catch {}
+      }
+      setSelectedRoomId(null);
+      setShowEndMeetingModal(false);
+      onNotify('🔴 Meeting ended for everyone.');
+    } catch (err: any) {
+      onNotify('Unable to end meeting: ' + (err?.message || 'Error'));
+    }
+  };
+
   const leaveStage = async () => {
+    if (jitsiApiRef.current) {
+      try { jitsiApiRef.current.executeCommand('hangup'); } catch {}
+    }
     if (!user || !liveRoom) {
       setSelectedRoomId(null);
       return;
     }
     const rId = liveRoom.id;
     setSelectedRoomId(null);
+    setShowEndMeetingModal(false);
     try {
       const myRef = doc(db, 'study_rooms', rId, 'participants', user.uid);
       const snap = await getDoc(myRef);
@@ -1749,13 +1823,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               )}
 
                 {/* IN-APP LIVE MEETING STAGE & SCREEN CAST (No external browser needed!) */}
-                <div
-                  className={`relative rounded-3xl overflow-hidden border border-sky-400/30 bg-slate-950 shadow-2xl transition-all duration-300 ${
-                    isMeetingExpanded
-                      ? 'fixed inset-3 z-50 flex flex-col backdrop-blur-2xl bg-slate-950/95 border-emerald-400/50'
-                      : 'w-full aspect-video min-h-[300px] max-h-[500px]'
-                  }`}
-                >
+                <div className="relative rounded-3xl overflow-hidden border border-sky-400/30 bg-slate-950 shadow-2xl transition-all duration-300 w-full aspect-video min-h-[300px] max-h-[500px]">
                   {/* Floating Reaction Emojis Burst */}
                   {floatingReactions.map((fx) => (
                     <div
@@ -1797,14 +1865,15 @@ export const LiveStudyStage: React.FC<Props> = ({
                         {isCastingScreen ? 'Stop Cast' : 'Cast Screen'}
                       </button>
 
-                      {/* Theater Mode Toggle */}
+                      {/* Prominent Theater Mode Button (Visible on Mobile & Desktop) */}
                       <button
                         type="button"
-                        onClick={() => setIsMeetingExpanded((v) => !v)}
-                        className="p-1.5 rounded-xl bg-black/60 text-white/90 hover:text-white border border-white/15"
-                        title={isMeetingExpanded ? 'Exit Fullscreen' : 'Expand Theater Mode'}
+                        onClick={() => setIsMeetingExpanded(true)}
+                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-emerald-300 hover:text-white border border-emerald-400/30 text-xs font-bold flex items-center gap-1.5 transition"
+                        title="Expand Immersive Theater Mode"
                       >
-                        {isMeetingExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                        <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-[11px] font-extrabold">Theater</span>
                       </button>
 
                       {/* Audio Click-to-Activate */}
@@ -1819,7 +1888,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                         title="Click to activate audio if muted by browser autoplay"
                       >
                         <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="hidden sm:inline">Audio Active</span>
+                        <span className="hidden sm:inline">Audio</span>
                       </button>
 
                       {/* External Tab Popout */}
@@ -1851,6 +1920,166 @@ export const LiveStudyStage: React.FC<Props> = ({
                   />
                 </div>
 
+                {/* FULLSCREEN / THEATER MEETING MODE OVERLAY (MOBILE & DESKTOP FULL-SCREEN IMMERSION) */}
+                {isMeetingExpanded && (
+                  <div className="fixed inset-0 z-50 flex flex-col bg-slate-950 p-2 sm:p-4 backdrop-blur-2xl">
+                    {/* Theater Top Bar */}
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-900/90 border border-white/10 rounded-2xl mb-2 shrink-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase">
+                          {liveRoom.courseCode}
+                        </span>
+                        <span className="text-xs font-black text-white truncate max-w-[180px] sm:max-w-md">
+                          {liveRoom.roomTitle}
+                        </span>
+                        <span className="hidden sm:inline-block text-[11px] text-slate-400">
+                          • {Math.max(1, admittedList.length)} Scholars
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const iframe = document.getElementById('jitsi_stage_iframe_theater') as HTMLIFrameElement | null;
+                            if (iframe) iframe.focus();
+                            onNotify('🔊 Audio active');
+                          }}
+                          className="px-2.5 py-1 rounded-xl bg-black/60 text-emerald-300 border border-emerald-400/30 text-[11px] font-bold flex items-center gap-1"
+                        >
+                          <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="hidden sm:inline">Audio</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsMeetingExpanded(false)}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 hover:text-white text-xs font-extrabold flex items-center gap-1.5 transition"
+                        >
+                          <Minimize2 className="w-3.5 h-3.5" />
+                          <span>Exit Theater</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Full Size Presentation & Screen Cast Stage */}
+                    <div className="flex-1 relative w-full h-full min-h-0 rounded-2xl overflow-hidden bg-black border border-white/10">
+                      <iframe
+                        id="jitsi_stage_iframe_theater"
+                        src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                          .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                          .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
+                          + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+                        className="w-full h-full border-0"
+                        title={`Theater Stage - ${liveRoom.roomTitle}`}
+                      />
+                    </div>
+
+                    {/* Pinned Bottom Meeting Controls Dock in Theater Mode */}
+                    <div className="p-2 sm:p-3 mt-2 rounded-2xl aura-dock flex items-center justify-between gap-2 flex-wrap shadow-2xl shrink-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Mic Toggle */}
+                        <button
+                          type="button"
+                          onClick={toggleMyMic}
+                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                            isMyMicMuted ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          }`}
+                        >
+                          {isMyMicMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
+                          <span>{isMyMicMuted ? 'Unmute' : 'Mute'}</span>
+                        </button>
+
+                        {/* Camera Toggle */}
+                        <button
+                          type="button"
+                          onClick={toggleMyCamera}
+                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                            isMyCameraOn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'aura-subtle-surface text-slate-300'
+                          }`}
+                        >
+                          {isMyCameraOn ? <Video className="w-4 h-4 text-emerald-400" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
+                          <span>{isMyCameraOn ? 'Cam On' : 'Cam Off'}</span>
+                        </button>
+
+                        {/* Cast Screen */}
+                        <button
+                          type="button"
+                          onClick={isCastingScreen ? stopScreenCast : startScreenCast}
+                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                            isCastingScreen ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'aura-subtle-surface text-slate-200'
+                          }`}
+                        >
+                          <Cast className="w-4 h-4 text-emerald-400" />
+                          <span>{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
+                        </button>
+
+                        {/* Raise Hand */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newHand = !myP?.handRaised;
+                            upsertMyPresence(
+                              liveRoom,
+                              (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
+                              newHand,
+                              newHand ? '✋' : myP?.reactionEmoji || '🎯'
+                            );
+                            onNotify(newHand ? '✋ Raised hand on stage' : 'Hand lowered');
+                          }}
+                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                            myP?.handRaised ? 'bg-amber-400 text-slate-950 font-black' : 'aura-subtle-surface text-slate-200'
+                          }`}
+                        >
+                          <Hand className="w-4 h-4 text-amber-400" />
+                          <span>{myP?.handRaised ? 'Hand Raised' : 'Hand'}</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Reactions */}
+                      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                        {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
+                          <button
+                            key={emo}
+                            type="button"
+                            onClick={() => {
+                              upsertMyPresence(
+                                liveRoom,
+                                (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
+                                Boolean(myP?.handRaised),
+                                emo
+                              );
+                              triggerFloatingReaction(emo);
+                            }}
+                            className="px-2 py-1 rounded-lg hover:bg-white/10 text-base"
+                          >
+                            {emo}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Red End Meeting / Leave & Minimize Button */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
+                          className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition"
+                        >
+                          <PhoneOff className="w-4 h-4" />
+                          <span>{canControl ? 'End Meeting' : 'Leave'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsMeetingExpanded(false)}
+                          className="px-3 py-2 rounded-xl aura-subtle-surface text-slate-300 text-xs font-bold"
+                        >
+                          Minimize
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* ACTIVE LIVE SCREEN BROADCAST PREVIEW TILE */}
                 {isCastingScreen && (
                   <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 aura-cast-glow bg-slate-950 p-3 space-y-2">
@@ -1878,9 +2107,6 @@ export const LiveStudyStage: React.FC<Props> = ({
                         className="w-full h-full object-contain"
                       />
                     </div>
-                    <p className="text-[11px] text-slate-300 bg-emerald-500/10 p-2.5 rounded-xl border border-emerald-400/25 leading-relaxed">
-                      💡 <strong>Broadcast Tip:</strong> To stream your screen directly over WebRTC to all joined Android phones & Web browsers, tap the <strong>Desktop [🖥️]</strong> icon on the bottom toolbar of the video stage above, or press <strong>"d"</strong> on your keyboard!
-                    </p>
                   </div>
                 )}
 
@@ -2026,7 +2252,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                     ))}
                   </div>
 
-                  {/* Pin Spotlight & Invite */}
+                  {/* Pin Spotlight, Invite & RED END CALL BUTTON */}
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -2043,6 +2269,15 @@ export const LiveStudyStage: React.FC<Props> = ({
                       title="QR & Browser Invite Link"
                     >
                       <QrCode className="w-3.5 h-3.5 text-emerald-400" /> Invite
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
+                      className="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-lg shadow-rose-600/30 transition"
+                      title={canControl ? 'End Meeting or Leave' : 'Leave Call'}
+                    >
+                      <PhoneOff className="w-3.5 h-3.5" />
+                      <span>{canControl ? 'End Meeting' : 'Leave'}</span>
                     </button>
                   </div>
                 </div>
@@ -2584,6 +2819,46 @@ export const LiveStudyStage: React.FC<Props> = ({
           }}
           onNotify={onNotify}
         />
+
+        {/* Google Meet Style Leave or End Meeting for All Modal */}
+        {showEndMeetingModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-sm rounded-3xl aura-glass p-6 space-y-4 border border-rose-500/40 shadow-2xl shadow-rose-500/10">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto text-rose-300">
+                <PhoneOff className="w-6 h-6" />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-extrabold text-white">Leave or End Meeting?</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  You are the host of <strong>{liveRoom.roomTitle}</strong>. You can end the meeting for all scholars, or just leave and let the session continue.
+                </p>
+              </div>
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={endMeetingForEveryone}
+                  className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5"
+                >
+                  <PhoneOff className="w-4 h-4" /> End Meeting for Everyone
+                </button>
+                <button
+                  type="button"
+                  onClick={leaveStage}
+                  className="w-full py-2.5 rounded-xl aura-subtle-surface hover:border-slate-400 text-slate-200 font-extrabold text-xs transition"
+                >
+                  Just Leave Meeting
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEndMeetingModal(false)}
+                  className="w-full py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -2705,7 +2980,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                     </div>
                     <div className="font-bold text-sm truncate">{r.roomTitle}</div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
                       onClick={() => {
@@ -2715,6 +2990,28 @@ export const LiveStudyStage: React.FC<Props> = ({
                       className="px-3 py-2 rounded-xl aura-subtle-surface hover:border-sky-400/50 text-xs font-bold inline-flex items-center gap-1"
                     >
                       <Copy className="w-3.5 h-3.5" /> Copy Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (confirm(`Stop meeting '${r.roomTitle}' for all participants?`)) {
+                          try {
+                            await updateDoc(doc(db, 'study_rooms', r.id), {
+                              status: 'COMPLETED',
+                              timerState: 'IDLE',
+                              timerRemainingSeconds: 0,
+                              updatedAt: serverTimestamp()
+                            });
+                            onNotify(`🔴 Ended meeting '${r.roomTitle}'.`);
+                          } catch (e: any) {
+                            onNotify('Error: ' + (e?.message || 'Permission denied'));
+                          }
+                        }
+                      }}
+                      className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/40 text-xs font-bold inline-flex items-center gap-1 transition"
+                      title="End this meeting for everyone"
+                    >
+                      <PhoneOff className="w-3.5 h-3.5" /> Stop Meeting
                     </button>
                     <button
                       type="button"
