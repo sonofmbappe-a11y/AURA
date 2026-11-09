@@ -64,6 +64,7 @@ import {
   buildJitsiVoiceUrl,
   db,
   detectBrowserPlatform,
+  extractJitsiRoomName,
   normalizeJoinCode,
   signInWithGoogleBrowser,
   signInWithEmailBrowser,
@@ -253,6 +254,7 @@ export const LiveStudyStage: React.FC<Props> = ({
   const [isMyCameraOn, setIsMyCameraOn] = useState(false);
   const jitsiContainerRef = useRef<HTMLDivElement | null>(null);
   const jitsiApiRef = useRef<any>(null);
+  const [isJitsiApiReady, setIsJitsiApiReady] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; left: number }[]>([]);
   const [chatFilter, setChatFilter] = useState<'ALL' | 'QUESTION' | 'INSIGHT' | 'CHAT'>('ALL');
 
@@ -494,7 +496,7 @@ export const LiveStudyStage: React.FC<Props> = ({
     if (!liveRoom) return;
 
     let isDisposed = false;
-    const roomName = `AuraStudy-${(liveRoom.joinCode || liveRoom.id.replace('room_', '')).trim().toUpperCase()}`;
+    const roomName = extractJitsiRoomName(liveRoom.voiceRoomUrl, liveRoom.joinCode, liveRoom.id);
     const displayName = user?.displayName || 'Scholar';
 
     const initJitsiMeeting = () => {
@@ -584,6 +586,7 @@ export const LiveStudyStage: React.FC<Props> = ({
         });
 
         jitsiApiRef.current = api;
+        setIsJitsiApiReady(true);
       } catch (err) {
         console.warn('Could not initialize Jitsi External API:', err);
       }
@@ -611,6 +614,7 @@ export const LiveStudyStage: React.FC<Props> = ({
         } catch {}
         jitsiApiRef.current = null;
       }
+      setIsJitsiApiReady(false);
     };
   }, [liveRoom?.id, liveRoom?.joinCode]);
 
@@ -2089,114 +2093,137 @@ export const LiveStudyStage: React.FC<Props> = ({
                     {/* Jitsi External API mounts directly into this div */}
                     <div ref={jitsiContainerRef} className="w-full h-full" />
                     
-                    {/* Fallback iframe when External API is not ready or blocked */}
-                    <iframe
-                      id="jitsi_stage_iframe"
-                      src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                        .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
-                        .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
-                        + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
-                      allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
-                      className="w-full h-full border-0 absolute inset-0"
-                      style={{ display: jitsiApiRef.current ? 'none' : 'block' }}
-                      title={`AURA Live Stage - ${liveRoom.roomTitle}`}
-                    />
+                    {/* Fallback iframe ONLY when External API is still initializing or blocked */}
+                    {!isJitsiApiReady && (
+                      <iframe
+                        id="jitsi_stage_iframe"
+                        src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                          .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                          .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
+                          + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+                        className="w-full h-full border-0 absolute inset-0"
+                        title={`AURA Live Stage - ${liveRoom.roomTitle}`}
+                      />
+                    )}
                   </div>
 
-                  {/* Pinned Bottom Meeting Controls Dock (Only shown when expanded in Theater Mode) */}
-                  {isMeetingExpanded && (
-                    <div className="p-2 sm:p-3 mt-2 rounded-2xl aura-dock flex items-center justify-between gap-2 flex-wrap shadow-2xl shrink-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {/* Mic Toggle */}
-                        <button
-                          type="button"
-                          onClick={toggleMyMic}
-                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                            isMyMicMuted ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                          }`}
-                        >
-                          {isMyMicMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
-                          <span>{isMyMicMuted ? 'Unmute' : 'Mute'}</span>
-                        </button>
+                  {/* Pinned Bottom Meeting Controls Dock (Always visible, perfectly spaced, zero overlapping!) */}
+                  <div className="p-2 sm:p-3 mt-2 rounded-2xl aura-dock flex items-center justify-between gap-2 flex-wrap shadow-2xl shrink-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Mic Toggle */}
+                      <button
+                        type="button"
+                        onClick={toggleMyMic}
+                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                          isMyMicMuted ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                        }`}
+                      >
+                        {isMyMicMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
+                        <span>{isMyMicMuted ? 'Unmute' : 'Mute'}</span>
+                      </button>
 
-                        {/* Camera Toggle */}
-                        <button
-                          type="button"
-                          onClick={toggleMyCamera}
-                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                            isMyCameraOn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'aura-subtle-surface text-slate-300'
-                          }`}
-                        >
-                          {isMyCameraOn ? <Video className="w-4 h-4 text-emerald-400" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
-                          <span>{isMyCameraOn ? 'Cam On' : 'Cam Off'}</span>
-                        </button>
+                      {/* Camera Toggle */}
+                      <button
+                        type="button"
+                        onClick={toggleMyCamera}
+                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                          isMyCameraOn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'aura-subtle-surface text-slate-300'
+                        }`}
+                      >
+                        {isMyCameraOn ? <Video className="w-4 h-4 text-emerald-400" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
+                        <span>{isMyCameraOn ? 'Cam On' : 'Cam Off'}</span>
+                      </button>
 
-                        {/* Cast Screen */}
-                        <button
-                          type="button"
-                          onClick={isCastingScreen ? stopScreenCast : startScreenCast}
-                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                            isCastingScreen ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'aura-subtle-surface text-slate-200'
-                          }`}
-                        >
-                          <Cast className="w-4 h-4 text-emerald-400" />
-                          <span>{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
-                        </button>
+                      {/* Cast Screen */}
+                      <button
+                        type="button"
+                        onClick={isCastingScreen ? stopScreenCast : startScreenCast}
+                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                          isCastingScreen ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'aura-subtle-surface text-slate-200'
+                        }`}
+                      >
+                        <Cast className="w-4 h-4 text-emerald-400" />
+                        <span>{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
+                      </button>
 
-                        {/* Raise Hand */}
+                      {/* Raise Hand */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newHand = !myP?.handRaised;
+                          upsertMyPresence(
+                            liveRoom,
+                            (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
+                            newHand,
+                            newHand ? '✋' : myP?.reactionEmoji || '🎯'
+                          );
+                          onNotify(newHand ? '✋ Raised hand on stage' : 'Hand lowered');
+                        }}
+                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
+                          myP?.handRaised ? 'bg-amber-400 text-slate-950 font-black' : 'aura-subtle-surface text-slate-200'
+                        }`}
+                      >
+                        <Hand className="w-4 h-4 text-amber-400" />
+                        <span>{myP?.handRaised ? 'Hand Raised' : 'Hand'}</span>
+                      </button>
+
+                      {/* Whiteboard */}
+                      <button
+                        type="button"
+                        onClick={() => setShowWhiteboardModal(true)}
+                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-sky-300 text-xs font-bold flex items-center gap-1 hover:text-white"
+                        title="Live Study Whiteboard"
+                      >
+                        <PenTool className="w-4 h-4 text-sky-400" />
+                        <span className="hidden sm:inline">Whiteboard</span>
+                      </button>
+
+                      {/* Green Room Diagnostics */}
+                      <button
+                        type="button"
+                        onClick={() => setShowDiagnosticsModal(true)}
+                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-emerald-300 text-xs font-bold flex items-center gap-1 hover:text-white"
+                        title="Device & Network Diagnostics"
+                      >
+                        <Sliders className="w-4 h-4 text-emerald-400" />
+                        <span className="hidden sm:inline">Green Room</span>
+                      </button>
+                    </div>
+
+                    {/* Quick Reactions */}
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                      {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
                         <button
+                          key={emo}
                           type="button"
                           onClick={() => {
-                            const newHand = !myP?.handRaised;
                             upsertMyPresence(
                               liveRoom,
                               (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                              newHand,
-                              newHand ? '✋' : myP?.reactionEmoji || '🎯'
+                              Boolean(myP?.handRaised),
+                              emo
                             );
-                            onNotify(newHand ? '✋ Raised hand on stage' : 'Hand lowered');
+                            triggerFloatingReaction(emo);
                           }}
-                          className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                            myP?.handRaised ? 'bg-amber-400 text-slate-950 font-black' : 'aura-subtle-surface text-slate-200'
-                          }`}
+                          className="px-2 py-1 rounded-lg hover:bg-white/10 text-base"
                         >
-                          <Hand className="w-4 h-4 text-amber-400" />
-                          <span>{myP?.handRaised ? 'Hand Raised' : 'Hand'}</span>
+                          {emo}
                         </button>
-                      </div>
+                      ))}
+                    </div>
 
-                      {/* Quick Reactions */}
-                      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                        {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
-                          <button
-                            key={emo}
-                            type="button"
-                            onClick={() => {
-                              upsertMyPresence(
-                                liveRoom,
-                                (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                                Boolean(myP?.handRaised),
-                                emo
-                              );
-                              triggerFloatingReaction(emo);
-                            }}
-                            className="px-2 py-1 rounded-lg hover:bg-white/10 text-base"
-                          >
-                            {emo}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Red End Meeting / Leave & Minimize Button */}
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
-                          className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition"
-                        >
-                          <PhoneOff className="w-4 h-4" />
-                          <span>{canControl ? 'End Meeting' : 'Leave'}</span>
-                        </button>
+                    {/* Red End Meeting / Leave & Minimize Button */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
+                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition"
+                      >
+                        <PhoneOff className="w-4 h-4" />
+                        <span>{canControl ? 'End Meeting' : 'Leave'}</span>
+                      </button>
+                      {isMeetingExpanded && (
                         <button
                           type="button"
                           onClick={() => setIsMeetingExpanded(false)}
@@ -2204,9 +2231,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                         >
                           Minimize
                         </button>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
                 {/* ACTIVE LIVE SCREEN BROADCAST PREVIEW TILE */}
                 {isCastingScreen && (

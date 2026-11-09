@@ -98,7 +98,20 @@ export function buildJitsiVoiceUrl(joinCode: string, roomId = ''): string {
   const salt = roomId
     ? `-${roomId.replace(/^room_/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}`
     : '';
-  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.hideConferenceTimer=true&config.hideConferenceSubject=true&config.toolbarButtons=%5B%5D&interfaceConfig.TOOLBAR_BUTTONS=%5B%5D`;
+  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.hideConferenceTimer=true&config.hideConferenceSubject=true&config.toolbarButtons=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D&interfaceConfig.TOOLBAR_BUTTONS=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D`;
+}
+
+export function extractJitsiRoomName(voiceUrl: string, joinCode: string, roomId = ''): string {
+  if (voiceUrl) {
+    const withoutHash = voiceUrl.split('#')[0].split('?')[0];
+    const match = withoutHash.match(/meet\.element\.io\/([^/]+)/i);
+    if (match && match[1]) return decodeURIComponent(match[1]);
+  }
+  const clean = joinCode.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'SCHOLARS';
+  const salt = roomId
+    ? `-${roomId.replace(/^room_/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}`
+    : '';
+  return `AuraStudy-${clean}${salt}`;
 }
 
 export function normalizeJoinCode(raw: string): string {
