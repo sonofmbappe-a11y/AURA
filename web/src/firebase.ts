@@ -98,7 +98,7 @@ export function buildJitsiVoiceUrl(joinCode: string, roomId = ''): string {
   const salt = roomId
     ? `-${roomId.replace(/^room_/, '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8).toUpperCase()}`
     : '';
-  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.hideConferenceTimer=true&config.hideConferenceSubject=true&config.toolbarButtons=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D&interfaceConfig.TOOLBAR_BUTTONS=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D`;
+  return `https://meet.element.io/AuraStudy-${clean}${salt}#config.prejoinConfig.enabled=false&config.disableDeepLinking=true&config.defaultLanguage='en'&config.startWithAudioMuted=false&config.startWithVideoMuted=false&config.startSilent=false&config.disableInitialGUM=false&config.enableNoAudioDetection=false&config.enableNoisyMicDetection=false&config.channelLastN=-1&config.disableSimulcast=false&config.resolution=720&config.hideConferenceTimer=true&config.hideConferenceSubject=true&config.toolbarButtons=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D&interfaceConfig.TOOLBAR_BUTTONS=%5B'microphone'%2C'camera'%2C'desktop'%2C'tileview'%2C'hangup'%5D`;
 }
 
 export function extractJitsiRoomName(voiceUrl: string, joinCode: string, roomId = ''): string {

@@ -21,6 +21,7 @@ import {
   PenTool,
   Sliders,
   Download,
+  FileText,
   Undo2,
   Eraser,
   Cast,
@@ -257,6 +258,92 @@ export const LiveStudyStage: React.FC<Props> = ({
   const [isJitsiApiReady, setIsJitsiApiReady] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; left: number }[]>([]);
   const [chatFilter, setChatFilter] = useState<'ALL' | 'QUESTION' | 'INSIGHT' | 'CHAT'>('ALL');
+
+  // FEATURE 1: Live Closed Captions & Real-Time Study Session Transcripts
+  const [isCaptionsActive, setIsCaptionsActive] = useState(false);
+  const [currentSubtitle, setCurrentSubtitle] = useState('');
+  const [sessionTranscripts, setSessionTranscripts] = useState<{ speaker: string; text: string; time: string }[]>([
+    { speaker: 'Host', text: 'Welcome everyone to today\'s live study session!', time: '10:00 AM' },
+    { speaker: 'System', text: 'Screen cast and WebRTC conference active.', time: '10:00 AM' }
+  ]);
+  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) return;
+
+    if (isCaptionsActive) {
+      try {
+        const rec = new SpeechRec();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = 'en-US';
+        rec.onresult = (event: any) => {
+          let interim = '';
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              const text = transcript.trim();
+              if (text) {
+                setCurrentSubtitle(text);
+                const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                setSessionTranscripts((prev) => [
+                  ...prev.slice(-49),
+                  { speaker: user?.displayName || 'Me', text, time: timeStr }
+                ]);
+              }
+            } else {
+              interim += transcript;
+              setCurrentSubtitle(interim);
+            }
+          }
+        };
+        rec.onerror = (e: any) => {
+          console.warn('SpeechRecognition warning:', e);
+        };
+        rec.start();
+        recognitionRef.current = rec;
+      } catch (e) {
+        console.warn('SpeechRecognition init error:', e);
+      }
+    } else {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
+      setCurrentSubtitle('');
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        recognitionRef.current = null;
+      }
+    };
+  }, [isCaptionsActive, user?.displayName]);
+
+  const downloadTranscript = () => {
+    const content = sessionTranscripts.map((t) => `[${t.time}] ${t.speaker}: ${t.text}`).join('\n');
+    const blob = new Blob(
+      [
+        `AURA STUDY SESSION TRANSCRIPT\nCourse: ${liveRoom?.courseCode || 'Study'}\nRoom: ${liveRoom?.roomTitle || ''}\nDate: ${new Date().toLocaleString()}\n\n` +
+          content
+      ],
+      { type: 'text/plain' }
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AURA_${liveRoom?.courseCode || 'Study'}_Transcript.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    onNotify('📥 Study transcript downloaded as text file!');
+  };
 
   const triggerFloatingReaction = (emoji: string) => {
     const id = uidGen('fx');
@@ -2046,6 +2133,36 @@ export const LiveStudyStage: React.FC<Props> = ({
                         <span className="hidden sm:inline text-[11px] font-extrabold">Check</span>
                       </button>
 
+                      {/* FEATURE 1: CC Real-Time Subtitles Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = !isCaptionsActive;
+                          setIsCaptionsActive(next);
+                          onNotify(next ? '💬 Real-time Closed Captions enabled' : 'Closed Captions disabled');
+                        }}
+                        className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition ${
+                          isCaptionsActive
+                            ? 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60 shadow-md shadow-emerald-500/20'
+                            : 'bg-black/60 text-slate-300 hover:text-white border-white/10'
+                        }`}
+                        title="Toggle Real-Time Subtitles & Transcript"
+                      >
+                        <span className="text-[11px] font-black">CC</span>
+                        <span className="hidden sm:inline text-[11px] font-extrabold">{isCaptionsActive ? 'Captions ON' : 'Captions'}</span>
+                      </button>
+
+                      {/* FEATURE 1: Notes / Live Transcript Log */}
+                      <button
+                        type="button"
+                        onClick={() => setShowTranscriptModal(true)}
+                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-slate-300 hover:text-white border border-white/10 text-xs font-bold flex items-center gap-1.5 transition"
+                        title="View Full Live Study Transcript"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="hidden sm:inline text-[11px] font-extrabold">Transcript</span>
+                      </button>
+
                       {/* Prominent Theater Mode Button (Visible on Mobile & Desktop) */}
                       <button
                         type="button"
@@ -2105,6 +2222,97 @@ export const LiveStudyStage: React.FC<Props> = ({
                         className="w-full h-full border-0 absolute inset-0"
                         title={`AURA Live Stage - ${liveRoom.roomTitle}`}
                       />
+                    )}
+
+                    {/* FEATURE 2: Interactive Floating Pop-Quiz Poll in Stage Overlay */}
+                    {liveRoom.activePollQuestion && liveRoom.activePollOptions.length >= 2 && (
+                      <div className="absolute top-3 right-3 max-w-[280px] sm:max-w-[320px] p-3.5 rounded-2xl bg-indigo-950/90 backdrop-blur-md border border-violet-400/60 shadow-2xl z-20 space-y-2">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-[10px] font-black text-violet-300 flex items-center gap-1">
+                            <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
+                            LIVE POLL • {totalVotes} VOTE(S)
+                          </span>
+                          {canControl && !isLocked && (
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold">
+                              {liveRoom.activePollCorrectIndex >= 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateDoc(doc(db, 'study_rooms', liveRoom.id), {
+                                      activePollRevealed: !liveRoom.activePollRevealed,
+                                      updatedAt: serverTimestamp()
+                                    })
+                                  }
+                                  className="text-emerald-300 hover:underline"
+                                >
+                                  {liveRoom.activePollRevealed ? 'Hide' : 'Reveal'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateDoc(doc(db, 'study_rooms', liveRoom.id), {
+                                    activePollQuestion: '',
+                                    activePollOptions: [],
+                                    activePollCorrectIndex: -1,
+                                    activePollRevealed: false,
+                                    updatedAt: serverTimestamp()
+                                  })
+                                }
+                                className="text-rose-300 hover:underline"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs font-bold text-white leading-snug">{liveRoom.activePollQuestion}</p>
+                        <div className="space-y-1">
+                          {liveRoom.activePollOptions.map((opt, idx) => {
+                            const votes = admittedList.filter((p) => p.pollVoteIndex === idx).length;
+                            const pct = totalVotes > 0 ? Math.round((votes * 100) / totalVotes) : 0;
+                            const myVote = myP?.pollVoteIndex === idx;
+                            const isCorrect = liveRoom.activePollRevealed && liveRoom.activePollCorrectIndex === idx;
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                disabled={isLocked}
+                                onClick={async () => {
+                                  if (!myP) {
+                                    await upsertMyPresence(liveRoom, 'QUIZZING', false, '📊');
+                                  }
+                                  await updateDoc(doc(db, 'study_rooms', liveRoom.id, 'participants', user.uid), {
+                                    pollVoteIndex: idx,
+                                    updatedAt: serverTimestamp()
+                                  });
+                                }}
+                                className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-[11px] transition ${
+                                  isCorrect
+                                    ? 'bg-emerald-500/30 border-emerald-400 text-white font-bold'
+                                    : myVote
+                                    ? 'bg-violet-600/40 border-violet-400 text-white font-bold'
+                                    : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
+                                }`}
+                              >
+                                <span className="truncate pr-1">
+                                  {opt} {isCorrect && '✓'} {myVote && '• My vote'}
+                                </span>
+                                <span className="text-[10px] text-violet-300 font-extrabold shrink-0">{pct}%</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* FEATURE 1: Floating Real-Time Closed Captions Subtitle Pill */}
+                    {isCaptionsActive && currentSubtitle && (
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-2 rounded-2xl bg-black/85 backdrop-blur-md border border-emerald-400/40 text-white text-xs sm:text-sm font-semibold text-center shadow-2xl pointer-events-none z-20 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                        <span className="text-emerald-300 font-bold shrink-0">CC:</span>
+                        <span className="line-clamp-2">{currentSubtitle}</span>
+                      </div>
                     )}
                   </div>
 
@@ -2188,6 +2396,17 @@ export const LiveStudyStage: React.FC<Props> = ({
                       >
                         <Sliders className="w-4 h-4 text-emerald-400" />
                         <span className="hidden sm:inline">Green Room</span>
+                      </button>
+
+                      {/* FEATURE 2: Interactive Polls Launcher */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPollModal(true)}
+                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-violet-300 text-xs font-bold flex items-center gap-1 hover:text-white"
+                        title="Interactive Pop-Quiz Polls"
+                      >
+                        <BarChart3 className="w-4 h-4 text-violet-400" />
+                        <span className="hidden sm:inline">Polls</span>
                       </button>
                     </div>
 
@@ -3236,6 +3455,90 @@ export const LiveStudyStage: React.FC<Props> = ({
                   className="w-full py-2.5 rounded-xl aura-subtle-surface text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
                 >
                   <Download className="w-4 h-4 text-sky-400" /> Export Session Study Notes (.txt)
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FEATURE 1: Live Study Session Transcript & Subtitles Modal */}
+        {showTranscriptModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl aura-glass p-6 space-y-4 border border-emerald-400/40 shadow-2xl">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white">Live Study Transcript & Captions</h3>
+                    <p className="text-[11px] text-slate-400">Real-time transcribed audio log for {liveRoom.courseCode}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTranscriptModal(false)}
+                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold"
+                >
+                  Done
+                </button>
+              </div>
+
+              {/* Subtitles status */}
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${isCaptionsActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                  <span className="text-xs font-bold text-white">
+                    {isCaptionsActive ? 'Speech Recognition Active (Listening)' : 'Captions Off'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !isCaptionsActive;
+                    setIsCaptionsActive(next);
+                    onNotify(next ? 'Captions enabled' : 'Captions disabled');
+                  }}
+                  className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                    isCaptionsActive ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                  }`}
+                >
+                  {isCaptionsActive ? 'Stop Captions' : 'Start Captions'}
+                </button>
+              </div>
+
+              {/* Transcript list */}
+              <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 max-h-60 overflow-y-auto space-y-2 text-xs">
+                {sessionTranscripts.map((entry, i) => (
+                  <div key={i} className="flex gap-2 text-slate-200">
+                    <span className="text-[10px] text-slate-400 font-mono shrink-0">[{entry.time}]</span>
+                    <span className="font-bold text-emerald-300 shrink-0">{entry.speaker}:</span>
+                    <span className="break-words">{entry.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const content = sessionTranscripts.map((t) => `[${t.time}] ${t.speaker}: ${t.text}`).join('\n');
+                    navigator.clipboard.writeText(content);
+                    onNotify('📋 Full transcript copied to clipboard!');
+                  }}
+                  className="px-4 py-2 rounded-xl aura-subtle-surface text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5"
+                >
+                  <Copy className="w-4 h-4 text-emerald-400" />
+                  <span>Copy All</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadTranscript}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download (.txt)</span>
                 </button>
               </div>
             </div>
