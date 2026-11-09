@@ -1,13 +1,16 @@
 import React, { useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
+  Award,
   Calculator,
   CloudDownload,
   CloudUpload,
+  GraduationCap,
   LogIn,
   LogOut,
   Moon,
   Plus,
+  Shield,
   Smartphone,
   Sparkles,
   Sun,
@@ -59,10 +62,17 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   // REM Sleep Calculator
   const [wakeTime, setWakeTime] = useState('06:30');
 
-  // GPA Calculator
+  // GPA Calculator & Honors Simulator
   const [gCode, setGCode] = useState('');
   const [gCredits, setGCredits] = useState('3');
   const [gLetter, setGLetter] = useState('A');
+  const [targetHonorsGpa, setTargetHonorsGpa] = useState<number>(3.80);
+  const [remainingCredits, setRemainingCredits] = useState<number>(45);
+
+  // Attendance Safety Shield
+  const [totalClasses, setTotalClasses] = useState<number>(36);
+  const [attendedClasses, setAttendedClasses] = useState<number>(33);
+  const [policyThreshold, setPolicyThreshold] = useState<number>(vault.profile.attendanceTargetPercent || 75);
 
   const bedtimes = useMemo(() => {
     const [h, m] = wakeTime.split(':').map(Number);
@@ -88,6 +98,49 @@ export const ToolsAndProfileView: React.FC<Props> = ({
     const gpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
     return { totalCredits, gpa };
   }, [vault.grades]);
+
+  const simulationStats = useMemo(() => {
+    const currentCredits = gpaStats.totalCredits;
+    const currentPoints = vault.grades.reduce((s, g) => s + g.creditHours * g.gradePoint, 0);
+    const target = targetHonorsGpa;
+    const remCr = Math.max(1, remainingCredits);
+    const totalFinalCredits = currentCredits + remCr;
+    const requiredTotalPoints = totalFinalCredits * target;
+    const neededPointsInRem = requiredTotalPoints - currentPoints;
+    const neededGpaInRem = neededPointsInRem / remCr;
+
+    return {
+      neededGpa:
+        neededGpaInRem > 4.0
+          ? '> 4.00 (Unattainable)'
+          : neededGpaInRem < 0
+          ? '0.00 (Secured!)'
+          : neededGpaInRem.toFixed(2),
+      isPossible: neededGpaInRem <= 4.0,
+      totalCredits: totalFinalCredits
+    };
+  }, [gpaStats, vault.grades, targetHonorsGpa, remainingCredits]);
+
+  const attendanceShield = useMemo(() => {
+    const total = Math.max(1, totalClasses);
+    const attended = Math.min(total, Math.max(0, attendedClasses));
+    const pct = Math.round((attended / total) * 100);
+    const minThreshold = policyThreshold;
+    const maxAbsencesAllowed = Math.floor(total * (1 - minThreshold / 100));
+    const currentMissed = total - attended;
+    const safeCutsLeft = Math.max(0, maxAbsencesAllowed - currentMissed);
+    const isAtRisk = pct < minThreshold;
+    const neededClassesToRecover = isAtRisk
+      ? Math.ceil((minThreshold * total - 100 * attended) / (100 - minThreshold))
+      : 0;
+
+    return {
+      pct,
+      isAtRisk,
+      safeCutsLeft,
+      neededClassesToRecover
+    };
+  }, [totalClasses, attendedClasses, policyThreshold]);
 
   const handleBackupToCloud = async () => {
     if (!user) return;
@@ -451,6 +504,147 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Feature: Target Honors & CGPA Predictor Simulator */}
+      <div className="aura-glass rounded-3xl p-5 space-y-4 border border-amber-400/30">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+            <Award className="w-4 h-4" /> HONORS &amp; CGPA TARGET SIMULATOR
+          </span>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold">
+            Target: {targetHonorsGpa.toFixed(2)}
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Simulate what GPA average you need across remaining credits to graduate with your target honors.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] font-bold text-slate-300 uppercase">Target Cumulative GPA</label>
+            <div className="flex items-center gap-2 mt-1">
+              {[3.60, 3.75, 3.85, 3.95].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setTargetHonorsGpa(g)}
+                  className={`flex-1 py-1 rounded-xl text-xs font-bold transition border ${
+                    targetHonorsGpa === g
+                      ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                      : 'aura-subtle-surface text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {g.toFixed(2)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase">
+              <span>Remaining Credits</span>
+              <span className="text-amber-300">{remainingCredits} Cr</span>
+            </div>
+            <input
+              type="range"
+              min="6"
+              max="120"
+              step="3"
+              value={remainingCredits}
+              onChange={(e) => setRemainingCredits(Number(e.target.value))}
+              className="w-full mt-2 accent-amber-400"
+            />
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-slate-400">Required Future Average</div>
+            <div className="text-lg font-mono font-extrabold text-white">
+              {simulationStats.neededGpa} GPA
+            </div>
+          </div>
+          <div className="text-right">
+            <span
+              className={`px-3 py-1 rounded-xl text-xs font-extrabold ${
+                simulationStats.isPossible
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                  : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+              }`}
+            >
+              {simulationStats.isPossible ? 'Honors Achievable ✓' : 'Target Adjustment Needed'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature: Attendance Risk Shield */}
+      <div className="aura-glass rounded-3xl p-5 space-y-4 border border-sky-400/30">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
+            <Shield className="w-4 h-4" /> ATTENDANCE SAFETY SHIELD
+          </span>
+          <span
+            className={`text-xs px-2.5 py-0.5 rounded-full font-extrabold ${
+              attendanceShield.isAtRisk
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+            }`}
+          >
+            {attendanceShield.pct}% Attendance
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Ensure you meet your university’s mandatory exam qualification threshold ({policyThreshold}% policy).
+        </p>
+
+        <div className="grid grid-cols-3 gap-2.5">
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Attended</label>
+            <input
+              type="number"
+              min="0"
+              value={attendedClasses}
+              onChange={(e) => setAttendedClasses(Number(e.target.value) || 0)}
+              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Total Held</label>
+            <input
+              type="number"
+              min="1"
+              value={totalClasses}
+              onChange={(e) => setTotalClasses(Math.max(1, Number(e.target.value) || 1))}
+              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase">Policy Min %</label>
+            <input
+              type="number"
+              min="50"
+              max="100"
+              value={policyThreshold}
+              onChange={(e) => setPolicyThreshold(Math.max(50, Math.min(100, Number(e.target.value) || 75)))}
+              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+            />
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-slate-400">Absence Safety Buffer</div>
+            <div className="text-sm font-extrabold text-white">
+              {attendanceShield.isAtRisk
+                ? `⚠️ Debarment Risk: Attend next ${attendanceShield.neededClassesToRecover} classes!`
+                : `🛡️ Safe: Can miss up to ${attendanceShield.safeCutsLeft} more lectures`}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* AURA Semester Wrapped Summary */}

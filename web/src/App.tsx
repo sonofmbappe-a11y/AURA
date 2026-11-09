@@ -5,9 +5,11 @@ import {
   Calendar,
   Flame,
   Moon,
+  Quote,
   Sliders,
   Sparkles,
   Sun,
+  Users,
   Video,
   X
 } from 'lucide-react';
@@ -23,8 +25,10 @@ import { FocusView } from './components/FocusView';
 import { StudyHubView } from './components/StudyHubView';
 import { LiveStudyStage } from './components/LiveStudyStage';
 import { ToolsAndProfileView } from './components/ToolsAndProfileView';
+import { GroupProjectsView } from './components/GroupProjectsView';
+import { CitationGeneratorView } from './components/CitationGeneratorView';
 
-type MainTab = 'TIMETABLE' | 'FOCUS' | 'STUDY' | 'LIVE_STAGE' | 'TOOLS';
+type MainTab = 'TIMETABLE' | 'FOCUS' | 'STUDY' | 'GROUPS' | 'CITATIONS' | 'LIVE_STAGE' | 'TOOLS';
 
 export const App: React.FC = () => {
   const initialRoomFromUrl = useMemo(() => {
@@ -102,8 +106,10 @@ export const App: React.FC = () => {
     { id: 'TIMETABLE', label: 'Timetable', icon: <Calendar className="w-4 h-4" /> },
     { id: 'FOCUS', label: 'Focus', icon: <Flame className="w-4 h-4" /> },
     { id: 'STUDY', label: 'Study Hub', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'GROUPS', label: 'Team Groups', icon: <Users className="w-4 h-4" /> },
+    { id: 'CITATIONS', label: 'Citations', icon: <Quote className="w-4 h-4" /> },
     { id: 'LIVE_STAGE', label: 'Live Meet', icon: <Video className="w-4 h-4" /> },
-    { id: 'TOOLS', label: 'Sync & Tools', icon: <Sliders className="w-4 h-4" /> }
+    { id: 'TOOLS', label: 'Tools', icon: <Sliders className="w-4 h-4" /> }
   ];
 
   const userInitial = (user?.displayName || vault.profile.name || 'A')
@@ -210,6 +216,21 @@ export const App: React.FC = () => {
         {activeTab === 'STUDY' && (
           <StudyHubView vault={vault} onUpdateVault={updateVault} />
         )}
+        {activeTab === 'GROUPS' && (
+          <GroupProjectsView
+            user={user}
+            vault={vault}
+            onUpdateVault={updateVault}
+            onNotify={notify}
+          />
+        )}
+        {activeTab === 'CITATIONS' && (
+          <CitationGeneratorView
+            vault={vault}
+            onUpdateVault={updateVault}
+            onNotify={notify}
+          />
+        )}
         {activeTab === 'LIVE_STAGE' && (
           <LiveStudyStage
             user={user}
@@ -229,8 +250,8 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Liquid-Glass Navigation Bar (iPhone Safe-Area Friendly) */}
-      <nav className="fixed bottom-3 left-3 right-3 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1.5 grid grid-cols-5 gap-1 shadow-2xl">
+      {/* Bottom Liquid-Glass Navigation Bar */}
+      <nav className="fixed bottom-3 left-3 right-3 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1.5 grid grid-cols-7 gap-1 shadow-2xl">
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (
@@ -238,14 +259,16 @@ export const App: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`py-2 px-0.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                 active
                   ? 'bg-gradient-to-br from-emerald-400 to-sky-400 text-slate-950 font-extrabold shadow-md shadow-emerald-500/25'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
               {item.icon}
-              <span className="text-[10px] leading-none tracking-tight">{item.label}</span>
+              <span className="text-[9px] sm:text-[10px] leading-none tracking-tight truncate max-w-full">
+                {item.label}
+              </span>
             </button>
           );
         })}

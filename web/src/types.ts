@@ -90,6 +90,88 @@ export interface WebFocusSession {
   completedAt: number;
 }
 
+export interface WebGroupTask {
+  id: string;
+  projectId: string;
+  memberName: string;
+  memberContact: string;
+  taskTitle: string;
+  isCompleted: boolean;
+}
+
+export interface WebGroupPoll {
+  question: string;
+  options: { text: string; votes: string[] }[]; // option text and array of voter emails
+  isClosed?: boolean;
+}
+
+export interface WebGroupResourceDoc {
+  id: string;
+  title: string;
+  linkOrFileName: string;
+  category: 'SLIDES' | 'DOCUMENT' | 'RESEARCH_LINK' | 'PAST_PAPER';
+  addedByEmail: string;
+  addedAt: number;
+}
+
+export interface WebGroupChatMessage {
+  id: string;
+  projectId: string;
+  senderEmail: string;
+  senderName: string;
+  messageText: string;
+  timestamp: number;
+  isPinned: boolean;
+  messageType: 'TEXT' | 'DELIVERABLE' | 'TARGET_UPDATE' | 'NOTICE' | 'POLL' | 'DOC_SHARE' | 'POMODORO_SYNC';
+  taggedDeliverableTitle?: string;
+  reactions?: Record<string, number>;
+  pollData?: WebGroupPoll;
+  docData?: WebGroupResourceDoc;
+}
+
+export interface WebGroupProject {
+  id: string;
+  courseCode: string;
+  projectTitle: string;
+  teamName: string;
+  objective: string;
+  groupTarget: string;
+  avatarEmoji: string;
+  avatarColorHex: string;
+  creatorEmail: string;
+  adminEmails: string[];
+  memberEmails: string[];
+  dueEpochMillis: number;
+  tasks: WebGroupTask[];
+  resources?: WebGroupResourceDoc[];
+  syncedPomodoroState?: {
+    isRunning: boolean;
+    remainingSeconds: number;
+    mode: 'FOCUS' | 'BREAK';
+    lastUpdated: number;
+    initiatorName: string;
+  };
+}
+
+export interface WebCitation {
+  id: string;
+  sourceType: 'BOOK' | 'JOURNAL' | 'WEBSITE' | 'SLIDES';
+  title: string;
+  authors: string;
+  year: string;
+  publicationOrPublisher: string;
+  volumeOrEdition?: string;
+  pagesOrUrl?: string;
+  doiOrIsbn?: string;
+  formattedApa: string;
+  formattedMla: string;
+  formattedHarvard: string;
+  formattedChicago: string;
+  formattedIeee: string;
+  bibtexCode: string;
+  createdAt: number;
+}
+
 export interface AuraLocalVault {
   profile: WebUserProfile;
   courses: WebCourse[];
@@ -100,6 +182,9 @@ export interface AuraLocalVault {
   grades: WebGrade[];
   focusSessions: WebFocusSession[];
   distractions: string[];
+  groupProjects: WebGroupProject[];
+  groupMessages: WebGroupChatMessage[];
+  citations: WebCitation[];
   lastAutoRestoredUid?: string;
 }
 

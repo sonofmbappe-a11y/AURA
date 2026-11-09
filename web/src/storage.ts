@@ -140,7 +140,72 @@ export function createDefaultVault(): AuraLocalVault {
     ],
     grades: [],
     focusSessions: [],
-    distractions: []
+    distractions: [],
+    groupProjects: [
+      {
+        id: 'gp_1',
+        courseCode: 'CS301',
+        projectTitle: 'Distributed Cache & Consensus Engine',
+        teamName: 'Team AURA Alpha',
+        objective: 'Build Raft consensus engine with 99.9% uptime',
+        groupTarget: 'Achieve 95%+ / Grade A',
+        avatarEmoji: '🚀',
+        avatarColorHex: '#10B981',
+        creatorEmail: 'scholar@university.edu',
+        adminEmails: ['scholar@university.edu'],
+        memberEmails: ['scholar@university.edu'],
+        dueEpochMillis: Date.now() + 14 * 86_400_000,
+        tasks: [
+          {
+            id: 'gt_1',
+            projectId: 'gp_1',
+            memberName: 'Scholar',
+            memberContact: 'scholar@university.edu',
+            taskTitle: 'Implement Heartbeat Leader Election',
+            isCompleted: true
+          },
+          {
+            id: 'gt_2',
+            projectId: 'gp_1',
+            memberName: 'Teammate',
+            memberContact: 'teammate@university.edu',
+            taskTitle: 'Write Distributed Benchmarks & Report',
+            isCompleted: false
+          }
+        ]
+      }
+    ],
+    groupMessages: [
+      {
+        id: 'gm_1',
+        projectId: 'gp_1',
+        senderEmail: 'scholar@university.edu',
+        senderName: 'Scholar',
+        messageText: 'Welcome to our Team AURA workspace! Goal is 95% on the consensus engine demo 🚀',
+        timestamp: Date.now() - 3600_000,
+        isPinned: true,
+        messageType: 'TEXT'
+      }
+    ],
+    citations: [
+      {
+        id: 'cit_1',
+        sourceType: 'BOOK',
+        title: 'Introduction to Algorithms',
+        authors: 'Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C.',
+        year: '2022',
+        publicationOrPublisher: 'MIT Press',
+        volumeOrEdition: '4th ed.',
+        doiOrIsbn: '978-0262046305',
+        formattedApa: 'Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2022). Introduction to algorithms (4th ed.). MIT Press.',
+        formattedMla: 'Cormen, Thomas H., et al. Introduction to Algorithms. 4th ed., MIT Press, 2022.',
+        formattedHarvard: 'Cormen, T.H., Leiserson, C.E., Rivest, R.L. and Stein, C. (2022) Introduction to algorithms. 4th edn. Cambridge, MA: MIT Press.',
+        formattedChicago: 'Cormen, Thomas H., Charles E. Leiserson, Ronald L. Rivest, and Clifford Stein. Introduction to Algorithms. 4th ed. Cambridge, MA: MIT Press, 2022.',
+        formattedIeee: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein, Introduction to Algorithms, 4th ed. Cambridge, MA: MIT Press, 2022.',
+        bibtexCode: '@book{cormen2022algorithms,\n  author = {Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford},\n  title = {Introduction to Algorithms},\n  edition = {4th},\n  publisher = {MIT Press},\n  year = {2022}\n}',
+        createdAt: Date.now()
+      }
+    ]
   };
 }
 
@@ -160,6 +225,9 @@ export function loadLocalVault(): AuraLocalVault {
       grades: Array.isArray(parsed.grades) ? parsed.grades : def.grades,
       focusSessions: Array.isArray(parsed.focusSessions) ? parsed.focusSessions : [],
       distractions: Array.isArray(parsed.distractions) ? parsed.distractions : [],
+      groupProjects: Array.isArray(parsed.groupProjects) ? parsed.groupProjects : def.groupProjects,
+      groupMessages: Array.isArray(parsed.groupMessages) ? parsed.groupMessages : def.groupMessages,
+      citations: Array.isArray(parsed.citations) ? parsed.citations : def.citations,
       lastAutoRestoredUid: parsed.lastAutoRestoredUid
     };
   } catch {
