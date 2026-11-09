@@ -844,7 +844,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                               <span className="font-extrabold flex items-center gap-1">
                                 {isMe ? 'You' : msg.senderName}
                                 {isAdmin && (
-                                  <Crown className="w-3 h-3 text-amber-300 inline" title="Admin" />
+                                  <span title="Admin">
+                                    <Crown className="w-3 h-3 text-amber-300 inline" />
+                                  </span>
                                 )}
                               </span>
                               <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -1413,6 +1415,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                 Create Task
               </button>
             </div>
+          </div>
         </div>
       )}
 
