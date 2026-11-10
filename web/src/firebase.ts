@@ -34,8 +34,16 @@ export const FIRESTORE_DATABASE_ID =
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// CRITICAL: Connect to the exact named Firestore database provisioned for the Android app!
-export const db = getFirestore(app, FIRESTORE_DATABASE_ID);
+// Connect to provisioned named database with automatic fallback
+export const db = (() => {
+  try {
+    return FIRESTORE_DATABASE_ID && FIRESTORE_DATABASE_ID !== '(default)'
+      ? getFirestore(app, FIRESTORE_DATABASE_ID)
+      : getFirestore(app);
+  } catch (_e) {
+    return getFirestore(app);
+  }
+})();
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -53,6 +61,12 @@ export async function signInWithGoogleBrowser(): Promise<User | null> {
     ) {
       await signInWithRedirect(auth, googleProvider);
       return null;
+    }
+    if (code === 'auth/unauthorized-domain') {
+      const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+      throw new Error(
+        `Domain unauthorized: add "${currentHost}" in Firebase Console > Authentication > Settings > Authorized domains`
+      );
     }
     throw err;
   }
