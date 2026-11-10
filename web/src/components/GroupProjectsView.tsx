@@ -17,6 +17,7 @@ import {
   where
 } from 'firebase/firestore';
 import {
+  BarChart3,
   BookOpen,
   Check,
   CheckCircle2,
@@ -896,8 +897,8 @@ export const GroupProjectsView: React.FC<Props> = ({
   // SEND DOC / RESOURCE
   const handleSendDoc = async () => {
     if (!activeProject) return;
-    const title = docTitleInput.trim();
-    const link = docUrlInput.trim();
+    const title = newResourceTitle.trim();
+    const link = newResourceUrl.trim();
     if (!title) return;
 
     const newMsg: WebGroupChatMessage = {
@@ -943,8 +944,8 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
 
     setShowDocModal(false);
-    setDocTitleInput('');
-    setDocUrlInput('');
+    setNewResourceTitle('');
+    setNewResourceUrl('');
     onNotify('Resource shared to group!');
   };
 
@@ -3420,8 +3421,8 @@ const CreateTeamModal: React.FC<{
               if (!title.trim()) return;
               const extraMembers = memberEmailsInput
                 .split(',')
-                .map((e) => e.trim().toLowerCase())
-                .filter((e) => e.includes('@'));
+                .map((e: string) => e.trim().toLowerCase())
+                .filter((e: string) => e.includes('@'));
               const allMembers = Array.from(new Set([creatorEmail, ...extraMembers]));
               const newProj: WebGroupProject = {
                 id: uidGen('gp'),
@@ -3485,7 +3486,7 @@ const GroupSettingsModal: React.FC<{
             <input
               type="text"
               value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTeamName(e.target.value)}
               className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
@@ -3496,7 +3497,7 @@ const GroupSettingsModal: React.FC<{
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
               className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
@@ -3507,7 +3508,7 @@ const GroupSettingsModal: React.FC<{
             <input
               type="text"
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTarget(e.target.value)}
               className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
