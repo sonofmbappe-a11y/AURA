@@ -138,9 +138,11 @@ export interface WebGroupProject {
   groupTarget: string;
   avatarEmoji: string;
   avatarColorHex: string;
+  creatorUid?: string;
   creatorEmail: string;
   adminEmails: string[];
   memberEmails: string[];
+  joinCode?: string;
   dueEpochMillis: number;
   tasks: WebGroupTask[];
   resources?: WebGroupResourceDoc[];
@@ -151,6 +153,24 @@ export interface WebGroupProject {
     lastUpdated: number;
     initiatorName: string;
   };
+}
+
+export interface WebGroupInvitation {
+  id: string;
+  projectId: string;
+  teamName: string;
+  projectTitle: string;
+  courseCode: string;
+  groupTarget: string;
+  avatarEmoji?: string;
+  avatarColorHex?: string;
+  senderUid: string;
+  senderEmail: string;
+  senderName: string;
+  inviteeEmail: string;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED';
+  joinCode?: string;
+  createdAt: number;
 }
 
 export interface WebCitation {

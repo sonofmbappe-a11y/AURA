@@ -38,8 +38,14 @@ export const App: React.FC = () => {
     return normalizeJoinCode(code);
   }, []);
 
+  const initialGroupFromUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const params = new URLSearchParams(window.location.search);
+    return params.get('join_group') || params.get('group') || '';
+  }, []);
+
   const [activeTab, setActiveTab] = useState<MainTab>(
-    initialRoomFromUrl ? 'LIVE_STAGE' : 'TIMETABLE'
+    initialGroupFromUrl ? 'GROUPS' : initialRoomFromUrl ? 'LIVE_STAGE' : 'TIMETABLE'
   );
   const [vault, setVault] = useState<AuraLocalVault>(() => loadLocalVault());
   const [user, setUser] = useState<User | null>(null);
@@ -220,6 +226,7 @@ export const App: React.FC = () => {
           <GroupProjectsView
             user={user}
             vault={vault}
+            initialGroupId={initialGroupFromUrl}
             onUpdateVault={updateVault}
             onNotify={notify}
           />
