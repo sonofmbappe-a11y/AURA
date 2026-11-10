@@ -332,7 +332,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={handleSaveToVault}
-                className="aura-pill-btn px-4 py-2 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-950 text-xs font-extrabold shadow-md"
+                className="aura-pill-btn px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md transition"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 Save to Bibliography

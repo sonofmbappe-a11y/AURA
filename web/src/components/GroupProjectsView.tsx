@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
+  arrayRemove,
   arrayUnion,
   collection,
   deleteDoc,
@@ -16,31 +17,45 @@ import {
   where
 } from 'firebase/firestore';
 import {
+  BookOpen,
   Check,
   CheckCircle2,
+  Clock,
   Copy,
   Crown,
   Download,
+  ExternalLink,
+  FileText,
+  Flame,
   FolderKanban,
+  Globe,
+  Image as ImageIcon,
   KeyRound,
+  LogOut,
   Mail,
+  Maximize2,
   MessageSquare,
   Mic,
   MicOff,
+  Pause,
   Phone,
   PhoneCall,
   Pin,
+  Play,
   Plus,
+  Search,
   Send,
   Settings,
   Share2,
   Smile,
   Sparkles,
+  Square,
   Trash2,
   UserCheck,
   UserMinus,
   UserPlus,
   Users,
+  Video,
   Volume2,
   X
 } from 'lucide-react';
@@ -51,6 +66,7 @@ import type {
   WebGroupChatMessage,
   WebGroupInvitation,
   WebGroupProject,
+  WebGroupResourceDoc,
   WebGroupTask
 } from '../types';
 
@@ -88,7 +104,10 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     initialGroupId || vault.groupProjects[0]?.id || ''
   );
-  const [activeTab, setActiveTab] = useState<'CHAT' | 'DELIVERABLES' | 'MEMBERS'>('CHAT');
+  const [activeTab, setActiveTab] = useState<'CHAT' | 'DELIVERABLES' | 'RESOURCES' | 'MEMBERS'>('CHAT');
+
+  // Track deleted or left project IDs in memory to avoid stale snapshot revival
+  const deletedProjectIdsRef = useRef<Set<string>>(new Set());
 
   // Pending Invitations received by the current user
   const [pendingInvitations, setPendingInvitations] = useState<WebGroupInvitation[]>([]);
@@ -102,6 +121,13 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [showDocModal, setShowDocModal] = useState(false);
   const [showJoinByCodeModal, setShowJoinByCodeModal] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
+  // Shared Team Resource Vault State (Feature 2)
+  const [newResourceTitle, setNewResourceTitle] = useState('');
+  const [newResourceUrl, setNewResourceUrl] = useState('');
+  const [newResourceCategory, setNewResourceCategory] = useState<'SLIDES' | 'DOCUMENT' | 'RESEARCH_LINK' | 'PAST_PAPER'>('SLIDES');
+  const [resourceFilter, setResourceFilter] = useState<string>('ALL');
 
   // Invitation Sent Confirmation Modal State
   const [inviteSuccessData, setInviteSuccessData] = useState<{
@@ -118,18 +144,33 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [pollOpt2, setPollOpt2] = useState('Friday 2:00 PM');
   const [pollOpt3, setPollOpt3] = useState('Saturday 11:00 AM');
 
-  // Group Doc State
-  const [docTitleInput, setDocTitleInput] = useState('');
-  const [docUrlInput, setDocUrlInput] = useState('');
-
   // Group Live Voice Huddle State
   const [voiceHuddleActive, setVoiceHuddleActive] = useState(false);
   const [isWebMicMuted, setIsWebMicMuted] = useState(false);
+
+  // Group Synced Pomodoro Sprint State
+  const [pomodoroSeconds, setPomodoroSeconds] = useState(25 * 60);
+  const [pomodoroRunning, setPomodoroRunning] = useState(false);
+
+  // Deliverables filter & search
+  const [taskFilter, setTaskFilter] = useState<'ALL' | 'PENDING' | 'DONE'>('ALL');
+  const [taskSearch, setTaskSearch] = useState('');
 
   // Message composer
   const [chatInput, setChatInput] = useState('');
   const [pinChecked, setPinChecked] = useState(false);
   const [selectedDeliverableTag, setSelectedDeliverableTag] = useState<string>('');
+
+  // Voice Note Recording State
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Auto-scroll anchor
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   // Active Project
   const activeProject = useMemo(() => {
@@ -154,6 +195,39 @@ export const GroupProjectsView: React.FC<Props> = ({
       .filter((m) => m.projectId === activeProject.id)
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [vault.groupMessages, activeProject]);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    if (activeTab === 'CHAT') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [projectMessages.length, activeTab]);
+
+  // Pomodoro timer tick
+  useEffect(() => {
+    if (!pomodoroRunning) return;
+    const interval = window.setInterval(() => {
+      setPomodoroSeconds((prev) => {
+        if (prev <= 1) {
+          setPomodoroRunning(false);
+          onNotify('🎉 Group 25-minute Pomodoro Sprint Complete! Time for a team break.');
+          return 25 * 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [pomodoroRunning, onNotify]);
+
+  // Clean up voice recording on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
 
   // 1. REAL-TIME FIRESTORE LISTENER FOR PENDING GROUP INVITATIONS
   useEffect(() => {
@@ -201,11 +275,11 @@ export const GroupProjectsView: React.FC<Props> = ({
       );
       return () => unsub();
     } catch {
-      // Ignore offline error
+      // Offline fallback
     }
   }, [user, currentEmail]);
 
-  // 2. REAL-TIME FIRESTORE LISTENER FOR GROUP PROJECTS WHERE USER IS A MEMBER OR CREATOR
+  // 2. REAL-TIME FIRESTORE LISTENER FOR GROUP PROJECTS WHERE USER IS A MEMBER
   useEffect(() => {
     if (!user || !currentEmail) return;
 
@@ -218,7 +292,6 @@ export const GroupProjectsView: React.FC<Props> = ({
       const unsubMember = onSnapshot(
         qMember,
         (snap) => {
-          if (snap.empty) return;
           const cloudProjects: WebGroupProject[] = snap.docs.map((d) => {
             const data = d.data();
             return {
@@ -228,7 +301,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               teamName: data.teamName || 'Team 1',
               objective: data.objective || data.groupTarget || '',
               groupTarget: data.groupTarget || 'Grade A',
-              avatarEmoji: data.avatarEmoji || '👥',
+              avatarEmoji: data.avatarEmoji || 'CS',
               avatarColorHex: data.avatarColorHex || '#10B981',
               creatorUid: data.creatorUid || '',
               creatorEmail: data.creatorEmail || '',
@@ -236,15 +309,18 @@ export const GroupProjectsView: React.FC<Props> = ({
               memberEmails: data.memberEmails || [currentEmail],
               joinCode: data.joinCode || '',
               dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
-              tasks: data.tasks || []
+              tasks: data.tasks || [],
+              resources: data.resources || []
             };
-          });
+          }).filter((p) => !deletedProjectIdsRef.current.has(p.id));
 
           onUpdateVault((prev) => {
-            const map = new Map<string, WebGroupProject>();
-            prev.groupProjects.forEach((p) => map.set(p.id, p));
-            cloudProjects.forEach((p) => map.set(p.id, p));
-            const merged = Array.from(map.values());
+            const cloudIds = new Set(cloudProjects.map((p) => p.id));
+            // Keep existing non-cloud local projects that were not deleted
+            const localOnly = prev.groupProjects.filter(
+              (p) => !cloudIds.has(p.id) && !deletedProjectIdsRef.current.has(p.id)
+            );
+            const merged = [...cloudProjects, ...localOnly];
             return { ...prev, groupProjects: merged };
           });
         },
@@ -335,7 +411,10 @@ export const GroupProjectsView: React.FC<Props> = ({
               taggedDeliverableTitle: data.taggedDeliverableTitle,
               reactions: data.reactions || {},
               pollData: data.pollData,
-              docData: data.docData
+              docData: data.docData,
+              audioUrl: data.audioUrl,
+              audioDurationSec: data.audioDurationSec,
+              imageUrl: data.imageUrl
             };
           });
 
@@ -367,20 +446,17 @@ export const GroupProjectsView: React.FC<Props> = ({
   // ACCEPT PENDING INVITATION
   const handleAcceptInvitation = async (inv: WebGroupInvitation) => {
     try {
-      // 1. Mark invite accepted in Firestore
       if (user) {
         await updateDoc(doc(db, 'group_invitations', inv.id), {
           status: 'ACCEPTED',
           updatedAt: serverTimestamp()
         }).catch(() => {});
 
-        // 2. Add currentEmail to project's memberEmails in Firestore
         await updateDoc(doc(db, 'group_projects', inv.projectId), {
           memberEmails: arrayUnion(currentEmail),
           updatedAt: serverTimestamp()
         }).catch(() => {});
 
-        // 3. Post notification in team chat
         const noticeMsgId = uidGen('gm_notice');
         await setDoc(doc(db, 'group_projects', inv.projectId, 'messages', noticeMsgId), {
           projectId: inv.projectId,
@@ -394,7 +470,6 @@ export const GroupProjectsView: React.FC<Props> = ({
         }).catch(() => {});
       }
 
-      // 4. Fetch project details if needed and update local vault
       const snap = await getDoc(doc(db, 'group_projects', inv.projectId));
       if (snap.exists()) {
         const pData = snap.data();
@@ -423,7 +498,6 @@ export const GroupProjectsView: React.FC<Props> = ({
         setSelectedProjectId(joined.id);
       }
 
-      // Remove from local pending list
       setPendingInvitations((prev) => prev.filter((i) => i.id !== inv.id));
       onNotify(`🎉 Successfully joined ${inv.teamName}!`);
     } catch {
@@ -455,7 +529,6 @@ export const GroupProjectsView: React.FC<Props> = ({
     try {
       let targetDoc: WebGroupProject | null = null;
 
-      // Check by ID or search by joinCode in Firestore
       const directSnap = await getDoc(doc(db, 'group_projects', raw.toLowerCase()));
       if (directSnap.exists()) {
         const d = directSnap.data();
@@ -510,7 +583,6 @@ export const GroupProjectsView: React.FC<Props> = ({
         return;
       }
 
-      // Add current user to members
       if (!targetDoc.memberEmails.includes(currentEmail)) {
         targetDoc.memberEmails.push(currentEmail);
       }
@@ -535,7 +607,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
   };
 
-  // SEND MESSAGE
+  // SEND TEXT OR DELIVERABLE MESSAGE
   const handleSendMessage = async () => {
     if (!activeProject) return;
     const text = chatInput.trim();
@@ -578,9 +650,166 @@ export const GroupProjectsView: React.FC<Props> = ({
           createdAt: serverTimestamp()
         });
       } catch {
-        // Keep local message
+        // Keep local
       }
     }
+  };
+
+  // START VOICE NOTE RECORDING
+  const handleStartVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.start(200);
+      setIsRecordingVoice(true);
+      setRecordingSeconds(0);
+
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      onNotify('Microphone access is required to record voice notes. Please grant permission in browser.');
+    }
+  };
+
+  // CANCEL VOICE NOTE RECORDING
+  const handleCancelVoiceRecording = () => {
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop());
+    }
+    audioChunksRef.current = [];
+    setIsRecordingVoice(false);
+    setRecordingSeconds(0);
+  };
+
+  // FINALIZE & SEND VOICE NOTE
+  const handleSendVoiceRecording = () => {
+    if (!mediaRecorderRef.current || !activeProject) return;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+
+    const dur = Math.max(1, recordingSeconds);
+    const recorder = mediaRecorderRef.current;
+
+    recorder.onstop = () => {
+      recorder.stream.getTracks().forEach((t) => t.stop());
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: recorder.mimeType || 'audio/webm'
+      });
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result as string;
+        const newMsg: WebGroupChatMessage = {
+          id: uidGen('vnote'),
+          projectId: activeProject.id,
+          senderEmail: currentEmail,
+          senderName: user?.displayName || vault.profile.name || 'Scholar',
+          messageText: `🎙️ Voice Note (${dur}s)`,
+          timestamp: Date.now(),
+          isPinned: false,
+          messageType: 'VOICE_NOTE',
+          audioUrl: base64Data,
+          audioDurationSec: dur,
+          reactions: {}
+        };
+
+        onUpdateVault((prev) => ({
+          ...prev,
+          groupMessages: [...prev.groupMessages, newMsg]
+        }));
+
+        if (user) {
+          try {
+            await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
+              projectId: activeProject.id,
+              senderUid: user.uid,
+              senderEmail: currentEmail,
+              senderName: newMsg.senderName,
+              messageText: newMsg.messageText,
+              isPinned: false,
+              messageType: 'VOICE_NOTE',
+              audioUrl: newMsg.audioUrl,
+              audioDurationSec: newMsg.audioDurationSec,
+              reactions: {},
+              createdAt: serverTimestamp()
+            });
+          } catch {
+            // Keep local
+          }
+        }
+        onNotify('Voice note sent to team!');
+      };
+      reader.readAsDataURL(audioBlob);
+    };
+
+    recorder.stop();
+    setIsRecordingVoice(false);
+    setRecordingSeconds(0);
+  };
+
+  // SEND IMAGE / DIAGRAM
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeProject) return;
+
+    if (file.size > 2.5 * 1024 * 1024) {
+      onNotify('Please select an image smaller than 2.5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64 = reader.result as string;
+      const newMsg: WebGroupChatMessage = {
+        id: uidGen('img'),
+        projectId: activeProject.id,
+        senderEmail: currentEmail,
+        senderName: user?.displayName || vault.profile.name || 'Scholar',
+        messageText: `📸 Photo: ${file.name}`,
+        timestamp: Date.now(),
+        isPinned: false,
+        messageType: 'IMAGE_SHARE',
+        imageUrl: base64,
+        reactions: {}
+      };
+
+      onUpdateVault((prev) => ({
+        ...prev,
+        groupMessages: [...prev.groupMessages, newMsg]
+      }));
+
+      if (user) {
+        try {
+          await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
+            projectId: activeProject.id,
+            senderUid: user.uid,
+            senderEmail: currentEmail,
+            senderName: newMsg.senderName,
+            messageText: newMsg.messageText,
+            isPinned: false,
+            messageType: 'IMAGE_SHARE',
+            imageUrl: newMsg.imageUrl,
+            reactions: {},
+            createdAt: serverTimestamp()
+          });
+        } catch {
+          // Keep local
+        }
+      }
+      onNotify('Photo shared with group!');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   // SEND POLL
@@ -735,7 +964,6 @@ export const GroupProjectsView: React.FC<Props> = ({
     const updatedMembers = [...activeProject.memberEmails, clean];
     const projectJoinCode = activeProject.joinCode || generateJoinCode();
 
-    // 1. Update local vault state
     onUpdateVault((prev) => ({
       ...prev,
       groupProjects: prev.groupProjects.map((p) =>
@@ -758,10 +986,8 @@ export const GroupProjectsView: React.FC<Props> = ({
       ]
     }));
 
-    // 2. Persist to Firestore: Update root group_projects document
     if (user) {
       try {
-        // Upsert root project doc
         await setDoc(
           doc(db, 'group_projects', activeProject.id),
           {
@@ -785,7 +1011,6 @@ export const GroupProjectsView: React.FC<Props> = ({
           { merge: true }
         );
 
-        // 3. Create Invitation record in group_invitations collection
         const inviteDocId = `inv_${activeProject.id}_${clean.replace(/[^a-z0-9]/g, '_')}`;
         await setDoc(doc(db, 'group_invitations', inviteDocId), {
           id: inviteDocId,
@@ -805,7 +1030,6 @@ export const GroupProjectsView: React.FC<Props> = ({
           createdAt: serverTimestamp()
         });
 
-        // 4. Record notice in chat
         await setDoc(
           doc(db, 'group_projects', activeProject.id, 'messages', uidGen('notice')),
           {
@@ -820,13 +1044,12 @@ export const GroupProjectsView: React.FC<Props> = ({
           }
         );
       } catch {
-        // Offline fallback
+        // Offline
       }
     }
 
     setShowAddMemberModal(false);
 
-    // 5. Open Invitation Success & Email Dispatch Modal
     setInviteSuccessData({
       inviteeEmail: clean,
       teamName: activeProject.teamName,
@@ -966,29 +1189,157 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
   };
 
-  // DELETE PROJECT
+  // DELETE PROJECT (Creator / Admin)
   const handleDeleteProject = async (projId: string) => {
-    if (!window.confirm('Are you sure you want to delete this group team and all its history?'))
+    const proj = vault.groupProjects.find((p) => p.id === projId);
+    const name = proj?.teamName || 'this team';
+
+    if (!window.confirm(`Permanently delete '${name}'? All messages, tasks, and resources will be removed.`))
       return;
 
-    onUpdateVault((prev) => ({
-      ...prev,
-      groupProjects: prev.groupProjects.filter((p) => p.id !== projId),
-      groupMessages: prev.groupMessages.filter((m) => m.projectId !== projId)
-    }));
+    deletedProjectIdsRef.current.add(projId);
+
+    onUpdateVault((prev) => {
+      const remaining = prev.groupProjects.filter((p) => p.id !== projId);
+      return {
+        ...prev,
+        groupProjects: remaining,
+        groupMessages: prev.groupMessages.filter((m) => m.projectId !== projId)
+      };
+    });
+
+    setSelectedProjectId((prevId) => {
+      if (prevId === projId) {
+        const remaining = vault.groupProjects.filter((p) => p.id !== projId);
+        return remaining[0]?.id || '';
+      }
+      return prevId;
+    });
 
     if (user) {
       try {
         await deleteDoc(doc(db, 'group_projects', projId));
-      } catch {
-        // Offline
+      } catch (err) {
+        console.error('Delete project error:', err);
       }
     }
 
-    onNotify('Group project deleted.');
+    onNotify(`Deleted '${name}'.`);
   };
 
-  // COPY CHAT TRANSCRIPT
+  // LEAVE GROUP (For any member)
+  const handleLeaveGroup = async (projId: string) => {
+    const proj = vault.groupProjects.find((p) => p.id === projId);
+    if (!proj) return;
+
+    if (!window.confirm(`Leave '${proj.teamName}'? You will be removed from team collaboration.`))
+      return;
+
+    deletedProjectIdsRef.current.add(projId);
+
+    onUpdateVault((prev) => {
+      const remaining = prev.groupProjects.filter((p) => p.id !== projId);
+      return {
+        ...prev,
+        groupProjects: remaining,
+        groupMessages: prev.groupMessages.filter((m) => m.projectId !== projId)
+      };
+    });
+
+    setSelectedProjectId((prevId) => {
+      if (prevId === projId) {
+        const remaining = vault.groupProjects.filter((p) => p.id !== projId);
+        return remaining[0]?.id || '';
+      }
+      return prevId;
+    });
+
+    if (user) {
+      try {
+        const updatedMembers = proj.memberEmails.filter(
+          (e) => e.toLowerCase() !== currentEmail
+        );
+        const updatedAdmins = proj.adminEmails.filter(
+          (e) => e.toLowerCase() !== currentEmail
+        );
+        await updateDoc(doc(db, 'group_projects', projId), {
+          memberEmails: updatedMembers,
+          adminEmails: updatedAdmins,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Leave group error:', err);
+      }
+    }
+
+    onNotify(`You left '${proj.teamName}'.`);
+  };
+
+  // ADD SHARED RESOURCE TO TEAM VAULT (Feature 2)
+  const handleAddResource = async () => {
+    if (!activeProject || !newResourceTitle.trim() || !newResourceUrl.trim()) return;
+    const resource: WebGroupResourceDoc = {
+      id: uidGen('res'),
+      title: newResourceTitle.trim(),
+      linkOrFileName: newResourceUrl.trim(),
+      category: newResourceCategory,
+      addedByEmail: currentEmail,
+      addedAt: Date.now()
+    };
+
+    const updatedResources = [...(activeProject.resources || []), resource];
+
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupProjects: prev.groupProjects.map((p) =>
+        p.id === activeProject.id ? { ...p, resources: updatedResources } : p
+      )
+    }));
+
+    if (user) {
+      try {
+        await updateDoc(doc(db, 'group_projects', activeProject.id), {
+          resources: updatedResources,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Add resource error:', err);
+      }
+    }
+
+    setNewResourceTitle('');
+    setNewResourceUrl('');
+    setShowDocModal(false);
+    onNotify(`Added '${resource.title}' to Team Resource Vault!`);
+  };
+
+  // DELETE RESOURCE FROM TEAM VAULT
+  const handleDeleteResource = async (resId: string) => {
+    if (!activeProject) return;
+    const updatedResources = (activeProject.resources || []).filter((r) => r.id !== resId);
+
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupProjects: prev.groupProjects.map((p) =>
+        p.id === activeProject.id ? { ...p, resources: updatedResources } : p
+      )
+    }));
+
+    if (user) {
+      try {
+        await updateDoc(doc(db, 'group_projects', activeProject.id), {
+          resources: updatedResources,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error('Delete resource error:', err);
+      }
+    }
+
+    onNotify('Resource removed from Vault.');
+  };
+
+  // EXPORT CHAT TRANSCRIPT
   const handleExportChat = () => {
     if (!activeProject) return;
     const lines = [
@@ -1010,25 +1361,44 @@ export const GroupProjectsView: React.FC<Props> = ({
 
   // COPY 1-CLICK INVITE LINK
   const handleCopyInviteLink = (proj: WebGroupProject) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aura-study-companion.vercel.app';
+    const origin =
+      typeof window !== 'undefined' ? window.location.origin : 'https://aura-study-companion.vercel.app';
     const link = `${origin}/?join_group=${proj.id}`;
     navigator.clipboard.writeText(link);
     onNotify(`Copied 1-Click Invite Link for ${proj.teamName}!`);
   };
 
+  // Filtered deliverables
   const tasks = activeProject?.tasks || [];
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((t) => {
+      const matchesSearch =
+        t.taskTitle.toLowerCase().includes(taskSearch.toLowerCase()) ||
+        t.memberName.toLowerCase().includes(taskSearch.toLowerCase());
+      if (!matchesSearch) return false;
+      if (taskFilter === 'PENDING') return !t.isCompleted;
+      if (taskFilter === 'DONE') return t.isCompleted;
+      return true;
+    });
+  }, [tasks, taskFilter, taskSearch]);
+
   const doneTasks = tasks.filter((t) => t.isCompleted).length;
   const taskProgressPct = tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0;
   const pinnedMessages = projectMessages.filter((m) => m.isPinned);
 
+  // Time remaining to deadline
+  const daysLeft = activeProject?.dueEpochMillis
+    ? Math.max(0, Math.ceil((activeProject.dueEpochMillis - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
   return (
     <div className="space-y-4">
-      {/* 1. PENDING INVITATIONS BANNER (When someone invited current user by email) */}
+      {/* 1. PENDING INVITATIONS BANNER */}
       {pendingInvitations.length > 0 && (
-        <div className="rounded-3xl p-4 bg-gradient-to-r from-amber-500/20 via-emerald-500/15 to-sky-500/20 border border-amber-400/40 shadow-xl space-y-3">
+        <div className="rounded-3xl p-4 bg-slate-900 border border-amber-500/40 shadow-xl space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
+              <Sparkles className="w-4 h-4 text-amber-400" />
               <h3 className="font-extrabold text-sm sm:text-base text-white">
                 Team Invitations Waiting For You ({pendingInvitations.length})
               </h3>
@@ -1042,17 +1412,13 @@ export const GroupProjectsView: React.FC<Props> = ({
             {pendingInvitations.map((inv) => (
               <div
                 key={inv.id}
-                className="p-3.5 rounded-2xl bg-black/40 border border-white/15 flex flex-col justify-between gap-3"
+                className="p-3.5 rounded-2xl bg-black/40 border border-slate-800 flex flex-col justify-between gap-3"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border"
-                    style={{
-                      backgroundColor: `${inv.avatarColorHex || '#10B981'}25`,
-                      borderColor: inv.avatarColorHex || '#10B981'
-                    }}
+                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border border-slate-700 bg-slate-800 text-white"
                   >
-                    {inv.avatarEmoji || '👥'}
+                    {inv.teamName.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -1063,7 +1429,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     </div>
                     <p className="text-xs text-slate-300 line-clamp-1">{inv.projectTitle}</p>
                     <p className="text-[11px] text-amber-300 font-semibold mt-0.5">
-                      🎯 Target: {inv.groupTarget}
+                      Target: {inv.groupTarget}
                     </p>
                     <p className="text-[10px] text-slate-400 mt-1">
                       Invited by: <span className="text-emerald-400 font-bold">{inv.senderName}</span> ({inv.senderEmail})
@@ -1071,11 +1437,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
                   <button
                     type="button"
                     onClick={() => handleAcceptInvitation(inv)}
-                    className="flex-1 py-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 font-extrabold text-xs shadow-md hover:scale-[1.02] active:scale-95 transition flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-1"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                     Accept &amp; Join
@@ -1095,23 +1461,23 @@ export const GroupProjectsView: React.FC<Props> = ({
       )}
 
       {/* Top Header Card */}
-      <div className="aura-hero-card rounded-3xl p-4 sm:p-5">
+      <div className="aura-hero-card rounded-2xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30 shrink-0">
-              <Users className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-extrabold text-white">
-                  Group Projects &amp; Live Team Hub
+                <h2 className="text-base sm:text-lg font-bold text-white">
+                  Academic Team Hub
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider">
-                  Cloud Synced
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  Live Cloud
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Create teams, set targets, invite coursemates by email, tag deliverables &amp; chat in real time.
+                Voice notes, shared slide vault, live sprints &amp; task tracking.
               </p>
             </div>
           </div>
@@ -1120,44 +1486,95 @@ export const GroupProjectsView: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
-              className="aura-pill-btn px-3.5 py-2 aura-subtle-surface text-sky-300 hover:border-sky-400/50 text-xs font-bold transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-xl aura-subtle-surface text-slate-200 hover:border-slate-500 text-xs font-semibold transition flex items-center gap-1.5"
             >
               <KeyRound className="w-3.5 h-3.5" />
-              Join with Code
+              <span>Join with Code</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="aura-pill-btn px-4 py-2 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-extrabold shadow-md shadow-emerald-500/20 hover:scale-105 active:scale-95 transition"
+              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-sm transition flex items-center gap-1.5"
             >
-              <Plus className="w-3.5 h-3.5 mr-1" />
+              <Plus className="w-3.5 h-3.5" />
               New Team
             </button>
           </div>
         </div>
 
-        {/* Group Selector Pills */}
-        {vault.groupProjects.length > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto pt-3 border-t border-white/10 mt-3 no-scrollbar">
-            {vault.groupProjects.map((p) => {
-              const isActive = p.id === activeProject?.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setSelectedProjectId(p.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-                    isActive
-                      ? 'bg-emerald-400/20 border border-emerald-400 text-emerald-300'
-                      : 'aura-subtle-surface text-slate-300 hover:border-white/30'
-                  }`}
-                >
-                  <span>{p.avatarEmoji || '👥'}</span>
-                  <span>{p.teamName}</span>
-                </button>
-              );
-            })}
+        {/* Prominent Teams Workspace Grid (Supports unlimited teams) */}
+        {vault.groupProjects.length > 0 && (
+          <div className="pt-4 border-t border-white/10 mt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <span className="font-semibold uppercase tracking-wider text-[11px]">
+                Your Teams ({vault.groupProjects.length})
+              </span>
+              <span className="text-[10px] text-slate-500">Tap to switch active team workspace</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {vault.groupProjects.map((p) => {
+                const isActive = p.id === activeProject?.id;
+                const isOwner = p.creatorEmail?.toLowerCase() === currentEmail;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedProjectId(p.id)}
+                    className={`cursor-pointer p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                      isActive
+                        ? 'bg-slate-800 border-emerald-500/70 shadow-md'
+                        : 'aura-subtle-surface hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="min-w-0 flex items-center gap-2.5">
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border"
+                        style={{
+                          backgroundColor: `${p.avatarColorHex || '#10b981'}15`,
+                          borderColor: `${p.avatarColorHex || '#10b981'}40`,
+                          color: p.avatarColorHex || '#10b981'
+                        }}
+                      >
+                        {p.courseCode.slice(0, 3)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-xs text-white truncate">{p.teamName}</span>
+                          {isActive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-400 truncate">
+                          {p.courseCode} • {p.memberEmails?.length || 1} {p.memberEmails?.length === 1 ? 'member' : 'members'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {isOwner ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProject(p.id)}
+                          title="Delete Team Workspace"
+                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/5 flex items-center justify-center transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleLeaveGroup(p.id)}
+                          title="Leave Team"
+                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/5 flex items-center justify-center transition"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -1165,7 +1582,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       {/* Main Active Group Stage */}
       {activeProject ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Left Column: Team Overview & Navigation */}
+          {/* Left Column: Team Overview, Countdown & Live Sprint */}
           <div className="space-y-4">
             <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
@@ -1240,18 +1657,30 @@ export const GroupProjectsView: React.FC<Props> = ({
                       <Settings className="w-4 h-4" />
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteProject(activeProject.id)}
-                    title="Delete Group"
-                    className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-rose-400 hover:border-rose-400/50 transition"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {(isCurrentUserAdmin || activeProject.creatorEmail?.toLowerCase() === currentEmail) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProject(activeProject.id)}
+                      title="Permanently Delete Team"
+                      className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-rose-400 hover:border-rose-400/50 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleLeaveGroup(activeProject.id)}
+                      title="Leave Team"
+                      className="px-2.5 py-1.5 rounded-xl aura-subtle-surface flex items-center gap-1 text-amber-400 hover:border-amber-400/50 text-xs font-semibold transition"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Leave</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
-              {/* Voice Huddle Active Card */}
+              {/* Live Voice Huddle Indicator */}
               {voiceHuddleActive && (
                 <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -1272,20 +1701,70 @@ export const GroupProjectsView: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* Target Banner */}
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30">
+              {/* Target & Submission Countdown */}
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
                     Target &amp; Milestone
                   </span>
-                  {activeProject.joinCode && (
-                    <span className="text-[10px] font-bold text-sky-300 font-mono">
-                      Code: {activeProject.joinCode}
-                    </span>
-                  )}
+                  <span className="text-[10px] font-bold text-sky-300 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {daysLeft > 0 ? `${daysLeft} days left` : 'Due Soon'}
+                  </span>
                 </div>
-                <div className="text-xs font-extrabold text-amber-200 mt-0.5">
+                <div className="text-xs font-extrabold text-amber-200">
                   🎯 {activeProject.groupTarget || 'Complete final prototype & presentation'}
+                </div>
+                {activeProject.joinCode && (
+                  <div className="text-[10px] text-slate-400 font-mono pt-1 border-t border-white/5 flex items-center justify-between">
+                    <span>Team Code:</span>
+                    <span className="text-emerald-300 font-bold">{activeProject.joinCode}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Group Pomodoro Live Sprint Widget (New Feature) */}
+              <div className="p-3 rounded-2xl aura-subtle-surface space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Flame className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-bold text-white">Group Focus Sprint</span>
+                  </div>
+                  <span className="text-[11px] font-mono font-extrabold text-emerald-400">
+                    {Math.floor(pomodoroSeconds / 60)
+                      .toString()
+                      .padStart(2, '0')}
+                    :{(pomodoroSeconds % 60).toString().padStart(2, '0')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPomodoroRunning(!pomodoroRunning);
+                      if (!pomodoroRunning) {
+                        onNotify('Started synchronized 25-minute study sprint!');
+                      }
+                    }}
+                    className={`flex-1 py-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+                      pomodoroRunning
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                        : 'bg-emerald-400 text-slate-950 shadow-md'
+                    }`}
+                  >
+                    {pomodoroRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                    <span>{pomodoroRunning ? 'Pause Sprint' : 'Start 25m Sprint'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPomodoroRunning(false);
+                      setPomodoroSeconds(25 * 60);
+                    }}
+                    className="px-2.5 py-1 rounded-xl aura-subtle-surface text-slate-400 hover:text-white text-xs font-bold"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
 
@@ -1293,55 +1772,67 @@ export const GroupProjectsView: React.FC<Props> = ({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-semibold">Deliverables Complete</span>
-                  <span className="font-extrabold text-emerald-400">
+                  <span className="font-bold text-emerald-400">
                     {doneTasks}/{tasks.length} ({taskProgressPct}%)
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-emerald-400 to-sky-400 transition-all duration-300"
+                    className="h-full bg-emerald-500 transition-all duration-300"
                     style={{ width: `${taskProgressPct}%` }}
                   />
                 </div>
               </div>
 
               {/* Navigation Sub-Tabs */}
-              <div className="flex gap-1.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab('CHAT')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'CHAT'
-                      ? 'bg-emerald-400 text-slate-950 shadow-md'
-                      : 'text-slate-300 hover:text-white'
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  Chat
+                  <span>Chat</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('DELIVERABLES')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'DELIVERABLES'
-                      ? 'bg-emerald-400 text-slate-950 shadow-md'
-                      : 'text-slate-300 hover:text-white'
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <FolderKanban className="w-3.5 h-3.5" />
-                  Tasks ({tasks.length})
+                  <span>Tasks ({tasks.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('RESOURCES')}
+                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
+                    activeTab === 'RESOURCES'
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Vault ({activeProject.resources?.length || 0})</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('MEMBERS')}
-                  className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'MEMBERS'
-                      ? 'bg-emerald-400 text-slate-950 shadow-md'
-                      : 'text-slate-300 hover:text-white'
+                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  Team ({activeProject.memberEmails.length})
+                  <span>Team ({activeProject.memberEmails.length})</span>
                 </button>
               </div>
 
@@ -1370,7 +1861,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           {/* Right Column: Tab Content Stage */}
           <div className="lg:col-span-2">
             {activeTab === 'CHAT' && (
-              <div className="aura-glass rounded-3xl p-4 sm:p-5 flex flex-col h-[600px] border border-white/15 shadow-2xl">
+              <div className="aura-glass rounded-3xl p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px] border border-white/15 shadow-2xl">
                 {/* Pinned Messages Bar */}
                 {pinnedMessages.length > 0 && (
                   <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center gap-2 mb-3 shrink-0">
@@ -1388,7 +1879,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       <MessageSquare className="w-10 h-10 text-slate-600 mb-2" />
                       <p className="font-extrabold text-sm text-white">No messages yet</p>
                       <p className="text-xs mt-1">
-                        Start the team conversation! All messages are stored securely in the Cloud and synced in real time.
+                        Send text messages, record voice notes, share slides &amp; photos in real time!
                       </p>
                     </div>
                   ) : (
@@ -1415,10 +1906,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-2xl p-3 space-y-1.5 relative group ${
+                            className={`max-w-[85%] rounded-2xl p-3 space-y-2 relative group ${
                               isMe
-                                ? 'bg-gradient-to-r from-emerald-500/90 to-sky-500/90 text-white shadow-lg'
-                                : 'bg-slate-800/80 border border-white/10 text-slate-100'
+                                ? 'bg-emerald-600 text-white shadow-md'
+                                : 'bg-slate-800/85 border border-white/10 text-slate-100'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-3 text-[11px] opacity-85">
@@ -1438,9 +1929,33 @@ export const GroupProjectsView: React.FC<Props> = ({
                               </span>
                             </div>
 
-                            <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
-                              {msg.messageText}
-                            </p>
+                            {/* Text Body */}
+                            {msg.messageText && msg.messageType !== 'VOICE_NOTE' && (
+                              <p className="text-xs sm:text-sm whitespace-pre-wrap leading-relaxed">
+                                {msg.messageText}
+                              </p>
+                            )}
+
+                            {/* Voice Note Player (New Feature) */}
+                            {msg.messageType === 'VOICE_NOTE' && msg.audioUrl && (
+                              <VoiceNotePlayer
+                                audioUrl={msg.audioUrl}
+                                durationSec={msg.audioDurationSec || 0}
+                                isMe={isMe}
+                              />
+                            )}
+
+                            {/* Image Attachment (New Feature) */}
+                            {msg.messageType === 'IMAGE_SHARE' && msg.imageUrl && (
+                              <div className="rounded-xl overflow-hidden border border-white/20 mt-1 cursor-pointer">
+                                <img
+                                  src={msg.imageUrl}
+                                  alt="Attached Diagram or Photo"
+                                  className="w-full max-h-60 object-cover hover:scale-105 transition duration-200"
+                                  onClick={() => setPreviewImageUrl(msg.imageUrl!)}
+                                />
+                              </div>
+                            )}
 
                             {/* Poll Card */}
                             {msg.pollData && (
@@ -1537,6 +2052,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       );
                     })
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Composer Dock */}
@@ -1553,68 +2069,144 @@ export const GroupProjectsView: React.FC<Props> = ({
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowPollModal(true)}
-                      title="Create Team Poll"
-                      className="w-9 h-9 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-300 flex items-center justify-center shrink-0 transition text-sm"
-                    >
-                      📊
-                    </button>
+                  {/* Dynamic Recording Dock vs Standard Text Dock */}
+                  {isRecordingVoice ? (
+                    <div className="p-2.5 rounded-2xl bg-rose-950/40 border border-rose-500/50 flex items-center justify-between gap-3 animate-pulse">
+                      <div className="flex items-center gap-3">
+                        <span className="w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping" />
+                        <span className="text-xs font-bold text-rose-300">
+                          Recording Voice Note... (
+                          {Math.floor(recordingSeconds / 60)
+                            .toString()
+                            .padStart(2, '0')}
+                          :{(recordingSeconds % 60).toString().padStart(2, '0')})
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                          <span className="w-1 h-3 bg-rose-400 rounded-full aura-sound-bar" />
+                          <span className="w-1 h-4 bg-rose-400 rounded-full aura-sound-bar" />
+                          <span className="w-1 h-2 bg-rose-400 rounded-full aura-sound-bar" />
+                        </div>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowDocModal(true)}
-                      title="Share Resource / Slide Link"
-                      className="w-9 h-9 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center shrink-0 transition text-sm"
-                    >
-                      📎
-                    </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCancelVoiceRecording}
+                          className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold transition flex items-center gap-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSendVoiceRecording}
+                          className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md flex items-center gap-1.5 transition"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Send
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <div className="flex items-center gap-1">
+                        {/* Voice Note Button */}
+                        <button
+                          type="button"
+                          onClick={handleStartVoiceRecording}
+                          title="Record Voice Note"
+                          className="w-9 h-9 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-300 flex items-center justify-center shrink-0 transition"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </button>
 
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                      placeholder="Message your group team..."
-                      className="aura-input flex-1 px-4 py-2.5 rounded-2xl text-xs sm:text-sm"
-                    />
+                        {/* Image / Attachment Button */}
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          title="Share Photo / Diagram"
+                          className="w-9 h-9 rounded-2xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-300 flex items-center justify-center shrink-0 transition"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageSelected}
+                          className="hidden"
+                        />
 
-                    {tasks.length > 0 && (
-                      <select
-                        aria-label="Tag deliverable to message"
-                        value={selectedDeliverableTag}
-                        onChange={(e) => setSelectedDeliverableTag(e.target.value)}
-                        className="aura-input px-3 py-2.5 rounded-2xl text-xs bg-slate-900 border-white/15 max-w-[120px] truncate"
+                        {/* Poll Button */}
+                        <button
+                          type="button"
+                          onClick={() => setShowPollModal(true)}
+                          title="Create Team Poll"
+                          className="w-9 h-9 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                        >
+                          Poll
+                        </button>
+
+                        {/* Doc Button */}
+                        <button
+                          type="button"
+                          onClick={() => setShowDocModal(true)}
+                          title="Share Resource Link"
+                          className="w-9 h-9 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                        >
+                          Link
+                        </button>
+                      </div>
+
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                        placeholder="Message your team..."
+                        className="aura-input flex-1 px-4 py-2.5 rounded-2xl text-xs sm:text-sm min-w-[140px]"
+                      />
+
+                      {tasks.length > 0 && (
+                        <select
+                          aria-label="Tag deliverable to message"
+                          value={selectedDeliverableTag}
+                          onChange={(e) => setSelectedDeliverableTag(e.target.value)}
+                          className="aura-input px-3 py-2.5 rounded-2xl text-xs bg-slate-900 border-white/15 max-w-[120px] truncate"
+                        >
+                          <option value="">Tag Task</option>
+                          {tasks.map((t) => (
+                            <option key={t.id} value={t.taskTitle}>
+                              {t.taskTitle}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleSendMessage}
+                        className="w-10 h-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow-md active:scale-95 transition shrink-0"
                       >
-                        <option value="">🎯 Tag Task</option>
-                        {tasks.map((t) => (
-                          <option key={t.id} value={t.taskTitle}>
-                            {t.taskTitle}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleSendMessage}
-                      className="w-10 h-10 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 flex items-center justify-center font-extrabold shadow-md hover:scale-105 active:scale-95 transition shrink-0"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                  </div>
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {activeTab === 'DELIVERABLES' && (
               <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-extrabold text-white text-sm sm:text-base">
-                    Group Deliverables &amp; Section Splits
-                  </h4>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <h4 className="font-extrabold text-white text-sm sm:text-base">
+                      Group Deliverables &amp; Section Splits
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      Split milestones, assign tasks to members &amp; track progress.
+                    </p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowAddTaskModal(true)}
@@ -1625,13 +2217,57 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </button>
                 </div>
 
-                {tasks.length === 0 ? (
+                {/* Filter and Search Bar (New Feature) */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setTaskFilter('ALL')}
+                      className={`px-2.5 py-1 rounded-lg transition ${
+                        taskFilter === 'ALL' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      }`}
+                    >
+                      All ({tasks.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaskFilter('PENDING')}
+                      className={`px-2.5 py-1 rounded-lg transition ${
+                        taskFilter === 'PENDING' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      }`}
+                    >
+                      Pending ({tasks.length - doneTasks})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaskFilter('DONE')}
+                      className={`px-2.5 py-1 rounded-lg transition ${
+                        taskFilter === 'DONE' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      }`}
+                    >
+                      Done ({doneTasks})
+                    </button>
+                  </div>
+
+                  <div className="relative flex-1 min-w-[140px]">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={taskSearch}
+                      onChange={(e) => setTaskSearch(e.target.value)}
+                      placeholder="Search deliverables..."
+                      className="aura-input w-full pl-8 pr-3 py-1.5 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+
+                {filteredTasks.length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-xs">
-                    No deliverables defined yet. Split milestones across teammates!
+                    No deliverables found matching your filter.
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {tasks.map((task) => (
+                    {filteredTasks.map((task) => (
                       <div
                         key={task.id}
                         className="p-3 rounded-2xl aura-subtle-surface flex items-center justify-between gap-3"
@@ -1784,6 +2420,140 @@ export const GroupProjectsView: React.FC<Props> = ({
                 </div>
               </div>
             )}
+
+            {/* Sub-Tab 4: Shared Team Resource Vault (Feature 2) */}
+            {activeTab === 'RESOURCES' && (
+              <div className="aura-glass rounded-2xl p-4 sm:p-5 space-y-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <h4 className="font-bold text-white text-sm sm:text-base">
+                        Shared Team Vault &amp; Resources
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Lecture slides, past papers, shared Google Docs &amp; research links for {activeProject.teamName}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowDocModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add Resource
+                  </button>
+                </div>
+
+                {/* Category Filters */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                  {['ALL', 'SLIDES', 'DOCUMENT', 'RESEARCH_LINK', 'PAST_PAPER'].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setResourceFilter(cat)}
+                      className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 ${
+                        resourceFilter === cat
+                          ? 'bg-slate-700 text-white border border-slate-600'
+                          : 'aura-subtle-surface text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {cat === 'ALL' ? 'All Resources' : cat.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Resource List */}
+                {(() => {
+                  const allRes = activeProject.resources || [];
+                  const filtered = allRes.filter(
+                    (r) => resourceFilter === 'ALL' || r.category === resourceFilter
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="p-8 rounded-2xl bg-white/5 border border-white/5 text-center space-y-2">
+                        <FileText className="w-8 h-8 text-slate-500 mx-auto" />
+                        <div className="text-xs font-bold text-slate-300">No resources found in this category</div>
+                        <p className="text-[11px] text-slate-500">
+                          Upload or link slides, PDFs, GitHub repositories, or Google Drive notes for your teammates.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowDocModal(true)}
+                          className="mt-2 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold inline-flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Add First Resource
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {filtered.map((r) => {
+                        const isAddedByMe = r.addedByEmail?.toLowerCase() === currentEmail;
+                        const canDelete = isAddedByMe || isCurrentUserAdmin;
+                        return (
+                          <div
+                            key={r.id}
+                            className="p-3.5 rounded-xl aura-subtle-surface border hover:border-slate-600 transition space-y-2.5 flex flex-col justify-between"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-slate-300 uppercase">
+                                  {r.category.replace('_', ' ')}
+                                </span>
+                                {canDelete && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteResource(r.id)}
+                                    title="Delete resource"
+                                    className="text-slate-500 hover:text-rose-400 transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              <h5 className="font-bold text-xs text-white line-clamp-1">{r.title}</h5>
+                              <p className="text-[10px] text-slate-400 line-clamp-1 break-all font-mono">
+                                {r.linkOrFileName}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] text-slate-400">
+                              <span>Added by {r.addedByEmail.split('@')[0]}</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(r.linkOrFileName);
+                                    onNotify('Copied resource link!');
+                                  }}
+                                  className="text-slate-400 hover:text-white transition flex items-center gap-1"
+                                >
+                                  <Copy className="w-3 h-3" /> Copy
+                                </button>
+                                <a
+                                  href={r.linkOrFileName.startsWith('http') ? r.linkOrFileName : `https://${r.linkOrFileName}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+                                >
+                                  <ExternalLink className="w-3 h-3" /> Open
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -1804,9 +2574,32 @@ export const GroupProjectsView: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="aura-pill-btn px-4 py-2 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-bold"
+              className="aura-pill-btn px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
             >
               Create Team Project
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Image Fullscreen Preview Modal */}
+      {previewImageUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh]">
+            <img
+              src={previewImageUrl}
+              alt="Enlarged preview"
+              className="rounded-2xl max-h-[85vh] object-contain shadow-2xl"
+            />
+            <button
+              type="button"
+              onClick={() => setPreviewImageUrl(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+            >
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1848,7 +2641,6 @@ export const GroupProjectsView: React.FC<Props> = ({
                   updatedAt: serverTimestamp()
                 });
 
-                // Also send invitations to any extra members
                 for (const memberEmail of newProj.memberEmails) {
                   if (memberEmail.toLowerCase() !== currentEmail) {
                     const invId = `inv_${newProj.id}_${memberEmail.replace(/[^a-z0-9]/g, '_')}`;
@@ -1923,7 +2715,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={handleJoinByCode}
-                className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-950 text-xs font-extrabold"
+                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
               >
                 Join Team
               </button>
@@ -2004,7 +2796,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   const input = document.getElementById('new_teammate_email_input') as HTMLInputElement | null;
                   if (input) handleAddMemberByEmail(input.value);
                 }}
-                className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-extrabold shadow-md hover:scale-105 active:scale-95 transition"
+                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md transition"
               >
                 Invite Teammate
               </button>
@@ -2035,7 +2827,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
             <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-xs text-slate-200 space-y-1.5">
               <div className="font-extrabold text-emerald-300 flex items-center gap-1.5">
-                <span>✅ Saved to Firestore Cloud</span>
+                <span>Saved to Firestore Cloud</span>
               </div>
               <p className="leading-relaxed">
                 <strong className="text-white">{inviteSuccessData.inviteeEmail}</strong> has been added to{' '}
@@ -2048,7 +2840,6 @@ export const GroupProjectsView: React.FC<Props> = ({
                 To guarantee they receive the invitation right now in their inbox or messages, choose an action:
               </p>
 
-              {/* Direct Mailto Button */}
               {(() => {
                 const origin =
                   typeof window !== 'undefined'
@@ -2068,7 +2859,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     href={mailtoHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 hover:scale-[1.02] active:scale-98 transition"
+                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition"
                   >
                     <Mail className="w-4 h-4" />
                     <span>Send Email to {inviteSuccessData.inviteeEmail} (Open Mail App)</span>
@@ -2201,7 +2992,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     onNotify(`Added deliverable '${newTask.taskTitle}'!`);
                   }
                 }}
-                className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-extrabold"
+                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
               >
                 Create Task
               </button>
@@ -2216,7 +3007,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-sky-400/40">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="text-xl">📊</span>
+                <BarChart3 className="w-5 h-5 text-sky-400" />
                 <h4 className="font-extrabold text-white text-base">Create Team Meeting Poll</h4>
               </div>
               <button
@@ -2282,7 +3073,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={handleSendPoll}
-                className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-950 text-xs font-extrabold"
+                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
               >
                 Post Poll to Chat
               </button>
@@ -2292,18 +3083,19 @@ export const GroupProjectsView: React.FC<Props> = ({
       )}
 
       {/* Modal: Share Resource / Slide Link */}
+      {/* Modal: Add Resource to Team Vault (Feature 2) */}
       {showDocModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-emerald-400/40">
+          <div className="w-full max-w-md rounded-2xl aura-glass p-5 space-y-4 border border-slate-700">
             <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="text-xl">📎</span>
-                <h4 className="font-extrabold text-white text-base">Share Document / Slide Link</h4>
+                <BookOpen className="w-4 h-4 text-emerald-400" />
+                <h4 className="font-bold text-white text-sm">Add to Team Resource Vault</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDocModal(false)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2311,24 +3103,48 @@ export const GroupProjectsView: React.FC<Props> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-300 uppercase">Document Title</label>
+                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                  Resource Title
+                </label>
                 <input
                   type="text"
-                  value={docTitleInput}
-                  onChange={(e) => setDocTitleInput(e.target.value)}
-                  placeholder="e.g. Sprint Architecture Slide Deck"
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  value={newResourceTitle}
+                  onChange={(e) => setNewResourceTitle(e.target.value)}
+                  placeholder="e.g. Lecture 4 Slides - Dynamic Programming"
+                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 uppercase">URL / Google Drive Link</label>
+                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                  Resource Category
+                </label>
+                <select
+                  value={newResourceCategory}
+                  onChange={(e) =>
+                    setNewResourceCategory(
+                      e.target.value as 'SLIDES' | 'DOCUMENT' | 'RESEARCH_LINK' | 'PAST_PAPER'
+                    )
+                  }
+                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs font-semibold bg-slate-900"
+                >
+                  <option value="SLIDES">Lecture Slides</option>
+                  <option value="DOCUMENT">Document / Notes / Summary</option>
+                  <option value="RESEARCH_LINK">Research Paper / GitHub Link</option>
+                  <option value="PAST_PAPER">Past Exam Paper / Question Bank</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                  Link (Google Drive, GitHub, PDF, Notion)
+                </label>
                 <input
                   type="text"
-                  value={docUrlInput}
-                  onChange={(e) => setDocUrlInput(e.target.value)}
-                  placeholder="https://docs.google.com/presentation/..."
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  value={newResourceUrl}
+                  onChange={(e) => setNewResourceUrl(e.target.value)}
+                  placeholder="https://drive.google.com/... or https://github.com/..."
+                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs font-mono"
                 />
               </div>
             </div>
@@ -2337,21 +3153,113 @@ export const GroupProjectsView: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowDocModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
               >
                 Cancel
               </button>
               <button
                 type="button"
-                onClick={handleSendDoc}
-                className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-extrabold"
+                onClick={handleAddResource}
+                disabled={!newResourceTitle.trim() || !newResourceUrl.trim()}
+                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-xs font-bold transition"
               >
-                Share to Team Chat
+                Save to Vault
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Interactive Voice Note Audio Player
+const VoiceNotePlayer: React.FC<{
+  audioUrl: string;
+  durationSec: number;
+  isMe: boolean;
+}> = ({ audioUrl, durationSec, isMe }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+    }
+  };
+
+  const progress = durationSec > 0 ? Math.min(100, (currentTime / durationSec) * 100) : 0;
+
+  return (
+    <div
+      className={`p-2.5 rounded-2xl flex items-center gap-3 mt-1 min-w-[200px] sm:min-w-[240px] ${
+        isMe ? 'bg-black/25 border border-white/20' : 'bg-black/30 border border-white/10'
+      }`}
+    >
+      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+
+      <button
+        type="button"
+        onClick={togglePlay}
+        className="w-8 h-8 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 transition shadow-md"
+      >
+        {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+      </button>
+
+      <div className="flex-1 space-y-1">
+        <div className="flex items-center gap-1 h-4">
+          {[4, 10, 16, 8, 14, 6, 12, 16, 8, 14, 10, 4].map((h, i) => (
+            <span
+              key={i}
+              className={`w-1 rounded-full transition-all duration-200 ${
+                isPlaying ? 'bg-emerald-300 aura-sound-bar' : 'bg-white/40'
+              }`}
+              style={{
+                height: `${h}px`,
+                animationDelay: `${(i % 4) * 0.15}s`
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono">
+          <span>
+            {Math.floor(currentTime / 60)}:
+            {Math.floor(currentTime % 60)
+              .toString()
+              .padStart(2, '0')}
+          </span>
+          <span>
+            {Math.floor(durationSec / 60)}:
+            {Math.floor(durationSec % 60)
+              .toString()
+              .padStart(2, '0')}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
@@ -2432,25 +3340,30 @@ const CreateTeamModal: React.FC<{
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Team Profile Avatar</label>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {EMOJI_OPTIONS.map((em) => (
-                <button
-                  key={em}
-                  type="button"
-                  onClick={() => setEmoji(em)}
-                  className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center border transition ${
-                    emoji === em ? 'bg-emerald-400/20 border-emerald-400 scale-110' : 'aura-subtle-surface'
-                  }`}
-                >
-                  {em}
-                </button>
-              ))}
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Team Monogram Badge
+            </label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border"
+                style={{
+                  backgroundColor: `${colorHex}15`,
+                  borderColor: `${colorHex}40`,
+                  color: colorHex
+                }}
+              >
+                {courseCode.slice(0, 3).toUpperCase() || 'GRP'}
+              </div>
+              <span className="text-xs text-slate-400">
+                Monogram auto-generated from Course Code
+              </span>
             </div>
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Accent Color</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Theme Accent Color
+            </label>
             <div className="flex items-center gap-2 mt-1.5">
               {COLOR_OPTIONS.map((hex) => (
                 <button
@@ -2458,7 +3371,7 @@ const CreateTeamModal: React.FC<{
                   type="button"
                   onClick={() => setColorHex(hex)}
                   className={`w-7 h-7 rounded-full border transition ${
-                    colorHex === hex ? 'scale-125 border-white' : 'border-white/20'
+                    colorHex === hex ? 'scale-125 border-white shadow-sm' : 'border-white/20'
                   }`}
                   style={{ backgroundColor: hex }}
                 />
@@ -2467,7 +3380,7 @@ const CreateTeamModal: React.FC<{
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
               Invite Members by Email (comma-separated)
             </label>
             <input
@@ -2475,18 +3388,20 @@ const CreateTeamModal: React.FC<{
               value={memberEmailsInput}
               onChange={(e) => setMemberEmailsInput(e.target.value)}
               placeholder="cbawa83@gmail.com, alex@university.edu"
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Days Until Submission</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Days Until Submission
+            </label>
             <input
               type="number"
               min="1"
               value={daysDue}
               onChange={(e) => setDaysDue(e.target.value)}
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
         </div>
@@ -2495,7 +3410,7 @@ const CreateTeamModal: React.FC<{
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+            className="px-3.5 py-2 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
           >
             Cancel
           </button>
@@ -2515,18 +3430,19 @@ const CreateTeamModal: React.FC<{
                 projectTitle: title.trim(),
                 objective: target.trim(),
                 groupTarget: target.trim(),
-                avatarEmoji: emoji,
+                avatarEmoji: courseCode.slice(0, 3).toUpperCase() || 'GRP',
                 avatarColorHex: colorHex,
                 creatorEmail,
                 adminEmails: [creatorEmail],
                 memberEmails: allMembers,
                 joinCode: generateJoinCode(),
                 dueEpochMillis: Date.now() + (parseInt(daysDue) || 14) * 86_400_000,
-                tasks: []
+                tasks: [],
+                resources: []
               };
               onCreate(newProj);
             }}
-            className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 text-xs font-extrabold"
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-sm"
           >
             Create Team Workspace
           </button>
@@ -2545,18 +3461,17 @@ const GroupSettingsModal: React.FC<{
   const [teamName, setTeamName] = useState(project.teamName);
   const [title, setTitle] = useState(project.projectTitle);
   const [target, setTarget] = useState(project.groupTarget);
-  const [emoji, setEmoji] = useState(project.avatarEmoji);
   const [colorHex, setColorHex] = useState(project.avatarColorHex);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-amber-400/30">
+      <div className="w-full max-w-md rounded-2xl aura-glass p-5 space-y-4 border border-slate-700">
         <div className="flex items-center justify-between pb-2 border-b border-white/10">
-          <h4 className="font-extrabold text-white text-base">Group Admin Controls</h4>
+          <h4 className="font-bold text-white text-base">Group Admin Settings</h4>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+            className="w-7 h-7 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
           >
             <X className="w-4 h-4" />
           </button>
@@ -2564,51 +3479,42 @@ const GroupSettingsModal: React.FC<{
 
         <div className="space-y-3 text-xs">
           <div>
-            <label className="font-bold text-slate-300 uppercase">Team Name</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Team Name
+            </label>
             <input
               type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-bold text-slate-300 uppercase">Project Title</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Project Title
+            </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-bold text-slate-300 uppercase">Group Target</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Target Goal
+            </label>
             <input
               type="text"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-bold text-slate-300 uppercase">Avatar Icon</label>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {EMOJI_OPTIONS.map((em) => (
-                <button
-                  key={em}
-                  type="button"
-                  onClick={() => setEmoji(em)}
-                  className={`w-8 h-8 rounded-xl text-base flex items-center justify-center border transition ${
-                    emoji === em ? 'bg-amber-400/20 border-amber-400 scale-110' : 'aura-subtle-surface'
-                  }`}
-                >
-                  {em}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="font-bold text-slate-300 uppercase">Accent Color</label>
+            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+              Theme Accent Color
+            </label>
             <div className="flex items-center gap-2 mt-1.5">
               {COLOR_OPTIONS.map((hex) => (
                 <button
@@ -2616,7 +3522,7 @@ const GroupSettingsModal: React.FC<{
                   type="button"
                   onClick={() => setColorHex(hex)}
                   className={`w-7 h-7 rounded-full border transition ${
-                    colorHex === hex ? 'scale-125 border-white' : 'border-white/20'
+                    colorHex === hex ? 'scale-125 border-white shadow-sm' : 'border-white/20'
                   }`}
                   style={{ backgroundColor: hex }}
                 />
@@ -2629,7 +3535,7 @@ const GroupSettingsModal: React.FC<{
           <button
             type="button"
             onClick={onClose}
-            className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+            className="px-3.5 py-2 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
           >
             Cancel
           </button>
@@ -2641,11 +3547,10 @@ const GroupSettingsModal: React.FC<{
                 teamName: teamName.trim() || project.teamName,
                 projectTitle: title.trim() || project.projectTitle,
                 groupTarget: target.trim() || project.groupTarget,
-                avatarEmoji: emoji,
                 avatarColorHex: colorHex
               });
             }}
-            className="aura-pill-btn px-4 py-1.5 bg-gradient-to-r from-amber-400 to-emerald-400 text-slate-950 text-xs font-extrabold"
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-sm"
           >
             Save Changes
           </button>

@@ -11,11 +11,8 @@ body {
   min-height: 100dvh;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  background:
-    radial-gradient(ellipse 90% 60% at 20% -10%, rgba(52, 211, 153, 0.18), transparent 60%),
-    radial-gradient(ellipse 80% 55% at 85% 10%, rgba(56, 189, 248, 0.20), transparent 60%),
-    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(167, 139, 250, 0.16), transparent 65%),
-    #050814;
+  background-color: #090d16;
+  background-image: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.45) 0%, transparent 75%);
   background-attachment: fixed;
   color: #f1f5f9;
 }
@@ -26,51 +23,40 @@ html.light {
 
 html.light body {
   color: #0f172a;
-  background:
-    radial-gradient(ellipse 90% 60% at 20% -10%, rgba(16, 185, 129, 0.14), transparent 60%),
-    radial-gradient(ellipse 80% 55% at 85% 10%, rgba(14, 165, 233, 0.16), transparent 60%),
-    radial-gradient(ellipse 70% 60% at 50% 100%, rgba(139, 92, 246, 0.10), transparent 65%),
-    #f4f7fb;
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle at 50% 0%, rgba(226, 232, 240, 0.6) 0%, transparent 75%);
   background-attachment: fixed;
 }
 
-/* Luxury Editorial Glassmorphism */
+/* Crisp Minimalist Glassmorphism (No rainbow AI slop) */
 .aura-glass {
-  background: linear-gradient(155deg, rgba(14, 23, 42, 0.82) 0%, rgba(7, 13, 26, 0.90) 100%);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 24px 48px -18px rgba(0, 0, 0, 0.65),
-    0 1px 2px 0 rgba(255, 255, 255, 0.08) inset;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 html.light .aura-glass {
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.88) 100%);
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  box-shadow:
-    0 20px 40px -18px rgba(15, 23, 42, 0.10),
-    0 1px 2px 0 rgba(255, 255, 255, 0.9) inset;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.06);
 }
 
-/* Gradient Glowing Hero Card */
+/* Editorial Surface Card */
 .aura-hero-card {
   position: relative;
-  background: linear-gradient(145deg, rgba(16, 28, 52, 0.85) 0%, rgba(6, 12, 24, 0.92) 100%);
-  backdrop-filter: blur(28px) saturate(170%);
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  box-shadow:
-    0 24px 50px -15px rgba(56, 189, 248, 0.15),
-    0 0 0 1px rgba(52, 211, 153, 0.15) inset;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 36px -12px rgba(0, 0, 0, 0.6);
 }
 
 html.light .aura-hero-card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(241, 245, 249, 0.92) 100%);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  box-shadow:
-    0 20px 45px -15px rgba(14, 165, 233, 0.12),
-    0 0 0 1px rgba(16, 185, 129, 0.15) inset;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
 }
 
 /* Custom Stage Inputs with Crisp Focus States */
@@ -179,9 +165,13 @@ html.light .aura-subtle-surface {
 }
 
 .aura-shimmer-btn {
-  background: linear-gradient(90deg, #34d399 0%, #38bdf8 30%, #a78bfa 60%, #34d399 100%);
-  background-size: 250% 100%;
-  animation: shimmerPass 4s linear infinite;
+  background: #10b981;
+  color: #020617;
+  font-weight: 700;
+  transition: background 0.15s ease;
+}
+.aura-shimmer-btn:hover {
+  background: #34d399;
 }
 
 /* Utility to hide scrollbars */

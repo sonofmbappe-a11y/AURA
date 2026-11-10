@@ -14,6 +14,7 @@ import {
   Smartphone,
   Sparkles,
   Sun,
+  Target,
   Trash2,
   UserCircle
 } from 'lucide-react';
@@ -69,10 +70,46 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   const [targetHonorsGpa, setTargetHonorsGpa] = useState<number>(3.80);
   const [remainingCredits, setRemainingCredits] = useState<number>(45);
 
+  // Feature 1: Course Final Exam Grade & Target Cutoff Simulator
+  const [courseworkScore, setCourseworkScore] = useState<number>(76);
+  const [courseworkWeight, setCourseworkWeight] = useState<number>(40);
+  const [targetFinalGrade, setTargetFinalGrade] = useState<number>(85); // 85% for Grade A
+
   // Attendance Safety Shield
   const [totalClasses, setTotalClasses] = useState<number>(36);
   const [attendedClasses, setAttendedClasses] = useState<number>(33);
   const [policyThreshold, setPolicyThreshold] = useState<number>(vault.profile.attendanceTargetPercent || 75);
+
+  const examForecaster = useMemo(() => {
+    const examWeight = Math.max(1, 100 - courseworkWeight);
+    const currentPoints = (courseworkScore * courseworkWeight) / 100;
+    const pointsNeeded = targetFinalGrade - currentPoints;
+    const requiredExamScore = (pointsNeeded / examWeight) * 100;
+
+    let status = 'Achievable with Focus';
+    let isPossible = true;
+    if (requiredExamScore <= 0) {
+      status = 'Grade Already Secured!';
+    } else if (requiredExamScore <= 60) {
+      status = 'Comfortably Achievable';
+    } else if (requiredExamScore <= 85) {
+      status = 'Target Achievable with Steady Prep';
+    } else if (requiredExamScore <= 100) {
+      status = 'High Effort Sprint Required';
+    } else {
+      status = 'Mathematically Out of Reach';
+      isPossible = false;
+    }
+
+    return {
+      examWeight,
+      currentPoints: currentPoints.toFixed(1),
+      pointsNeeded: Math.max(0, pointsNeeded).toFixed(1),
+      requiredExamScore: requiredExamScore.toFixed(1),
+      isPossible,
+      status
+    };
+  }, [courseworkScore, courseworkWeight, targetFinalGrade]);
 
   const bedtimes = useMemo(() => {
     const [h, m] = wakeTime.split(':').map(Number);
@@ -580,6 +617,100 @@ export const ToolsAndProfileView: React.FC<Props> = ({
         </div>
       </div>
 
+      {/* Feature 1: Course Final Exam Grade & Target Forecaster */}
+      <div className="aura-glass rounded-2xl p-5 space-y-4 border border-slate-800">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+            <Target className="w-4 h-4 text-emerald-400" /> FINAL EXAM GRADE TARGET FORECASTER
+          </span>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+            Target: {targetFinalGrade}%
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-400">
+          Calculate the exact exam score required to secure your target course grade based on your current coursework score.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
+              <span>Coursework Score</span>
+              <span className="text-emerald-400 font-mono font-bold">{courseworkScore}%</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={courseworkScore}
+              onChange={(e) => setCourseworkScore(Number(e.target.value))}
+              className="w-full mt-2 accent-emerald-400"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
+              <span>Coursework Weight</span>
+              <span className="text-sky-400 font-mono font-bold">{courseworkWeight}%</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="90"
+              step="5"
+              value={courseworkWeight}
+              onChange={(e) => setCourseworkWeight(Number(e.target.value))}
+              className="w-full mt-2 accent-sky-400"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
+              <span>Target Final Mark</span>
+              <span className="text-amber-400 font-mono font-bold">{targetFinalGrade}%</span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {[75, 80, 85, 90].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTargetFinalGrade(t)}
+                  className={`flex-1 py-1 rounded-lg text-xs font-bold transition border ${
+                    targetFinalGrade === t
+                      ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                      : 'aura-subtle-surface text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {t}%
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] text-slate-400">
+              Exam Weight: {examForecaster.examWeight}% • Current Points: {examForecaster.currentPoints} pts
+            </div>
+            <div className="text-xl font-mono font-extrabold text-white mt-0.5">
+              {examForecaster.isPossible ? `${examForecaster.requiredExamScore}% on Final` : 'Out of Reach'}
+            </div>
+          </div>
+          <div className="text-right">
+            <span
+              className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                examForecaster.isPossible
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
+                  : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+              }`}
+            >
+              {examForecaster.status}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Feature: Attendance Risk Shield */}
       <div className="aura-glass rounded-3xl p-5 space-y-4 border border-sky-400/30">
         <div className="flex items-center justify-between">
@@ -640,17 +771,17 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             <div className="text-[11px] text-slate-400">Absence Safety Buffer</div>
             <div className="text-sm font-extrabold text-white">
               {attendanceShield.isAtRisk
-                ? `⚠️ Debarment Risk: Attend next ${attendanceShield.neededClassesToRecover} classes!`
-                : `🛡️ Safe: Can miss up to ${attendanceShield.safeCutsLeft} more lectures`}
+                ? `Debarment Warning: Attend next ${attendanceShield.neededClassesToRecover} classes`
+                : `Safe Margin: Up to ${attendanceShield.safeCutsLeft} classes available`}
             </div>
           </div>
         </div>
       </div>
 
-      {/* AURA Semester Wrapped Summary */}
-      <div className="rounded-3xl p-5 bg-gradient-to-br from-emerald-500/20 via-sky-500/20 to-violet-500/25 border border-white/15 space-y-3">
-        <div className="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4" /> AURA SEMESTER WRAPPED SNAPSHOT
+      {/* AURA Semester Academic Summary */}
+      <div className="rounded-3xl p-5 bg-slate-900/80 border border-slate-800 space-y-3">
+        <div className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+          <Sparkles className="w-4 h-4" /> Academic Progress Metrics
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
           <div className="p-3 rounded-2xl bg-black/25">

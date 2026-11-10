@@ -146,20 +146,18 @@ export const App: React.FC = () => {
       )}
 
       {/* Sticky Top App Bar */}
-      <header className="sticky top-2 z-30 aura-glass rounded-3xl px-4 py-3 mb-4 flex items-center justify-between gap-2.5">
+      <header className="sticky top-2 z-30 aura-glass rounded-2xl px-4 py-3 mb-4 flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 via-sky-400 to-violet-500 p-[1.5px] shrink-0 shadow-lg shadow-emerald-500/20">
-            <div className="w-full h-full rounded-[14px] bg-slate-950/85 flex items-center justify-center font-extrabold text-emerald-300 text-sm">
-              A
-            </div>
+          <div className="w-10 h-10 rounded-xl bg-slate-900 border border-emerald-500/30 flex items-center justify-center font-extrabold text-emerald-400 text-sm shrink-0 shadow-sm">
+            A
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-sm sm:text-base tracking-tight truncate">
+              <span className="font-extrabold text-sm sm:text-base tracking-tight truncate text-white">
                 AURA
               </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider">
-                Universal Study Suite
+              <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                Academic Suite
               </span>
             </div>
             <div className="text-[11px] text-slate-400 truncate">
@@ -178,34 +176,34 @@ export const App: React.FC = () => {
               }))
             }
             aria-label="Toggle theme"
-            className="w-9 h-9 rounded-xl aura-subtle-surface flex items-center justify-center hover:border-sky-400/50 transition"
+            className="w-9 h-9 rounded-xl aura-subtle-surface flex items-center justify-center hover:border-slate-600 transition"
           >
             {vault.profile.isDarkTheme ? (
-              <Sun className="w-4 h-4 text-amber-300" />
+              <Sun className="w-4 h-4 text-slate-300" />
             ) : (
-              <Moon className="w-4 h-4 text-sky-600" />
+              <Moon className="w-4 h-4 text-slate-700" />
             )}
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('LIVE_STAGE')}
-            className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
               user
-                ? 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/30'
-                : 'bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                ? 'bg-slate-800 border border-slate-700 text-slate-200 hover:border-slate-600'
+                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'
             }`}
           >
             {user ? (
               <>
-                <span className="w-5 h-5 rounded-full bg-emerald-400 text-slate-950 text-[10px] font-extrabold flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full bg-slate-700 text-slate-200 text-[10px] font-bold flex items-center justify-center border border-slate-600">
                   {userInitial}
                 </span>
-                <span className="hidden xs:inline">Live Cloud</span>
+                <span className="hidden xs:inline">Cloud Active</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </>
             ) : (
-              <span>Join / Sign In</span>
+              <span>Sign In</span>
             )}
           </button>
         </div>
@@ -258,7 +256,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Bottom Liquid-Glass Navigation Bar */}
-      <nav className="fixed bottom-3 left-3 right-3 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1.5 grid grid-cols-7 gap-1 shadow-2xl">
+      <nav className="fixed bottom-3 left-2.5 right-2.5 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1 sm:p-1.5 flex items-center justify-between sm:justify-center sm:gap-2 shadow-2xl overflow-x-auto no-scrollbar">
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (
@@ -266,14 +264,14 @@ export const App: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`py-2 px-0.5 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
+              className={`flex-1 sm:flex-initial py-2 px-1 sm:px-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shrink-0 min-w-[44px] sm:min-w-[68px] ${
                 active
-                  ? 'bg-gradient-to-br from-emerald-400 to-sky-400 text-slate-950 font-extrabold shadow-md shadow-emerald-500/25'
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
               {item.icon}
-              <span className="text-[9px] sm:text-[10px] leading-none tracking-tight truncate max-w-full">
+              <span className="text-[9px] sm:text-[11px] leading-tight tracking-tight truncate max-w-full">
                 {item.label}
               </span>
             </button>
