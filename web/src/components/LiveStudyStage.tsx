@@ -2315,144 +2315,6 @@ export const LiveStudyStage: React.FC<Props> = ({
                       </div>
                     )}
                   </div>
-
-                  {/* Pinned Bottom Meeting Controls Dock (Always visible, perfectly spaced, zero overlapping!) */}
-                  <div className="p-2 sm:p-3 mt-2 rounded-2xl aura-dock flex items-center justify-between gap-2 flex-wrap shadow-2xl shrink-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* Mic Toggle */}
-                      <button
-                        type="button"
-                        onClick={toggleMyMic}
-                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                          isMyMicMuted ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        }`}
-                      >
-                        {isMyMicMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-emerald-400" />}
-                        <span>{isMyMicMuted ? 'Unmute' : 'Mute'}</span>
-                      </button>
-
-                      {/* Camera Toggle */}
-                      <button
-                        type="button"
-                        onClick={toggleMyCamera}
-                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                          isMyCameraOn ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'aura-subtle-surface text-slate-300'
-                        }`}
-                      >
-                        {isMyCameraOn ? <Video className="w-4 h-4 text-emerald-400" /> : <VideoOff className="w-4 h-4 text-slate-400" />}
-                        <span>{isMyCameraOn ? 'Cam On' : 'Cam Off'}</span>
-                      </button>
-
-                      {/* Cast Screen */}
-                      <button
-                        type="button"
-                        onClick={isCastingScreen ? stopScreenCast : startScreenCast}
-                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                          isCastingScreen ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30' : 'aura-subtle-surface text-slate-200'
-                        }`}
-                      >
-                        <Cast className="w-4 h-4 text-emerald-400" />
-                        <span>{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
-                      </button>
-
-                      {/* Raise Hand */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newHand = !myP?.handRaised;
-                          upsertMyPresence(
-                            liveRoom,
-                            (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                            newHand,
-                            newHand ? '✋' : myP?.reactionEmoji || '🎯'
-                          );
-                          onNotify(newHand ? '✋ Raised hand on stage' : 'Hand lowered');
-                        }}
-                        className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                          myP?.handRaised ? 'bg-amber-400 text-slate-950 font-black' : 'aura-subtle-surface text-slate-200'
-                        }`}
-                      >
-                        <Hand className="w-4 h-4 text-amber-400" />
-                        <span>{myP?.handRaised ? 'Hand Raised' : 'Hand'}</span>
-                      </button>
-
-                      {/* Whiteboard */}
-                      <button
-                        type="button"
-                        onClick={() => setShowWhiteboardModal(true)}
-                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-sky-300 text-xs font-bold flex items-center gap-1 hover:text-white"
-                        title="Live Study Whiteboard"
-                      >
-                        <PenTool className="w-4 h-4 text-sky-400" />
-                        <span className="hidden sm:inline">Whiteboard</span>
-                      </button>
-
-                      {/* Green Room Diagnostics */}
-                      <button
-                        type="button"
-                        onClick={() => setShowDiagnosticsModal(true)}
-                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-emerald-300 text-xs font-bold flex items-center gap-1 hover:text-white"
-                        title="Device & Network Diagnostics"
-                      >
-                        <Sliders className="w-4 h-4 text-emerald-400" />
-                        <span className="hidden sm:inline">Green Room</span>
-                      </button>
-
-                      {/* FEATURE 2: Interactive Polls Launcher */}
-                      <button
-                        type="button"
-                        onClick={() => setShowPollModal(true)}
-                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-violet-300 text-xs font-bold flex items-center gap-1 hover:text-white"
-                        title="Interactive Pop-Quiz Polls"
-                      >
-                        <BarChart3 className="w-4 h-4 text-violet-400" />
-                        <span className="hidden sm:inline">Polls</span>
-                      </button>
-                    </div>
-
-                    {/* Quick Reactions */}
-                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                      {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
-                        <button
-                          key={emo}
-                          type="button"
-                          onClick={() => {
-                            upsertMyPresence(
-                              liveRoom,
-                              (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                              Boolean(myP?.handRaised),
-                              emo
-                            );
-                            triggerFloatingReaction(emo);
-                          }}
-                          className="px-2 py-1 rounded-lg hover:bg-white/10 text-base"
-                        >
-                          {emo}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Red End Meeting / Leave & Minimize Button */}
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
-                        className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition"
-                      >
-                        <PhoneOff className="w-4 h-4" />
-                        <span>{canControl ? 'End Meeting' : 'Leave'}</span>
-                      </button>
-                      {isMeetingExpanded && (
-                        <button
-                          type="button"
-                          onClick={() => setIsMeetingExpanded(false)}
-                          className="px-3 py-2 rounded-xl aura-subtle-surface text-slate-300 text-xs font-bold"
-                        >
-                          Minimize
-                        </button>
-                      )}
-                    </div>
-                  </div>
                 </div>
                 {/* ACTIVE LIVE SCREEN BROADCAST PREVIEW TILE */}
                 {isCastingScreen && (
@@ -2949,27 +2811,52 @@ export const LiveStudyStage: React.FC<Props> = ({
                       (chatFilter === 'ALL'
                         ? messages
                         : messages.filter((m) => m.messageType === chatFilter)
-                      ).slice(-35).map((m) => (
-                        <div key={m.id} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-extrabold text-sky-300">
-                              {m.authorName}
-                            </span>
-                            {m.messageType !== 'CHAT' && (
-                              <span
-                                className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${
-                                  m.messageType === 'QUESTION'
-                                    ? 'bg-amber-400/20 text-amber-300'
-                                    : 'bg-emerald-400/20 text-emerald-300'
-                                }`}
-                              >
-                                {m.messageType}
+                      ).slice(-35).map((m) => {
+                        const isMsgAuthor = m.authorId === user.uid;
+                        const canDeleteMsg = isMsgAuthor || canControl;
+                        return (
+                          <div key={m.id} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs group relative">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-extrabold text-sky-300">
+                                {m.authorName} {isMsgAuthor && '(You)'}
                               </span>
-                            )}
+                              <div className="flex items-center gap-1.5">
+                                {m.messageType !== 'CHAT' && (
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${
+                                      m.messageType === 'QUESTION'
+                                        ? 'bg-amber-400/20 text-amber-300'
+                                        : 'bg-emerald-400/20 text-emerald-300'
+                                    }`}
+                                  >
+                                    {m.messageType}
+                                  </span>
+                                )}
+                                {canDeleteMsg && (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (window.confirm(isMsgAuthor ? 'Unsend this message for everyone?' : 'Delete message as Host/Admin?')) {
+                                        try {
+                                          await deleteDoc(doc(db, 'study_rooms', liveRoom.id, 'messages', m.id));
+                                          onNotify(isMsgAuthor ? 'Message unsent.' : 'Message deleted.');
+                                        } catch (e: unknown) {
+                                          onNotify((e as Error)?.message || 'Failed to delete message.');
+                                        }
+                                      }
+                                    }}
+                                    className="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition"
+                                    title={isMsgAuthor ? 'Unsend message' : 'Delete message as Host'}
+                                  >
+                                    <Trash2 className="w-3 h-3 text-rose-300" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-1 leading-relaxed">{m.text}</div>
                           </div>
-                          <div className="mt-1 leading-relaxed">{m.text}</div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
 

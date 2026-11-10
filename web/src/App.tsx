@@ -124,7 +124,7 @@ export const App: React.FC = () => {
     .toUpperCase();
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-4xl mx-auto px-3 sm:px-6 pb-28 pt-3">
+    <div className="min-h-dvh flex flex-col max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pb-32 lg:pb-36 pt-3">
       {/* Floating Z-[100] Toast Notification (Always visible even over Modals) */}
       {toast && (
         <div className="fixed top-3 left-3 right-3 max-w-lg mx-auto z-[100] pointer-events-auto">
@@ -210,7 +210,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         {activeTab === 'TIMETABLE' && (
           <TimetableView vault={vault} onUpdateVault={updateVault} />
         )}
@@ -256,7 +256,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Bottom Liquid-Glass Navigation Bar */}
-      <nav className="fixed bottom-3 left-2.5 right-2.5 max-w-4xl mx-auto z-40 aura-glass rounded-2xl p-1 sm:p-1.5 flex items-center justify-between sm:justify-center sm:gap-2 shadow-2xl overflow-x-auto no-scrollbar">
+      <nav className="fixed bottom-3 left-2.5 right-2.5 max-w-3xl mx-auto z-40 aura-glass rounded-2xl p-1 sm:p-1.5 flex items-center justify-around sm:justify-center sm:gap-2 shadow-2xl overflow-x-auto no-scrollbar backdrop-blur-2xl">
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (
@@ -264,14 +264,14 @@ export const App: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`flex-1 sm:flex-initial py-2 px-1 sm:px-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shrink-0 min-w-[44px] sm:min-w-[68px] ${
+              className={`flex-1 sm:flex-initial py-2 px-1 sm:px-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all shrink-0 min-w-[48px] sm:min-w-[76px] ${
                 active
                   ? 'bg-emerald-500 text-slate-950 font-bold shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
               {item.icon}
-              <span className="text-[9px] sm:text-[11px] leading-tight tracking-tight truncate max-w-full">
+              <span className="text-[10px] sm:text-[11px] leading-tight tracking-tight truncate max-w-full font-semibold">
                 {item.label}
               </span>
             </button>
