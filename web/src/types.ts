@@ -119,6 +119,7 @@ export interface WebGroupChatMessage {
   projectId: string;
   senderEmail: string;
   senderName: string;
+  senderUid?: string;
   messageText: string;
   timestamp: number;
   isPinned: boolean;

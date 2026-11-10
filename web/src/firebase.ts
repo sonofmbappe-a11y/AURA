@@ -65,7 +65,7 @@ export async function signInWithGoogleBrowser(): Promise<User | null> {
     if (code === 'auth/unauthorized-domain') {
       const currentHost = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
       throw new Error(
-        `Domain unauthorized: add "${currentHost}" in Firebase Console > Authentication > Settings > Authorized domains`
+        `Domain (${currentHost}) is not authorized yet. Please sign in with Email & Password or add this domain to Authorized Domains.`
       );
     }
     throw err;
