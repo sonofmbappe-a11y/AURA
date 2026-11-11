@@ -27,6 +27,7 @@ import { LiveStudyStage } from './components/LiveStudyStage';
 import { ToolsAndProfileView } from './components/ToolsAndProfileView';
 import { GroupProjectsView } from './components/GroupProjectsView';
 import { CitationGeneratorView } from './components/CitationGeneratorView';
+import { WebAuthModal } from './components/WebAuthModal';
 
 type MainTab = 'TIMETABLE' | 'FOCUS' | 'STUDY' | 'GROUPS' | 'CITATIONS' | 'LIVE_STAGE' | 'TOOLS';
 
@@ -50,6 +51,7 @@ export const App: React.FC = () => {
   const [vault, setVault] = useState<AuraLocalVault>(() => loadLocalVault());
   const [user, setUser] = useState<User | null>(null);
   const [toast, setToast] = useState<string>('');
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   const notify = useCallback((msg: string) => {
     setToast(msg);
@@ -187,11 +189,17 @@ export const App: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setActiveTab('LIVE_STAGE')}
+            onClick={() => {
+              if (user) {
+                setActiveTab('TOOLS');
+              } else {
+                setShowAuthModal(true);
+              }
+            }}
             className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition ${
               user
                 ? 'bg-slate-800 border border-slate-700 text-slate-200 hover:border-slate-600'
-                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold'
+                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold shadow-lg shadow-emerald-500/20'
             }`}
           >
             {user ? (
@@ -208,6 +216,13 @@ export const App: React.FC = () => {
           </button>
         </div>
       </header>
+
+      {/* Auth Modal for 1-Tap Google / Email & Password */}
+      <WebAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onNotify={notify}
+      />
 
       {/* Main Content */}
       <main className="flex-1 w-full">
