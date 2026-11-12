@@ -28,8 +28,7 @@ const firebaseConfig = {
 };
 
 export const FIRESTORE_DATABASE_ID =
-  import.meta.env.VITE_FIRESTORE_DATABASE_ID ||
-  'ai-studio-android-aura-63829403-a9de-4f28-9da2-e7be3968b280';
+  import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)';
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
