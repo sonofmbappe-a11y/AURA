@@ -60,7 +60,7 @@ import {
   Volume2,
   X
 } from 'lucide-react';
-import { db } from '../firebase';
+import { db, defaultDb } from '../firebase';
 import { uidGen } from '../storage';
 import type {
   AuraLocalVault,
@@ -109,6 +109,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
   // Track deleted or left project IDs in memory to avoid stale snapshot revival
   const deletedProjectIdsRef = useRef<Set<string>>(new Set());
+  const targetDbs = useMemo(() => (defaultDb !== db ? [db, defaultDb] : [db]), []);
 
   // Pending Invitations received by the current user
   const [pendingInvitations, setPendingInvitations] = useState<WebGroupInvitation[]>([]);
@@ -237,104 +238,168 @@ export const GroupProjectsView: React.FC<Props> = ({
       return;
     }
 
-    try {
-      const q = query(
-        collection(db, 'group_invitations'),
-        where('inviteeEmail', '==', currentEmail)
-      );
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          const list: WebGroupInvitation[] = [];
-          snap.forEach((d) => {
-            const data = d.data();
-            if (data.status === 'PENDING') {
-              list.push({
-                id: d.id,
-                projectId: data.projectId || '',
-                teamName: data.teamName || 'Group Team',
-                projectTitle: data.projectTitle || 'Assignment',
-                courseCode: data.courseCode || 'GENERAL',
-                groupTarget: data.groupTarget || 'Grade A',
-                avatarEmoji: data.avatarEmoji || '👥',
-                avatarColorHex: data.avatarColorHex || '#10B981',
-                senderUid: data.senderUid || '',
-                senderEmail: data.senderEmail || '',
-                senderName: data.senderName || 'Teammate',
-                inviteeEmail: data.inviteeEmail || currentEmail,
-                status: 'PENDING',
-                joinCode: data.joinCode || '',
-                createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()
-              });
-            }
-          });
-          setPendingInvitations(list);
-        },
-        () => {
-          // Offline fallback
-        }
-      );
-      return () => unsub();
-    } catch {
-      // Offline fallback
-    }
-  }, [user, currentEmail]);
+    const invByDb = new Map<number, WebGroupInvitation[]>();
+    const unsubs: (() => void)[] = [];
 
-  // 2. REAL-TIME FIRESTORE LISTENER FOR GROUP PROJECTS WHERE USER IS A MEMBER
+    targetDbs.forEach((targetDb, dbIdx) => {
+      try {
+        const q = query(
+          collection(targetDb, 'group_invitations'),
+          where('inviteeEmail', '==', currentEmail)
+        );
+        const unsub = onSnapshot(
+          q,
+          (snap) => {
+            const list: WebGroupInvitation[] = [];
+            snap.forEach((d) => {
+              const data = d.data();
+              if (data.status === 'PENDING') {
+                list.push({
+                  id: d.id,
+                  projectId: data.projectId || '',
+                  teamName: data.teamName || 'Group Team',
+                  projectTitle: data.projectTitle || 'Assignment',
+                  courseCode: data.courseCode || 'GENERAL',
+                  groupTarget: data.groupTarget || 'Grade A',
+                  avatarEmoji: data.avatarEmoji || '👥',
+                  avatarColorHex: data.avatarColorHex || '#10B981',
+                  senderUid: data.senderUid || '',
+                  senderEmail: data.senderEmail || '',
+                  senderName: data.senderName || 'Teammate',
+                  inviteeEmail: data.inviteeEmail || currentEmail,
+                  status: 'PENDING',
+                  joinCode: data.joinCode || '',
+                  createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now()
+                });
+              }
+            });
+            invByDb.set(dbIdx, list);
+            const merged = new Map<string, WebGroupInvitation>();
+            invByDb.forEach((items) => {
+              items.forEach((item) => merged.set(item.id, item));
+            });
+            setPendingInvitations(Array.from(merged.values()));
+          },
+          () => {
+            // Offline fallback
+          }
+        );
+        unsubs.push(unsub);
+      } catch {
+        // Offline fallback
+      }
+    });
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [user, currentEmail, targetDbs]);
+
+  // 2. REAL-TIME FIRESTORE LISTENER FOR GROUP PROJECTS WHERE USER IS A MEMBER, ADMIN, OR CREATOR
   useEffect(() => {
     if (!user || !currentEmail) return;
 
-    try {
-      const qMember = query(
-        collection(db, 'group_projects'),
-        where('memberEmails', 'array-contains', currentEmail)
-      );
+    const unsubs: (() => void)[] = [];
+    const resultsByKey = new Map<
+      string,
+      Map<string, { project: WebGroupProject; updatedAtMs: number }>
+    >();
 
-      const unsubMember = onSnapshot(
-        qMember,
-        (snap) => {
-          const cloudProjects: WebGroupProject[] = snap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              courseCode: data.courseCode || 'GENERAL',
-              projectTitle: data.projectTitle || 'Group Project',
-              teamName: data.teamName || 'Team 1',
-              objective: data.objective || data.groupTarget || '',
-              groupTarget: data.groupTarget || 'Grade A',
-              avatarEmoji: data.avatarEmoji || 'CS',
-              avatarColorHex: data.avatarColorHex || '#10B981',
-              creatorUid: data.creatorUid || '',
-              creatorEmail: data.creatorEmail || '',
-              adminEmails: data.adminEmails || [data.creatorEmail || ''],
-              memberEmails: data.memberEmails || [currentEmail],
-              joinCode: data.joinCode || '',
-              dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
-              tasks: data.tasks || [],
-              resources: data.resources || []
-            };
-          }).filter((p) => !deletedProjectIdsRef.current.has(p.id));
+    const mapDoc = (d: { id: string; data: () => Record<string, any> }) => {
+      const data = d.data();
+      const updatedAtMs =
+        data.updatedAt?.toMillis?.() ?? data.createdAt?.toMillis?.() ?? 0;
+      const project: WebGroupProject = {
+        id: d.id,
+        courseCode: data.courseCode || 'GENERAL',
+        projectTitle: data.projectTitle || 'Group Project',
+        teamName: data.teamName || 'Team 1',
+        objective: data.objective || data.groupTarget || '',
+        groupTarget: data.groupTarget || 'Grade A',
+        avatarEmoji: data.avatarEmoji || 'CS',
+        avatarColorHex: data.avatarColorHex || '#10B981',
+        creatorUid: data.creatorUid || '',
+        creatorEmail: data.creatorEmail || '',
+        adminEmails: data.adminEmails || [data.creatorEmail || ''],
+        memberEmails: data.memberEmails || [currentEmail],
+        joinCode: data.joinCode || '',
+        dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
+        tasks: data.tasks || [],
+        resources: data.resources || []
+      };
+      return { project, updatedAtMs };
+    };
 
-          onUpdateVault((prev) => {
-            const cloudIds = new Set(cloudProjects.map((p) => p.id));
-            // Keep existing non-cloud local projects that were not deleted
-            const localOnly = prev.groupProjects.filter(
-              (p) => !cloudIds.has(p.id) && !deletedProjectIdsRef.current.has(p.id)
-            );
-            const merged = [...cloudProjects, ...localOnly];
-            return { ...prev, groupProjects: merged };
-          });
-        },
-        () => {
+    const flushMerged = () => {
+      const merged = new Map<string, { project: WebGroupProject; updatedAtMs: number }>();
+      resultsByKey.forEach((bucket) => {
+        bucket.forEach((entry, id) => {
+          if (deletedProjectIdsRef.current.has(id)) return;
+          const prev = merged.get(id);
+          if (!prev || entry.updatedAtMs >= prev.updatedAtMs) {
+            merged.set(id, entry);
+          }
+        });
+      });
+      const syncedList = Array.from(merged.values()).map((v) => v.project);
+      onUpdateVault((prev) => ({
+        ...prev,
+        groupProjects: syncedList
+      }));
+    };
+
+    targetDbs.forEach((targetDb, dbIdx) => {
+      const registerQuery = (key: string, qRef: ReturnType<typeof query>) => {
+        try {
+          const unsub = onSnapshot(
+            qRef,
+            (snap) => {
+              const bucket = new Map<string, { project: WebGroupProject; updatedAtMs: number }>();
+              snap.docs.forEach((d) => {
+                if (!deletedProjectIdsRef.current.has(d.id)) {
+                  bucket.set(d.id, mapDoc(d));
+                }
+              });
+              resultsByKey.set(key, bucket);
+              flushMerged();
+            },
+            () => {}
+          );
+          unsubs.push(unsub);
+        } catch {
           // Offline fallback
         }
-      );
+      };
 
-      return () => unsubMember();
-    } catch {
-      // Offline fallback
-    }
-  }, [user, currentEmail, onUpdateVault]);
+      registerQuery(
+        `member_${dbIdx}`,
+        query(
+          collection(targetDb, 'group_projects'),
+          where('memberEmails', 'array-contains', currentEmail)
+        )
+      );
+      registerQuery(
+        `admin_${dbIdx}`,
+        query(
+          collection(targetDb, 'group_projects'),
+          where('adminEmails', 'array-contains', currentEmail)
+        )
+      );
+      if (user.uid) {
+        registerQuery(
+          `creator_${dbIdx}`,
+          query(
+            collection(targetDb, 'group_projects'),
+            where('creatorUid', '==', user.uid)
+          )
+        );
+      }
+    });
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [user, currentEmail, targetDbs, onUpdateVault]);
 
   // 3. HANDLE DIRECT JOIN VIA URL PARAMETER (`?join_group=PROJECT_ID`)
   useEffect(() => {
@@ -342,42 +407,49 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     const performDirectJoin = async () => {
       try {
-        const snap = await getDoc(doc(db, 'group_projects', initialGroupId));
-        if (snap.exists()) {
-          const data = snap.data();
-          const members: string[] = data.memberEmails || [];
-          if (!members.map((e) => e.toLowerCase()).includes(currentEmail)) {
-            members.push(currentEmail);
-            await updateDoc(doc(db, 'group_projects', initialGroupId), {
-              memberEmails: arrayUnion(currentEmail),
-              updatedAt: serverTimestamp()
+        for (const targetDb of targetDbs) {
+          const snap = await getDoc(doc(targetDb, 'group_projects', initialGroupId)).catch(() => null);
+          if (snap && snap.exists()) {
+            const data = snap.data();
+            const members: string[] = Array.isArray(data.memberEmails) ? [...data.memberEmails] : [];
+            if (!members.map((e) => e.toLowerCase()).includes(currentEmail)) {
+              members.push(currentEmail);
+              await Promise.allSettled(
+                targetDbs.map((tDb) =>
+                  updateDoc(doc(tDb, 'group_projects', initialGroupId), {
+                    memberEmails: arrayUnion(currentEmail),
+                    updatedAt: serverTimestamp()
+                  })
+                )
+              );
+            }
+
+            const joinedProj: WebGroupProject = {
+              id: snap.id,
+              courseCode: data.courseCode || 'GENERAL',
+              projectTitle: data.projectTitle || 'Group Project',
+              teamName: data.teamName || 'Team 1',
+              objective: data.objective || data.groupTarget || '',
+              groupTarget: data.groupTarget || 'Grade A',
+              avatarEmoji: data.avatarEmoji || '👥',
+              avatarColorHex: data.avatarColorHex || '#10B981',
+              creatorUid: data.creatorUid || '',
+              creatorEmail: data.creatorEmail || '',
+              adminEmails: data.adminEmails || [],
+              memberEmails: members,
+              joinCode: data.joinCode || '',
+              dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
+              tasks: data.tasks || []
+            };
+
+            onUpdateVault((prev) => {
+              const other = prev.groupProjects.filter((p) => p.id !== joinedProj.id);
+              return { ...prev, groupProjects: [joinedProj, ...other] };
             });
+            setSelectedProjectId(joinedProj.id);
+            onNotify(`Joined '${joinedProj.teamName}' via invite link!`);
+            break;
           }
-
-          const joinedProj: WebGroupProject = {
-            id: snap.id,
-            courseCode: data.courseCode || 'GENERAL',
-            projectTitle: data.projectTitle || 'Group Project',
-            teamName: data.teamName || 'Team 1',
-            objective: data.objective || data.groupTarget || '',
-            groupTarget: data.groupTarget || 'Grade A',
-            avatarEmoji: data.avatarEmoji || '👥',
-            avatarColorHex: data.avatarColorHex || '#10B981',
-            creatorUid: data.creatorUid || '',
-            creatorEmail: data.creatorEmail || '',
-            adminEmails: data.adminEmails || [],
-            memberEmails: members,
-            joinCode: data.joinCode || '',
-            dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
-            tasks: data.tasks || []
-          };
-
-          onUpdateVault((prev) => {
-            const other = prev.groupProjects.filter((p) => p.id !== joinedProj.id);
-            return { ...prev, groupProjects: [joinedProj, ...other] };
-          });
-          setSelectedProjectId(joinedProj.id);
-          onNotify(`Joined '${joinedProj.teamName}' via invite link!`);
         }
       } catch {
         // Fallback
@@ -385,81 +457,77 @@ export const GroupProjectsView: React.FC<Props> = ({
     };
 
     performDirectJoin();
-  }, [initialGroupId, user, currentEmail, onUpdateVault, onNotify]);
+  }, [initialGroupId, user, currentEmail, targetDbs, onUpdateVault, onNotify]);
 
   // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT
   useEffect(() => {
     if (!activeProject?.id || !user) return;
-    try {
-      const q = query(
-        collection(db, 'group_projects', activeProject.id, 'messages'),
-        orderBy('createdAt', 'asc')
-      );
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          const cloudMsgs: WebGroupChatMessage[] = snap.docs.map((d) => {
-            const data = d.data();
-            return {
-              id: d.id,
-              projectId: activeProject.id,
-              senderEmail: data.senderEmail || '',
-              senderName: data.senderName || 'Teammate',
-              messageText: data.messageText || '',
-              timestamp: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
-              isPinned: Boolean(data.isPinned),
-              messageType: data.messageType || 'TEXT',
-              taggedDeliverableTitle: data.taggedDeliverableTitle,
-              reactions: data.reactions || {},
-              pollData: data.pollData,
-              docData: data.docData,
-              audioUrl: data.audioUrl,
-              audioDurationSec: data.audioDurationSec,
-              imageUrl: data.imageUrl
-            };
-          });
-
-          if (cloudMsgs.length > 0) {
-            onUpdateVault((prev) => {
-              const other = prev.groupMessages.filter((m) => m.projectId !== activeProject.id);
-              const mergedMap = new Map<string, WebGroupChatMessage>();
-              prev.groupMessages
-                .filter((m) => m.projectId === activeProject.id)
-                .forEach((m) => mergedMap.set(m.id, m));
-              cloudMsgs.forEach((m) => mergedMap.set(m.id, m));
+    const unsubs: (() => void)[] = [];
+    targetDbs.forEach((targetDb) => {
+      try {
+        const q = query(
+          collection(targetDb, 'group_projects', activeProject.id, 'messages'),
+          orderBy('createdAt', 'asc')
+        );
+        const unsub = onSnapshot(
+          q,
+          (snap) => {
+            const cloudMsgs: WebGroupChatMessage[] = snap.docs.map((d) => {
+              const data = d.data();
               return {
-                ...prev,
-                groupMessages: [...other, ...Array.from(mergedMap.values())]
+                id: d.id,
+                projectId: activeProject.id,
+                senderEmail: data.senderEmail || '',
+                senderName: data.senderName || 'Teammate',
+                messageText: data.messageText || '',
+                timestamp: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
+                isPinned: Boolean(data.isPinned),
+                messageType: data.messageType || 'TEXT',
+                taggedDeliverableTitle: data.taggedDeliverableTitle,
+                reactions: data.reactions || {},
+                pollData: data.pollData,
+                docData: data.docData,
+                audioUrl: data.audioUrl,
+                audioDurationSec: data.audioDurationSec,
+                imageUrl: data.imageUrl
               };
             });
+
+            if (cloudMsgs.length > 0) {
+              onUpdateVault((prev) => {
+                const other = prev.groupMessages.filter((m) => m.projectId !== activeProject.id);
+                const mergedMap = new Map<string, WebGroupChatMessage>();
+                prev.groupMessages
+                  .filter((m) => m.projectId === activeProject.id)
+                  .forEach((m) => mergedMap.set(m.id, m));
+                cloudMsgs.forEach((m) => mergedMap.set(m.id, m));
+                return {
+                  ...prev,
+                  groupMessages: [...other, ...Array.from(mergedMap.values())]
+                };
+              });
+            }
+          },
+          () => {
+            // Silent offline fallback
           }
-        },
-        () => {
-          // Silent offline fallback
-        }
-      );
-      return () => unsub();
-    } catch {
-      // Offline fallback
-    }
-  }, [activeProject?.id, user, onUpdateVault]);
+        );
+        unsubs.push(unsub);
+      } catch {
+        // Offline fallback
+      }
+    });
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [activeProject?.id, user, targetDbs, onUpdateVault]);
 
   // ACCEPT PENDING INVITATION
   const handleAcceptInvitation = async (inv: WebGroupInvitation) => {
     try {
       if (user) {
-        await updateDoc(doc(db, 'group_invitations', inv.id), {
-          status: 'ACCEPTED',
-          updatedAt: serverTimestamp()
-        }).catch(() => {});
-
-        await updateDoc(doc(db, 'group_projects', inv.projectId), {
-          memberEmails: arrayUnion(currentEmail),
-          updatedAt: serverTimestamp()
-        }).catch(() => {});
-
         const noticeMsgId = uidGen('gm_notice');
-        await setDoc(doc(db, 'group_projects', inv.projectId, 'messages', noticeMsgId), {
+        const noticePayload = {
           projectId: inv.projectId,
           senderUid: user.uid,
           senderEmail: currentEmail,
@@ -468,35 +536,51 @@ export const GroupProjectsView: React.FC<Props> = ({
           isPinned: false,
           messageType: 'NOTICE',
           createdAt: serverTimestamp()
-        }).catch(() => {});
+        };
+        await Promise.allSettled(
+          targetDbs.flatMap((targetDb) => [
+            updateDoc(doc(targetDb, 'group_invitations', inv.id), {
+              status: 'ACCEPTED',
+              updatedAt: serverTimestamp()
+            }),
+            updateDoc(doc(targetDb, 'group_projects', inv.projectId), {
+              memberEmails: arrayUnion(currentEmail),
+              updatedAt: serverTimestamp()
+            }),
+            setDoc(doc(targetDb, 'group_projects', inv.projectId, 'messages', noticeMsgId), noticePayload)
+          ])
+        );
       }
 
-      const snap = await getDoc(doc(db, 'group_projects', inv.projectId));
-      if (snap.exists()) {
-        const pData = snap.data();
-        const joined: WebGroupProject = {
-          id: snap.id,
-          courseCode: pData.courseCode || inv.courseCode,
-          projectTitle: pData.projectTitle || inv.projectTitle,
-          teamName: pData.teamName || inv.teamName,
-          objective: pData.objective || inv.groupTarget,
-          groupTarget: pData.groupTarget || inv.groupTarget,
-          avatarEmoji: pData.avatarEmoji || inv.avatarEmoji || '👥',
-          avatarColorHex: pData.avatarColorHex || inv.avatarColorHex || '#10B981',
-          creatorUid: pData.creatorUid || '',
-          creatorEmail: pData.creatorEmail || inv.senderEmail,
-          adminEmails: pData.adminEmails || [inv.senderEmail],
-          memberEmails: pData.memberEmails || [inv.senderEmail, currentEmail],
-          joinCode: pData.joinCode || inv.joinCode || '',
-          dueEpochMillis: pData.dueEpochMillis || Date.now() + 14 * 86_400_000,
-          tasks: pData.tasks || []
-        };
+      for (const targetDb of targetDbs) {
+        const snap = await getDoc(doc(targetDb, 'group_projects', inv.projectId)).catch(() => null);
+        if (snap && snap.exists()) {
+          const pData = snap.data();
+          const joined: WebGroupProject = {
+            id: snap.id,
+            courseCode: pData.courseCode || inv.courseCode,
+            projectTitle: pData.projectTitle || inv.projectTitle,
+            teamName: pData.teamName || inv.teamName,
+            objective: pData.objective || inv.groupTarget,
+            groupTarget: pData.groupTarget || inv.groupTarget,
+            avatarEmoji: pData.avatarEmoji || inv.avatarEmoji || '👥',
+            avatarColorHex: pData.avatarColorHex || inv.avatarColorHex || '#10B981',
+            creatorUid: pData.creatorUid || '',
+            creatorEmail: pData.creatorEmail || inv.senderEmail,
+            adminEmails: pData.adminEmails || [inv.senderEmail],
+            memberEmails: pData.memberEmails || [inv.senderEmail, currentEmail],
+            joinCode: pData.joinCode || inv.joinCode || '',
+            dueEpochMillis: pData.dueEpochMillis || Date.now() + 14 * 86_400_000,
+            tasks: pData.tasks || []
+          };
 
-        onUpdateVault((prev) => ({
-          ...prev,
-          groupProjects: [joined, ...prev.groupProjects.filter((p) => p.id !== joined.id)]
-        }));
-        setSelectedProjectId(joined.id);
+          onUpdateVault((prev) => ({
+            ...prev,
+            groupProjects: [joined, ...prev.groupProjects.filter((p) => p.id !== joined.id)]
+          }));
+          setSelectedProjectId(joined.id);
+          break;
+        }
       }
 
       setPendingInvitations((prev) => prev.filter((i) => i.id !== inv.id));
@@ -510,10 +594,14 @@ export const GroupProjectsView: React.FC<Props> = ({
   const handleDeclineInvitation = async (inv: WebGroupInvitation) => {
     try {
       if (user) {
-        await updateDoc(doc(db, 'group_invitations', inv.id), {
-          status: 'DECLINED',
-          updatedAt: serverTimestamp()
-        }).catch(() => {});
+        await Promise.allSettled(
+          targetDbs.map((targetDb) =>
+            updateDoc(doc(targetDb, 'group_invitations', inv.id), {
+              status: 'DECLINED',
+              updatedAt: serverTimestamp()
+            })
+          )
+        );
       }
       setPendingInvitations((prev) => prev.filter((i) => i.id !== inv.id));
       onNotify(`Declined invitation to ${inv.teamName}.`);
@@ -522,65 +610,95 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
   };
 
-  // JOIN TEAM BY CODE
+  // JOIN TEAM BY CODE OR LINK
   const handleJoinByCode = async () => {
-    const raw = joinCodeInput.trim().toUpperCase();
-    if (!raw) return;
+    const rawTrimmed = joinCodeInput.trim();
+    if (!rawTrimmed) return;
+
+    let cleanIdOrCode = rawTrimmed;
+    if (cleanIdOrCode.includes('join_group=')) {
+      cleanIdOrCode = cleanIdOrCode.split('join_group=')[1].split('&')[0].trim();
+    } else if (cleanIdOrCode.includes('group=')) {
+      cleanIdOrCode = cleanIdOrCode.split('group=')[1].split('&')[0].trim();
+    }
+    const noHash = cleanIdOrCode.startsWith('#') ? cleanIdOrCode.slice(1).trim() : cleanIdOrCode;
+    const rawUpper = noHash.toUpperCase();
+    const strippedPrefix = rawUpper.startsWith('GRP-') ? rawUpper.slice(4).trim() : rawUpper;
+    const prefixedCode = `GRP-${strippedPrefix}`;
+    const candidateDocIds = Array.from(new Set([noHash, noHash.toLowerCase(), strippedPrefix.toLowerCase()].filter(Boolean)));
+    const candidateJoinCodes = Array.from(new Set([rawUpper, prefixedCode, strippedPrefix].filter(Boolean)));
 
     try {
       let targetDoc: WebGroupProject | null = null;
+      let targetId = '';
 
-      const directSnap = await getDoc(doc(db, 'group_projects', raw.toLowerCase()));
-      if (directSnap.exists()) {
-        const d = directSnap.data();
-        targetDoc = {
-          id: directSnap.id,
-          courseCode: d.courseCode || 'GENERAL',
-          projectTitle: d.projectTitle || 'Group Project',
-          teamName: d.teamName || 'Team 1',
-          objective: d.objective || '',
-          groupTarget: d.groupTarget || 'Grade A',
-          avatarEmoji: d.avatarEmoji || '👥',
-          avatarColorHex: d.avatarColorHex || '#10B981',
-          creatorUid: d.creatorUid || '',
-          creatorEmail: d.creatorEmail || '',
-          adminEmails: d.adminEmails || [],
-          memberEmails: d.memberEmails || [],
-          joinCode: d.joinCode || '',
-          dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
-          tasks: d.tasks || []
-        };
-      } else {
-        const qCode = query(
-          collection(db, 'group_projects'),
-          where('joinCode', '==', raw)
-        );
-        const codeSnap = await getDocs(qCode);
-        if (!codeSnap.empty) {
-          const docItem = codeSnap.docs[0];
-          const d = docItem.data();
-          targetDoc = {
-            id: docItem.id,
-            courseCode: d.courseCode || 'GENERAL',
-            projectTitle: d.projectTitle || 'Group Project',
-            teamName: d.teamName || 'Team 1',
-            objective: d.objective || '',
-            groupTarget: d.groupTarget || 'Grade A',
-            avatarEmoji: d.avatarEmoji || '👥',
-            avatarColorHex: d.avatarColorHex || '#10B981',
-            creatorUid: d.creatorUid || '',
-            creatorEmail: d.creatorEmail || '',
-            adminEmails: d.adminEmails || [],
-            memberEmails: d.memberEmails || [],
-            joinCode: d.joinCode || raw,
-            dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
-            tasks: d.tasks || []
-          };
+      for (const targetDb of targetDbs) {
+        if (targetDoc) break;
+        try {
+          for (const docIdCandidate of candidateDocIds) {
+            const directSnap = await getDoc(doc(targetDb, 'group_projects', docIdCandidate)).catch(() => null);
+            if (directSnap && directSnap.exists()) {
+              const d = directSnap.data();
+              targetId = directSnap.id;
+              targetDoc = {
+                id: directSnap.id,
+                courseCode: d.courseCode || 'GENERAL',
+                projectTitle: d.projectTitle || 'Group Project',
+                teamName: d.teamName || 'Team 1',
+                objective: d.objective || '',
+                groupTarget: d.groupTarget || 'Grade A',
+                avatarEmoji: d.avatarEmoji || '👥',
+                avatarColorHex: d.avatarColorHex || '#10B981',
+                creatorUid: d.creatorUid || '',
+                creatorEmail: d.creatorEmail || '',
+                adminEmails: d.adminEmails || [],
+                memberEmails: d.memberEmails || [],
+                joinCode: d.joinCode || '',
+                dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
+                tasks: d.tasks || []
+              };
+              break;
+            }
+          }
+          if (targetDoc) break;
+
+          for (const codeCandidate of candidateJoinCodes) {
+            const qCode = query(
+              collection(targetDb, 'group_projects'),
+              where('joinCode', '==', codeCandidate)
+            );
+            const codeSnap = await getDocs(qCode);
+            if (!codeSnap.empty) {
+              const docItem = codeSnap.docs[0];
+              const d = docItem.data();
+              targetId = docItem.id;
+              targetDoc = {
+                id: docItem.id,
+                courseCode: d.courseCode || 'GENERAL',
+                projectTitle: d.projectTitle || 'Group Project',
+                teamName: d.teamName || 'Team 1',
+                objective: d.objective || '',
+                groupTarget: d.groupTarget || 'Grade A',
+                avatarEmoji: d.avatarEmoji || '👥',
+                avatarColorHex: d.avatarColorHex || '#10B981',
+                creatorUid: d.creatorUid || '',
+                creatorEmail: d.creatorEmail || '',
+                adminEmails: d.adminEmails || [],
+                memberEmails: d.memberEmails || [],
+                joinCode: d.joinCode || codeCandidate,
+                dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
+                tasks: d.tasks || []
+              };
+              break;
+            }
+          }
+        } catch {
+          // Continue to next db
         }
       }
 
-      if (!targetDoc) {
-        onNotify(`No team found with Code '${raw}'. Check the code and try again.`);
+      if (!targetDoc || !targetId) {
+        onNotify(`No team found with Code '${rawUpper}'. Check the code and try again.`);
         return;
       }
 
@@ -589,10 +707,15 @@ export const GroupProjectsView: React.FC<Props> = ({
       }
 
       if (user) {
-        await updateDoc(doc(db, 'group_projects', targetDoc.id), {
+        const updatePayload = {
           memberEmails: arrayUnion(currentEmail),
           updatedAt: serverTimestamp()
-        }).catch(() => {});
+        };
+        await Promise.allSettled(
+          targetDbs.map((targetDb) =>
+            updateDoc(doc(targetDb, 'group_projects', targetId), updatePayload)
+          )
+        );
       }
 
       onUpdateVault((prev) => ({
@@ -637,22 +760,23 @@ export const GroupProjectsView: React.FC<Props> = ({
     setSelectedDeliverableTag('');
 
     if (user) {
-      try {
-        await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
-          projectId: activeProject.id,
-          senderUid: user.uid,
-          senderEmail: currentEmail,
-          senderName: newMsg.senderName,
-          messageText: newMsg.messageText,
-          isPinned: newMsg.isPinned,
-          messageType: newMsg.messageType,
-          taggedDeliverableTitle: newMsg.taggedDeliverableTitle || null,
-          reactions: {},
-          createdAt: serverTimestamp()
-        });
-      } catch {
-        // Keep local
-      }
+      const msgPayload = {
+        projectId: activeProject.id,
+        senderUid: user.uid,
+        senderEmail: currentEmail,
+        senderName: newMsg.senderName,
+        messageText: newMsg.messageText,
+        isPinned: newMsg.isPinned,
+        messageType: newMsg.messageType,
+        taggedDeliverableTitle: newMsg.taggedDeliverableTitle || null,
+        reactions: {},
+        createdAt: serverTimestamp()
+      };
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), msgPayload)
+        )
+      );
     }
   };
 
@@ -675,11 +799,11 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await deleteDoc(doc(db, 'group_projects', activeProject.id, 'messages', msg.id));
-      } catch (err) {
-        console.error('Delete message error:', err);
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          deleteDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', msg.id))
+        )
+      );
     }
 
     onNotify(isMe ? 'Message unsent.' : 'Message deleted by admin.');
@@ -759,23 +883,24 @@ export const GroupProjectsView: React.FC<Props> = ({
         }));
 
         if (user) {
-          try {
-            await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
-              projectId: activeProject.id,
-              senderUid: user.uid,
-              senderEmail: currentEmail,
-              senderName: newMsg.senderName,
-              messageText: newMsg.messageText,
-              isPinned: false,
-              messageType: 'VOICE_NOTE',
-              audioUrl: newMsg.audioUrl,
-              audioDurationSec: newMsg.audioDurationSec,
-              reactions: {},
-              createdAt: serverTimestamp()
-            });
-          } catch {
-            // Keep local
-          }
+          const payload = {
+            projectId: activeProject.id,
+            senderUid: user.uid,
+            senderEmail: currentEmail,
+            senderName: newMsg.senderName,
+            messageText: newMsg.messageText,
+            isPinned: false,
+            messageType: 'VOICE_NOTE',
+            audioUrl: newMsg.audioUrl,
+            audioDurationSec: newMsg.audioDurationSec,
+            reactions: {},
+            createdAt: serverTimestamp()
+          };
+          await Promise.allSettled(
+            targetDbs.map((targetDb) =>
+              setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
+            )
+          );
         }
         onNotify('Voice note sent to team!');
       };
@@ -819,22 +944,23 @@ export const GroupProjectsView: React.FC<Props> = ({
       }));
 
       if (user) {
-        try {
-          await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
-            projectId: activeProject.id,
-            senderUid: user.uid,
-            senderEmail: currentEmail,
-            senderName: newMsg.senderName,
-            messageText: newMsg.messageText,
-            isPinned: false,
-            messageType: 'IMAGE_SHARE',
-            imageUrl: newMsg.imageUrl,
-            reactions: {},
-            createdAt: serverTimestamp()
-          });
-        } catch {
-          // Keep local
-        }
+        const payload = {
+          projectId: activeProject.id,
+          senderUid: user.uid,
+          senderEmail: currentEmail,
+          senderName: newMsg.senderName,
+          messageText: newMsg.messageText,
+          isPinned: false,
+          messageType: 'IMAGE_SHARE',
+          imageUrl: newMsg.imageUrl,
+          reactions: {},
+          createdAt: serverTimestamp()
+        };
+        await Promise.allSettled(
+          targetDbs.map((targetDb) =>
+            setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
+          )
+        );
       }
       onNotify('Photo shared with group!');
     };
@@ -870,21 +996,24 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
-          projectId: activeProject.id,
-          senderUid: user.uid,
-          senderEmail: currentEmail,
-          senderName: newMsg.senderName,
-          messageText: newMsg.messageText,
-          isPinned: false,
-          messageType: 'POLL',
-          pollData: newMsg.pollData,
-          createdAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      const payload = {
+        projectId: activeProject.id,
+        senderUid: user.uid,
+        senderEmail: currentEmail,
+        senderName: newMsg.senderName,
+        messageText: newMsg.messageText,
+        isPinned: false,
+        messageType: 'POLL',
+        pollData: newMsg.pollData,
+        pollQuestion: q,
+        pollOptionsCsv: opts.join('|'),
+        createdAt: serverTimestamp()
+      };
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
+        )
+      );
     }
 
     setShowPollModal(false);
@@ -955,21 +1084,24 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await setDoc(doc(db, 'group_projects', activeProject.id, 'messages', newMsg.id), {
-          projectId: activeProject.id,
-          senderUid: user.uid,
-          senderEmail: currentEmail,
-          senderName: newMsg.senderName,
-          messageText: newMsg.messageText,
-          isPinned: false,
-          messageType: 'DOC_SHARE',
-          docData: newMsg.docData,
-          createdAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      const payload = {
+        projectId: activeProject.id,
+        senderUid: user.uid,
+        senderEmail: currentEmail,
+        senderName: newMsg.senderName,
+        messageText: newMsg.messageText,
+        isPinned: false,
+        messageType: 'DOC_SHARE',
+        docData: newMsg.docData,
+        sharedDocTitle: title,
+        sharedDocUrl: link,
+        createdAt: serverTimestamp()
+      };
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
+        )
+      );
     }
 
     setShowDocModal(false);
@@ -1017,65 +1149,61 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await setDoc(
-          doc(db, 'group_projects', activeProject.id),
-          {
-            id: activeProject.id,
-            courseCode: activeProject.courseCode,
-            projectTitle: activeProject.projectTitle,
-            teamName: activeProject.teamName,
-            objective: activeProject.objective,
-            groupTarget: activeProject.groupTarget,
-            avatarEmoji: activeProject.avatarEmoji || '👥',
-            avatarColorHex: activeProject.avatarColorHex || '#10B981',
-            creatorUid: activeProject.creatorUid || user.uid,
-            creatorEmail: activeProject.creatorEmail || currentEmail,
-            adminEmails: activeProject.adminEmails,
-            memberEmails: updatedMembers,
-            joinCode: projectJoinCode,
-            dueEpochMillis: activeProject.dueEpochMillis,
-            tasks: activeProject.tasks || [],
-            updatedAt: serverTimestamp()
-          },
-          { merge: true }
-        );
+      const projectPayload = {
+        id: activeProject.id,
+        courseCode: activeProject.courseCode,
+        projectTitle: activeProject.projectTitle,
+        teamName: activeProject.teamName,
+        objective: activeProject.objective,
+        groupTarget: activeProject.groupTarget,
+        avatarEmoji: activeProject.avatarEmoji || '👥',
+        avatarColorHex: activeProject.avatarColorHex || '#10B981',
+        creatorUid: activeProject.creatorUid || user.uid,
+        creatorEmail: activeProject.creatorEmail || currentEmail,
+        adminEmails: activeProject.adminEmails,
+        memberEmails: updatedMembers,
+        joinCode: projectJoinCode,
+        dueEpochMillis: activeProject.dueEpochMillis,
+        tasks: activeProject.tasks || [],
+        updatedAt: serverTimestamp()
+      };
+      const inviteDocId = `inv_${activeProject.id}_${clean.replace(/[^a-z0-9]/g, '_')}`;
+      const invitePayload = {
+        id: inviteDocId,
+        projectId: activeProject.id,
+        teamName: activeProject.teamName,
+        projectTitle: activeProject.projectTitle,
+        courseCode: activeProject.courseCode,
+        groupTarget: activeProject.groupTarget,
+        avatarEmoji: activeProject.avatarEmoji || '👥',
+        avatarColorHex: activeProject.avatarColorHex || '#10B981',
+        senderUid: user.uid,
+        senderEmail: currentEmail,
+        senderName: user.displayName || vault.profile.name || 'Team Leader',
+        inviteeEmail: clean,
+        status: 'PENDING',
+        joinCode: projectJoinCode,
+        createdAt: serverTimestamp()
+      };
+      const noticeId = uidGen('notice');
+      const noticePayload = {
+        projectId: activeProject.id,
+        senderUid: user.uid,
+        senderEmail: 'system@aura',
+        senderName: 'AURA Team Bot',
+        messageText: `🎉 ${clean} was invited to the group!`,
+        isPinned: false,
+        messageType: 'NOTICE',
+        createdAt: serverTimestamp()
+      };
 
-        const inviteDocId = `inv_${activeProject.id}_${clean.replace(/[^a-z0-9]/g, '_')}`;
-        await setDoc(doc(db, 'group_invitations', inviteDocId), {
-          id: inviteDocId,
-          projectId: activeProject.id,
-          teamName: activeProject.teamName,
-          projectTitle: activeProject.projectTitle,
-          courseCode: activeProject.courseCode,
-          groupTarget: activeProject.groupTarget,
-          avatarEmoji: activeProject.avatarEmoji || '👥',
-          avatarColorHex: activeProject.avatarColorHex || '#10B981',
-          senderUid: user.uid,
-          senderEmail: currentEmail,
-          senderName: user.displayName || vault.profile.name || 'Team Leader',
-          inviteeEmail: clean,
-          status: 'PENDING',
-          joinCode: projectJoinCode,
-          createdAt: serverTimestamp()
-        });
-
-        await setDoc(
-          doc(db, 'group_projects', activeProject.id, 'messages', uidGen('notice')),
-          {
-            projectId: activeProject.id,
-            senderUid: user.uid,
-            senderEmail: 'system@aura',
-            senderName: 'AURA Team Bot',
-            messageText: `🎉 ${clean} was invited to the group!`,
-            isPinned: false,
-            messageType: 'NOTICE',
-            createdAt: serverTimestamp()
-          }
-        );
-      } catch {
-        // Offline
-      }
+      await Promise.allSettled(
+        targetDbs.flatMap((targetDb) => [
+          setDoc(doc(targetDb, 'group_projects', activeProject.id), projectPayload, { merge: true }),
+          setDoc(doc(targetDb, 'group_invitations', inviteDocId), invitePayload),
+          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', noticeId), noticePayload)
+        ])
+      );
     }
 
     setShowAddMemberModal(false);
@@ -1119,14 +1247,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          adminEmails: updatedAdmins,
-          updatedAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            adminEmails: updatedAdmins,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     onNotify(`Promoted ${clean} to Group Admin.`);
@@ -1145,14 +1273,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          adminEmails: updatedAdmins,
-          updatedAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            adminEmails: updatedAdmins,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     onNotify(`Demoted ${clean} to Member.`);
@@ -1179,15 +1307,15 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          memberEmails: updatedMembers,
-          adminEmails: updatedAdmins,
-          updatedAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            memberEmails: updatedMembers,
+            adminEmails: updatedAdmins,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     onNotify(`Removed ${clean} from ${activeProject.teamName}.`);
@@ -1208,14 +1336,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          tasks: updatedTasks,
-          updatedAt: serverTimestamp()
-        });
-      } catch {
-        // Offline
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            tasks: updatedTasks,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
   };
 
@@ -1247,11 +1375,9 @@ export const GroupProjectsView: React.FC<Props> = ({
     });
 
     if (user) {
-      try {
-        await deleteDoc(doc(db, 'group_projects', projId));
-      } catch (err) {
-        console.error('Delete project error:', err);
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) => deleteDoc(doc(targetDb, 'group_projects', projId)))
+      );
     }
 
     onNotify(`Deleted '${name}'.`);
@@ -1285,21 +1411,21 @@ export const GroupProjectsView: React.FC<Props> = ({
     });
 
     if (user) {
-      try {
-        const updatedMembers = proj.memberEmails.filter(
-          (e) => e.toLowerCase() !== currentEmail
-        );
-        const updatedAdmins = proj.adminEmails.filter(
-          (e) => e.toLowerCase() !== currentEmail
-        );
-        await updateDoc(doc(db, 'group_projects', projId), {
-          memberEmails: updatedMembers,
-          adminEmails: updatedAdmins,
-          updatedAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.error('Leave group error:', err);
-      }
+      const updatedMembers = proj.memberEmails.filter(
+        (e) => e.toLowerCase() !== currentEmail
+      );
+      const updatedAdmins = proj.adminEmails.filter(
+        (e) => e.toLowerCase() !== currentEmail
+      );
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', projId), {
+            memberEmails: updatedMembers,
+            adminEmails: updatedAdmins,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     onNotify(`You left '${proj.teamName}'.`);
@@ -1327,14 +1453,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          resources: updatedResources,
-          updatedAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.error('Add resource error:', err);
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            resources: updatedResources,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     setNewResourceTitle('');
@@ -1356,14 +1482,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      try {
-        await updateDoc(doc(db, 'group_projects', activeProject.id), {
-          resources: updatedResources,
-          updatedAt: serverTimestamp()
-        });
-      } catch (err) {
-        console.error('Delete resource error:', err);
-      }
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+            resources: updatedResources,
+            updatedAt: serverTimestamp()
+          })
+        )
+      );
     }
 
     onNotify('Resource removed from Vault.');
@@ -2666,7 +2792,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
             if (user) {
               try {
-                await setDoc(doc(db, 'group_projects', newProj.id), {
+                const payload = {
                   id: newProj.id,
                   courseCode: newProj.courseCode,
                   projectTitle: newProj.projectTitle,
@@ -2684,12 +2810,17 @@ export const GroupProjectsView: React.FC<Props> = ({
                   tasks: newProj.tasks,
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp()
-                });
+                };
+                await Promise.allSettled(
+                  targetDbs.map((targetDb) =>
+                    setDoc(doc(targetDb, 'group_projects', newProj.id), payload)
+                  )
+                );
 
                 for (const memberEmail of newProj.memberEmails) {
                   if (memberEmail.toLowerCase() !== currentEmail) {
                     const invId = `inv_${newProj.id}_${memberEmail.replace(/[^a-z0-9]/g, '_')}`;
-                    await setDoc(doc(db, 'group_invitations', invId), {
+                    const invPayload = {
                       id: invId,
                       projectId: newProj.id,
                       teamName: newProj.teamName,
@@ -2705,7 +2836,12 @@ export const GroupProjectsView: React.FC<Props> = ({
                       status: 'PENDING',
                       joinCode: newProj.joinCode,
                       createdAt: serverTimestamp()
-                    });
+                    };
+                    await Promise.allSettled(
+                      targetDbs.map((targetDb) =>
+                        setDoc(doc(targetDb, 'group_invitations', invId), invPayload)
+                      )
+                    );
                   }
                 }
               } catch {
@@ -2780,18 +2916,18 @@ export const GroupProjectsView: React.FC<Props> = ({
               groupProjects: prev.groupProjects.map((p) => (p.id === updated.id ? updated : p))
             }));
             if (user) {
-              try {
-                await updateDoc(doc(db, 'group_projects', updated.id), {
-                  teamName: updated.teamName,
-                  projectTitle: updated.projectTitle,
-                  groupTarget: updated.groupTarget,
-                  avatarEmoji: updated.avatarEmoji,
-                  avatarColorHex: updated.avatarColorHex,
-                  updatedAt: serverTimestamp()
-                });
-              } catch {
-                // Offline
-              }
+              await Promise.allSettled(
+                targetDbs.map((targetDb) =>
+                  updateDoc(doc(targetDb, 'group_projects', updated.id), {
+                    teamName: updated.teamName,
+                    projectTitle: updated.projectTitle,
+                    groupTarget: updated.groupTarget,
+                    avatarEmoji: updated.avatarEmoji,
+                    avatarColorHex: updated.avatarColorHex,
+                    updatedAt: serverTimestamp()
+                  })
+                )
+              );
             }
             setShowSettingsModal(false);
             onNotify('Saved group settings and target!');
@@ -3027,10 +3163,14 @@ export const GroupProjectsView: React.FC<Props> = ({
                     }));
 
                     if (user) {
-                      await updateDoc(doc(db, 'group_projects', activeProject.id), {
-                        tasks: updatedTasks,
-                        updatedAt: serverTimestamp()
-                      }).catch(() => {});
+                      await Promise.allSettled(
+                        targetDbs.map((targetDb) =>
+                          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
+                            tasks: updatedTasks,
+                            updatedAt: serverTimestamp()
+                          })
+                        )
+                      );
                     }
 
                     setShowAddTaskModal(false);

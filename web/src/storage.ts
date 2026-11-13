@@ -4,7 +4,7 @@ import {
   setDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, defaultDb } from './firebase';
 import type {
   AuraLocalVault,
   WebAssessment,
@@ -371,7 +371,7 @@ export async function saveCloudBackupFromWeb(
 
   const totalFocusMinutes = vault.focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0);
 
-  await setDoc(ref, {
+  const basePayload = {
     userId: uid,
     studentName: (p.name.trim() || 'Scholar').slice(0, 100),
     institution: (p.institution.trim() || 'University').slice(0, 150),
@@ -394,7 +394,28 @@ export async function saveCloudBackupFromWeb(
       : [],
     createdAt: existingCreatedAt || serverTimestamp(),
     updatedAt: serverTimestamp()
-  });
+  };
+
+  await setDoc(ref, basePayload);
+  if (db !== defaultDb) {
+    try {
+      const defaultRef = doc(defaultDb, 'user_backups', uid);
+      const defaultSnap = await getDoc(defaultRef).catch(() => null);
+      const defaultCreatedAt = defaultSnap?.exists() ? defaultSnap.data()?.createdAt : null;
+      const defaultExpenses =
+        defaultSnap?.exists() && Array.isArray(defaultSnap.data()?.expenseRecords)
+          ? defaultSnap.data()?.expenseRecords
+          : basePayload.expenseRecords;
+      await setDoc(defaultRef, {
+        ...basePayload,
+        expenseRecords: defaultExpenses,
+        createdAt: defaultCreatedAt || serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch {
+      // Secondary fallback DB best-effort sync
+    }
+  }
 }
 
 /**
@@ -404,9 +425,31 @@ export async function fetchAndMergeCloudBackupToWeb(
   uid: string,
   current: AuraLocalVault
 ): Promise<{ updatedVault: AuraLocalVault; summary: string } | null> {
-  const ref = doc(db, 'user_backups', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
+  const refs = db !== defaultDb
+    ? [doc(db, 'user_backups', uid), doc(defaultDb, 'user_backups', uid)]
+    : [doc(db, 'user_backups', uid)];
+
+  const results = await Promise.allSettled(refs.map((r) => getDoc(r)));
+  const existingSnaps = results
+    .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof getDoc>>> => r.status === 'fulfilled')
+    .map((r) => r.value)
+    .filter((s) => s.exists());
+
+  if (existingSnaps.length === 0) return null;
+
+  const snap = existingSnaps.reduce((best, cur) => {
+    const bestData = best.data();
+    const curData = cur.data();
+    const bestMs =
+      bestData?.updatedAt?.toMillis?.() ??
+      bestData?.createdAt?.toMillis?.() ??
+      0;
+    const curMs =
+      curData?.updatedAt?.toMillis?.() ??
+      curData?.createdAt?.toMillis?.() ??
+      0;
+    return curMs > bestMs ? cur : best;
+  });
 
   const data = snap.data();
   const settingsArr: string[] = Array.isArray(data.profileSettings) ? data.profileSettings : [];

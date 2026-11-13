@@ -28,21 +28,27 @@ const firebaseConfig = {
 };
 
 export const FIRESTORE_DATABASE_ID =
-  import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)';
+  import.meta.env.VITE_FIRESTORE_DATABASE_ID || 'ai-studio-android-aura-63829403-a9de-4f28-9da2-e7be3968b280';
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
+export const defaultDb = getFirestore(app);
+
 // Connect to provisioned named database with automatic fallback
-export const db = (() => {
-  try {
-    return FIRESTORE_DATABASE_ID && FIRESTORE_DATABASE_ID !== '(default)'
-      ? getFirestore(app, FIRESTORE_DATABASE_ID)
-      : getFirestore(app);
-  } catch (_e) {
-    return getFirestore(app);
+export const namedDb = (() => {
+  const targetId = FIRESTORE_DATABASE_ID;
+  if (targetId && targetId !== '(default)') {
+    try {
+      return getFirestore(app, targetId);
+    } catch {
+      return defaultDb;
+    }
   }
+  return defaultDb;
 })();
+
+export const db = namedDb;
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });

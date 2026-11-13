@@ -93,9 +93,18 @@ export const App: React.FC = () => {
       setUser(u);
       if (u) {
         const current = loadLocalVault();
+        const switchedAccount =
+          Boolean(current.lastAutoRestoredUid) && current.lastAutoRestoredUid !== u.uid;
+        const baseVault = switchedAccount
+          ? { ...current, groupProjects: [], groupMessages: [] }
+          : current;
+        if (switchedAccount) {
+          setVault(baseVault);
+          saveLocalVault(baseVault);
+        }
         if (current.lastAutoRestoredUid !== u.uid) {
           try {
-            const res = await fetchAndMergeCloudBackupToWeb(u.uid, current);
+            const res = await fetchAndMergeCloudBackupToWeb(u.uid, baseVault);
             if (res) {
               setVault(res.updatedVault);
               saveLocalVault(res.updatedVault);
@@ -104,6 +113,18 @@ export const App: React.FC = () => {
           } catch {
             // Silent if offline or no backup yet
           }
+        }
+      } else {
+        const current = loadLocalVault();
+        if (current.lastAutoRestoredUid) {
+          const cleared: AuraLocalVault = {
+            ...current,
+            lastAutoRestoredUid: '',
+            groupProjects: [],
+            groupMessages: []
+          };
+          setVault(cleared);
+          saveLocalVault(cleared);
         }
       }
     });
