@@ -5,7 +5,6 @@ import {
   Check,
   Clock,
   Copy,
-  Flame,
   Hand,
   Lock,
   Mic,
@@ -15,9 +14,7 @@ import {
   Shield,
   ShieldAlert,
   Sparkles,
-  Unlock,
-  UserMinus,
-  Zap
+  UserMinus
 } from 'lucide-react';
 import { AuraModal } from './AuraModal';
 import type {
@@ -49,10 +46,10 @@ interface HostRoomModalProps {
 }
 
 const QUICK_PRESETS = [
-  { label: '⚡ 25m Pomodoro Sprint', mins: 25, titleSuffix: 'Pomodoro Focus Sprint' },
-  { label: '📝 50m Past Paper Review', mins: 50, titleSuffix: 'Past Paper Drill' },
-  { label: '🎓 90m Deep Exam Prep', mins: 90, titleSuffix: 'Deep Exam Prep' },
-  { label: '☕ 15m Speed Flashcards', mins: 15, titleSuffix: 'Rapid Flashcard Review' }
+  { label: '25m Pomodoro Sprint', mins: 25, titleSuffix: 'Pomodoro Focus Sprint' },
+  { label: '50m Past Paper Review', mins: 50, titleSuffix: 'Past Paper Drill' },
+  { label: '90m Deep Exam Prep', mins: 90, titleSuffix: 'Deep Exam Prep' },
+  { label: '15m Speed Flashcards', mins: 15, titleSuffix: 'Rapid Flashcard Review' }
 ];
 
 export const HostRoomModal: React.FC<HostRoomModalProps> = ({
@@ -124,8 +121,8 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
         {/* 1-Click Fast Presets */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400">⚡ 1-Click Sprint Presets</span>
-            <span className="text-[10px] text-sky-400 font-bold">Auto-fills title & clock</span>
+            <span className="text-[11px] font-bold text-slate-400">1-Click Sprint Presets</span>
+            <span className="text-[10px] text-cyan-400 font-bold">Auto-fills title &amp; clock</span>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {QUICK_PRESETS.map((p) => (
@@ -133,7 +130,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
                 key={p.label}
                 type="button"
                 onClick={() => applyPreset(p)}
-                className="px-2.5 py-1.5 rounded-xl aura-subtle-surface hover:border-sky-400/50 text-[11px] font-bold text-slate-300 hover:text-white text-left transition truncate"
+                className="px-2.5 py-1.5 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-[11px] font-semibold text-slate-300 hover:text-white text-left transition truncate"
               >
                 {p.label}
               </button>
@@ -149,7 +146,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value)}
               placeholder="e.g. CS301"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
             />
             <datalist id="host-course-options">
               {courses.map((c) => (
@@ -167,7 +164,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
               max={360}
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl aura-input text-xs font-mono font-bold text-center"
+              className="w-full px-3 py-2.5 rounded-lg aura-input text-xs font-mono font-bold text-center"
             />
           </div>
         </div>
@@ -180,7 +177,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
             value={roomTitle}
             onChange={(e) => setRoomTitle(e.target.value)}
             placeholder={`e.g. ${(courseCode || 'CS301').toUpperCase()} Past Paper Sprint`}
-            className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
           />
         </div>
 
@@ -191,7 +188,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
               value={focusTopic}
               onChange={(e) => setFocusTopic(e.target.value)}
               placeholder="e.g. Chapter 4 Proofs & Live Polls"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
           </div>
           <div className="space-y-1">
@@ -200,7 +197,7 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
               value={cityBadge}
               onChange={(e) => setCityBadge(e.target.value)}
               placeholder="e.g. Accra • Legon / Kumasi"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
           </div>
         </div>
@@ -210,17 +207,17 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
           <div className="grid grid-cols-2 gap-2">
             {(
               [
-                ['CAMPUS', '🌐 Open Campus Lobby + Code'],
-                ['UNLISTED', '🔑 Private Code / Link Only']
+                ['CAMPUS', 'Open Campus Lobby + Code'],
+                ['UNLISTED', 'Private Code / Link Only']
               ] as const
             ).map(([mode, label]) => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => setVisibility(mode)}
-                className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border transition ${
+                className={`py-2 px-3 rounded-lg text-xs font-semibold border transition ${
                   visibility === mode
-                    ? 'bg-sky-500/25 border-sky-400 text-sky-200'
+                    ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
                     : 'aura-subtle-surface text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -295,14 +292,14 @@ export const HostRoomModal: React.FC<HostRoomModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-2xl aura-subtle-surface hover:bg-white/15 text-xs font-bold transition"
+            className="flex-1 py-2.5 rounded-lg aura-subtle-surface hover:border-slate-600 text-xs font-semibold transition"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 py-3 rounded-2xl aura-shimmer-btn text-slate-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-lg aura-shimmer-btn text-slate-950 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             <Sparkles className="w-4 h-4" />
             {isSubmitting ? 'Launching Room...' : 'Go Live Now'}
@@ -340,19 +337,19 @@ export const QrInviteModal: React.FC<QrInviteModalProps> = ({
       badge="UNIVERSAL ROOM INVITE"
       title={`Invite to ${room.courseCode}`}
       subtitle="Anyone on Android, iPhone Safari, Chrome, or Mac/PC can scan or enter this 6-character code."
-      accentColor="emerald"
+      accentColor="sky"
       maxWidthClass="max-w-sm"
     >
       <div className="text-center space-y-3.5">
-        <div className="bg-white p-4 rounded-3xl inline-block mx-auto shadow-xl">
+        <div className="bg-white p-4 rounded-xl inline-block mx-auto">
           <QRCodeSVG value={shareUrl} size={184} />
         </div>
 
-        <div className="p-3.5 rounded-2xl aura-subtle-surface space-y-1">
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-sky-300">
+        <div className="p-3.5 rounded-lg aura-subtle-surface space-y-1">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-cyan-400">
             6-CHARACTER JOIN CODE
           </div>
-          <div className="font-mono text-3xl font-extrabold tracking-widest text-emerald-400">
+          <div className="font-mono text-3xl font-bold tracking-widest text-cyan-400">
             {displayCode}
           </div>
           <div className="text-[11px] text-slate-400 break-all pt-1">{shareUrl}</div>
@@ -365,7 +362,7 @@ export const QrInviteModal: React.FC<QrInviteModalProps> = ({
               navigator.clipboard.writeText(shareUrl);
               onNotify(`Copied Invite Link (Code: ${displayCode})!`);
             }}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 px-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
           >
             <Copy className="w-3.5 h-3.5" /> Copy Link
           </button>
@@ -384,7 +381,7 @@ export const QrInviteModal: React.FC<QrInviteModalProps> = ({
                   // Cancelled share sheet
                 }
               }}
-              className="flex-1 py-2.5 px-3 rounded-xl bg-sky-500/25 border border-sky-400/50 text-sky-200 text-xs font-extrabold inline-flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 px-3 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
             >
               <Share2 className="w-3.5 h-3.5" /> Share
             </button>
@@ -395,7 +392,7 @@ export const QrInviteModal: React.FC<QrInviteModalProps> = ({
                 navigator.clipboard.writeText(displayCode);
                 onNotify(`Copied Code ${displayCode}!`);
               }}
-              className="flex-1 py-2.5 px-3 rounded-xl aura-subtle-surface text-xs font-bold inline-flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 px-3 rounded-lg aura-subtle-surface text-xs font-semibold inline-flex items-center justify-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" /> Copy Code
             </button>
@@ -426,7 +423,7 @@ const POLL_TEMPLATES = [
   },
   {
     q: 'Sprint Check-In: What is your energy & focus level right now?',
-    opts: ['🔥 Locked in (100%)', '⚡ Good pace (75%)', '☕ Need 5m coffee break', '😴 Struggling with concepts'],
+    opts: ['Locked in (100%)', 'Good pace (75%)', 'Need 5m break', 'Need concept review'],
     correct: -1
   }
 ];
@@ -485,14 +482,14 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Fast Exam Templates */}
         <div className="space-y-1">
-          <span className="text-[11px] font-bold text-slate-400">⚡ Instant Quick Templates</span>
+          <span className="text-[11px] font-bold text-slate-400">Instant Quick Templates</span>
           <div className="flex flex-wrap gap-1.5">
             {POLL_TEMPLATES.map((t, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => applyTemplate(t)}
-                className="px-2.5 py-1 rounded-xl aura-subtle-surface hover:border-sky-400/50 text-[10px] font-bold text-slate-300 hover:text-white transition"
+                className="px-2.5 py-1 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-[10px] font-semibold text-slate-300 hover:text-white transition"
               >
                 {t.q.slice(0, 32)}...
               </button>
@@ -504,32 +501,32 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           placeholder="Question prompt (e.g. Which layer does TCP belong to?)"
-          className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
+          className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input
             value={optA}
             onChange={(e) => setOptA(e.target.value)}
             placeholder="Option A (required)"
-            className="w-full px-3.5 py-2 rounded-xl aura-input text-xs"
+            className="w-full px-3.5 py-2 rounded-lg aura-input text-xs"
           />
           <input
             value={optB}
             onChange={(e) => setOptB(e.target.value)}
             placeholder="Option B (required)"
-            className="w-full px-3.5 py-2 rounded-xl aura-input text-xs"
+            className="w-full px-3.5 py-2 rounded-lg aura-input text-xs"
           />
           <input
             value={optC}
             onChange={(e) => setOptC(e.target.value)}
             placeholder="Option C (optional)"
-            className="w-full px-3.5 py-2 rounded-xl aura-input text-xs"
+            className="w-full px-3.5 py-2 rounded-lg aura-input text-xs"
           />
           <input
             value={optD}
             onChange={(e) => setOptD(e.target.value)}
             placeholder="Option D (optional)"
-            className="w-full px-3.5 py-2 rounded-xl aura-input text-xs"
+            className="w-full px-3.5 py-2 rounded-lg aura-input text-xs"
           />
         </div>
 
@@ -550,9 +547,9 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
                 key={letter}
                 type="button"
                 onClick={() => setCorrectIdx(idx)}
-                className={`px-3 py-1 rounded-lg font-extrabold transition ${
+                className={`px-3 py-1 rounded-lg font-bold transition ${
                   correctIdx === idx
-                    ? 'bg-emerald-400 text-slate-950 shadow-md'
+                    ? 'bg-cyan-500 text-slate-950'
                     : 'aura-subtle-surface text-slate-300'
                 }`}
               >
@@ -566,13 +563,13 @@ export const CreatePollModal: React.FC<CreatePollModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+            className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold shadow-md shadow-emerald-500/20"
+            className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold"
           >
             Push Poll Live
           </button>
@@ -591,9 +588,9 @@ interface PinSpotlightModalProps {
 }
 
 const SPOTLIGHT_SUGGESTIONS = [
-  '🎯 50m Sprint Target: Complete 5 past-paper questions on Section B before break.',
-  '📌 Theorem Spotlight: Euler Formula e^(iπ) + 1 = 0 & Fourier transform identities.',
-  '💡 Key Discussion: How does Deadlock Avoidance differ from Deadlock Detection?'
+  '50m Sprint Target: Complete 5 past-paper questions on Section B before break.',
+  'Theorem Spotlight: Euler Formula e^(iπ) + 1 = 0 & Fourier transform identities.',
+  'Key Discussion: How does Deadlock Avoidance differ from Deadlock Detection?'
 ];
 
 export const PinSpotlightModal: React.FC<PinSpotlightModalProps> = ({
@@ -619,14 +616,14 @@ export const PinSpotlightModal: React.FC<PinSpotlightModalProps> = ({
     >
       <div className="space-y-3">
         <div className="space-y-1">
-          <span className="text-[11px] font-bold text-slate-400">💡 Fast Suggestions</span>
+          <span className="text-[11px] font-bold text-slate-400">Fast Suggestions</span>
           <div className="space-y-1">
             {SPOTLIGHT_SUGGESTIONS.map((s, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setDraft(s)}
-                className="w-full text-left p-2 rounded-xl aura-subtle-surface hover:border-amber-400/50 text-[11px] text-slate-300 hover:text-white transition line-clamp-1"
+                className="w-full text-left p-2 rounded-lg aura-subtle-surface hover:border-amber-500/50 text-[11px] text-slate-300 hover:text-white transition line-clamp-1"
               >
                 {s}
               </button>
@@ -946,32 +943,32 @@ export const SessionRecapModal: React.FC<SessionRecapModalProps> = ({
   onNotify
 }) => {
   const recapText = [
-    `📋 AURA SMART STUDY MINUTES`,
+    `AURA SMART STUDY MINUTES`,
     `Course: ${room.courseCode} — ${room.roomTitle}`,
     `Host: ${room.ownerName} • Sprint: ${room.activeMinutes} mins`,
     `Topic: ${room.focusTopic}`,
     ``,
-    `👥 ATTENDEES (${Math.max(1, participants.filter((p) => p.admissionStatus !== 'REMOVED').length)}):`,
+    `ATTENDEES (${Math.max(1, participants.filter((p) => p.admissionStatus !== 'REMOVED').length)}):`,
     ...participants
       .filter((p) => p.admissionStatus !== 'REMOVED')
       .map((p) => `• ${p.displayName} (${p.cityOrCampus || 'Remote'} • ${p.devicePlatform})`),
     ...(room.spotlightCardText
-      ? ['', '📌 SPOTLIGHTED FOCUS:', room.spotlightCardText]
+      ? ['', 'SPOTLIGHTED FOCUS:', room.spotlightCardText]
       : []),
     ...(room.sharedBoardNote
-      ? ['', '📝 SHARED CHALKBOARD / FORMULAS:', room.sharedBoardNote]
+      ? ['', 'SHARED CHALKBOARD / FORMULAS:', room.sharedBoardNote]
       : []),
     ...(sharedCards.length > 0
       ? [
           '',
-          `🃏 FLASHCARDS DROPPED (${sharedCards.length}):`,
+          `FLASHCARDS DROPPED (${sharedCards.length}):`,
           ...sharedCards.slice(0, 15).map((c, idx) => `${idx + 1}. Q: ${c.question}\n   A: ${c.answer}`)
         ]
       : []),
     ...(messages.length > 0
       ? [
           '',
-          '💬 KEY LIVE Q&A HIGHLIGHTS:',
+          'KEY LIVE Q&A HIGHLIGHTS:',
           ...messages.slice(-10).map((m) => `• ${m.authorName}: ${m.text}`)
         ]
       : [])
@@ -984,9 +981,9 @@ export const SessionRecapModal: React.FC<SessionRecapModalProps> = ({
       badge="SESSION MINUTES"
       title="Smart Study Session Recap"
       subtitle="Save the shared formulas, flashcards, and Q&A straight to your Notes Vault."
-      accentColor="emerald"
+      accentColor="sky"
     >
-      <pre className="p-3.5 rounded-2xl aura-subtle-surface text-[11px] whitespace-pre-wrap font-sans max-h-60 overflow-y-auto leading-relaxed">
+      <pre className="p-3.5 rounded-lg aura-subtle-surface text-[11px] whitespace-pre-wrap font-sans max-h-60 overflow-y-auto leading-relaxed">
         {recapText}
       </pre>
       <div className="flex gap-2">
@@ -996,7 +993,7 @@ export const SessionRecapModal: React.FC<SessionRecapModalProps> = ({
             onSaveToNotes(`Meeting Recap: ${room.roomTitle}`, recapText);
             onClose();
           }}
-          className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+          className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
         >
           <BookmarkPlus className="w-4 h-4" /> Save to Notes
         </button>
@@ -1006,7 +1003,7 @@ export const SessionRecapModal: React.FC<SessionRecapModalProps> = ({
             navigator.clipboard.writeText(recapText);
             onNotify('Copied Smart Study Minutes to clipboard!');
           }}
-          className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold inline-flex items-center justify-center gap-1.5"
+          className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold inline-flex items-center justify-center gap-1.5"
         >
           <Copy className="w-3.5 h-3.5" /> Copy Text
         </button>

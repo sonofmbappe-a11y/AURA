@@ -6,16 +6,17 @@ export default {
     extend: {
       colors: {
         aura: {
-          obsidian: '#060B16',
-          card: '#0D172B',
-          cyan: '#38BDF8',
-          mint: '#34D399',
-          violet: '#A78BFA',
-          amber: '#FBBF24'
+          obsidian: '#0B1220',
+          card: '#111827',
+          border: '#1E293B',
+          cyan: '#06B6D4',
+          mint: '#10B981',
+          violet: '#8B5CF6',
+          amber: '#F59E0B'
         }
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
       }
     }

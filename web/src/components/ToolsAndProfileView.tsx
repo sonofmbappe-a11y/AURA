@@ -5,7 +5,6 @@ import {
   Calculator,
   CloudDownload,
   CloudUpload,
-  GraduationCap,
   LogIn,
   LogOut,
   Moon,
@@ -219,20 +218,20 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       {/* Cross-Platform Cloud Backup & Restore Card */}
-      <div className="aura-glass rounded-3xl p-5 space-y-3.5 border border-emerald-400/35">
+      <div className="aura-glass rounded-xl p-5 space-y-3.5 border border-slate-800">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-extrabold">
-              ANDROID ⇄ IPHONE / WEB CLOUD VAULT
+            <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 text-[11px] font-bold">
+              ANDROID / IPHONE / WEB CLOUD VAULT
             </span>
-            <h3 className="font-extrabold text-base mt-1">
+            <h3 className="font-bold text-base mt-1">
               {user ? user.displayName || user.email : 'Sign In to Sync Your Timetable & Profile'}
             </h3>
           </div>
           {user && (
             <button
               onClick={() => signOutBrowser()}
-              className="p-2 rounded-xl bg-rose-500/15 text-rose-300"
+              className="p-2 rounded-lg bg-rose-500/15 text-rose-300"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -241,7 +240,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
         </div>
 
         <p className="text-xs text-slate-400">
-          Routine edits save locally on your browser for instant offline speed & zero database cost. Tap below whenever you want to push or pull your snapshot with the Android app!
+          Routine edits save locally on your browser for instant offline speed &amp; zero database cost. Tap below whenever you want to push or pull your snapshot with the Android app.
         </p>
 
         {!user ? (
@@ -254,13 +253,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   onNotify((e as Error)?.message || 'Sign-in cancelled or domain not yet authorized.');
                 }
               }}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs inline-flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs inline-flex items-center justify-center gap-2 transition"
             >
               <LogIn className="w-4 h-4" /> Sign in with Google
             </button>
 
-            {/* Expandable Email/Password Option */}
-            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-2.5">
+            <div className="p-3 rounded-lg aura-subtle-surface space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-bold text-slate-300">
                   {isRegister ? 'Create Scholar Account (Email)' : 'Sign In with Email & Password'}
@@ -268,7 +266,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setIsRegister(!isRegister)}
-                  className="text-[10px] font-extrabold text-emerald-400 hover:underline"
+                  className="text-[10px] font-bold text-cyan-400 hover:underline"
                 >
                   {isRegister ? 'Switch to Sign In' : 'Create Account'}
                 </button>
@@ -280,7 +278,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Full Name"
-                  className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+                  className="w-full px-3 py-2 rounded-lg aura-input text-xs"
                 />
               )}
 
@@ -289,7 +287,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="scholar@university.edu"
-                className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+                className="w-full px-3 py-2 rounded-lg aura-input text-xs"
               />
 
               <input
@@ -297,7 +295,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••• (min 6 characters)"
-                className="w-full px-3 py-2 rounded-xl aura-input text-xs"
+                className="w-full px-3 py-2 rounded-lg aura-input text-xs"
               />
 
               <button
@@ -319,7 +317,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                     onNotify((err as Error)?.message || 'Authentication failed.');
                   }
                 }}
-                className="w-full py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs transition"
+                className="w-full py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 font-semibold text-xs transition"
               >
                 {isRegister ? 'Create Account' : 'Sign In'}
               </button>
@@ -330,14 +328,14 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             <button
               disabled={busySync}
               onClick={handleBackupToCloud}
-              className="py-2.5 px-3 rounded-xl bg-emerald-500 text-slate-950 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="py-2.5 px-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition"
             >
               <CloudUpload className="w-4 h-4" /> Backup to Cloud
             </button>
             <button
               disabled={busySync}
               onClick={handleImportFromCloud}
-              className="py-2.5 px-3 rounded-xl bg-sky-500/25 border border-sky-400/50 text-sky-200 font-extrabold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="py-2.5 px-3 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition"
             >
               <CloudDownload className="w-4 h-4" /> Import Android Backup
             </button>
@@ -346,19 +344,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* iPhone Safari Add-to-Home-Screen Guide */}
-      <div className="aura-glass rounded-3xl p-4 flex items-start gap-3 border border-sky-400/30">
-        <Smartphone className="w-6 h-6 text-sky-400 shrink-0 mt-0.5" />
+      <div className="aura-glass rounded-xl p-4 flex items-start gap-3 border border-slate-800">
+        <Smartphone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
         <div className="space-y-1 text-xs">
-          <div className="font-extrabold text-sky-300">Install on iPhone or iPad Home Screen</div>
+          <div className="font-bold text-cyan-400">Install on iPhone or iPad Home Screen</div>
           <p className="text-slate-400 leading-relaxed">
             On iPhone Safari, tap the <strong>Share</strong> icon at the bottom of Safari and choose{' '}
-            <strong>"Add to Home Screen"</strong> for a full-screen native app icon with offline timetable access!
+            <strong>"Add to Home Screen"</strong> for a full-screen native app icon with offline timetable access.
           </p>
         </div>
       </div>
 
       {/* Student Profile & Theme */}
-      <div className="aura-glass rounded-3xl p-5 space-y-3">
+      <div className="aura-glass rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
             <UserCircle className="w-4 h-4" /> STUDENT PROFILE & THEME
@@ -433,16 +431,16 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* 90-Minute REM Sleep Cycle Planner */}
-      <div className="aura-glass rounded-3xl p-5 space-y-3">
+      <div className="aura-glass rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-violet-300 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-violet-300 flex items-center gap-1.5">
             <Moon className="w-4 h-4" /> 90-MIN REM SLEEP CYCLE WAKE-UP PLANNER
           </span>
           <input
             type="time"
             value={wakeTime}
             onChange={(e) => setWakeTime(e.target.value)}
-            className="px-3 py-1 rounded-xl aura-input text-xs font-mono"
+            className="px-3 py-1 rounded-lg aura-input text-xs font-mono"
           />
         </div>
         <p className="text-xs text-slate-400">
@@ -452,9 +450,9 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           {bedtimes.map((b) => (
             <div
               key={b.cycles}
-              className="p-3 rounded-2xl bg-violet-500/15 border border-violet-400/30 text-center"
+              className="p-3 rounded-lg aura-subtle-surface text-center"
             >
-              <div className="text-base font-mono font-extrabold text-violet-200">{b.time}</div>
+              <div className="text-base font-mono font-bold text-violet-300">{b.time}</div>
               <div className="text-[10px] text-slate-400">
                 {b.cycles} Cycles ({b.hours}h)
               </div>
@@ -464,12 +462,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* Cumulative GPA Calculator */}
-      <div className="aura-glass rounded-3xl p-5 space-y-3">
+      <div className="aura-glass rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5">
-            <Calculator className="w-4 h-4" /> GPA & GRADE TRACKER
+          <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+            <Calculator className="w-4 h-4" /> GPA &amp; GRADE TRACKER
           </span>
-          <span className="text-sm font-mono font-extrabold text-emerald-400">
+          <span className="text-sm font-mono font-bold text-cyan-400">
             GPA: {gpaStats.gpa} ({gpaStats.totalCredits} Cr)
           </span>
         </div>
@@ -478,19 +476,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             value={gCode}
             onChange={(e) => setGCode(e.target.value)}
             placeholder="Course"
-            className="col-span-2 px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+            className="col-span-2 px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
           />
           <input
             type="number"
             value={gCredits}
             onChange={(e) => setGCredits(e.target.value)}
             placeholder="Cr"
-            className="px-2 py-2.5 rounded-xl aura-input text-xs font-mono text-center"
+            className="px-2 py-2.5 rounded-lg aura-input text-xs font-mono text-center"
           />
           <select
             value={gLetter}
             onChange={(e) => setGLetter(e.target.value)}
-            className="px-2 py-2.5 rounded-xl aura-input text-xs font-bold"
+            className="px-2 py-2.5 rounded-lg aura-input text-xs font-bold"
           >
             {Object.keys(GRADE_SCALE).map((k) => (
               <option key={k} value={k}>
@@ -519,12 +517,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             }));
             setGCode('');
           }}
-          className="w-full py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-bold inline-flex items-center justify-center gap-1"
+          className="w-full py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-xs font-semibold inline-flex items-center justify-center gap-1 transition"
         >
           <Plus className="w-3.5 h-3.5" /> Add Course Grade
         </button>
         {vault.grades.map((g) => (
-          <div key={g.id} className="p-2.5 rounded-xl bg-white/5 flex items-center justify-between text-xs">
+          <div key={g.id} className="p-2.5 rounded-lg aura-subtle-surface flex items-center justify-between text-xs">
             <span>
               <strong>{g.courseCode}</strong> • {g.creditHours} Cr • Grade <strong>{g.letterGrade}</strong> ({g.gradePoint.toFixed(1)})
             </span>
@@ -544,12 +542,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* Feature: Target Honors & CGPA Predictor Simulator */}
-      <div className="aura-glass rounded-3xl p-5 space-y-4 border border-amber-400/30">
+      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
             <Award className="w-4 h-4" /> HONORS &amp; CGPA TARGET SIMULATOR
           </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-extrabold">
+          <span className="text-xs px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-bold">
             Target: {targetHonorsGpa.toFixed(2)}
           </span>
         </div>
@@ -567,9 +565,9 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   key={g}
                   type="button"
                   onClick={() => setTargetHonorsGpa(g)}
-                  className={`flex-1 py-1 rounded-xl text-xs font-bold transition border ${
+                  className={`flex-1 py-1 rounded-lg text-xs font-bold transition border ${
                     targetHonorsGpa === g
-                      ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                      ? 'bg-amber-500/15 border-amber-500 text-amber-300'
                       : 'aura-subtle-surface text-slate-400 hover:text-white'
                   }`}
                 >
@@ -596,34 +594,34 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3">
+        <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
           <div>
             <div className="text-[11px] text-slate-400">Required Future Average</div>
-            <div className="text-lg font-mono font-extrabold text-white">
+            <div className="text-lg font-mono font-bold">
               {simulationStats.neededGpa} GPA
             </div>
           </div>
           <div className="text-right">
             <span
-              className={`px-3 py-1 rounded-xl text-xs font-extrabold ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold ${
                 simulationStats.isPossible
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                  : 'bg-rose-500/20 text-rose-300 border border-rose-400/30'
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
               }`}
             >
-              {simulationStats.isPossible ? 'Honors Achievable ✓' : 'Target Adjustment Needed'}
+              {simulationStats.isPossible ? 'Honors Achievable' : 'Target Adjustment Needed'}
             </span>
           </div>
         </div>
       </div>
 
       {/* Feature 1: Course Final Exam Grade & Target Forecaster */}
-      <div className="aura-glass rounded-2xl p-5 space-y-4 border border-slate-800">
+      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-white flex items-center gap-1.5">
-            <Target className="w-4 h-4 text-emerald-400" /> FINAL EXAM GRADE TARGET FORECASTER
+          <span className="text-xs font-bold flex items-center gap-1.5">
+            <Target className="w-4 h-4 text-cyan-400" /> FINAL EXAM GRADE TARGET FORECASTER
           </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+          <span className="text-xs px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 font-bold border border-cyan-500/25">
             Target: {targetFinalGrade}%
           </span>
         </div>
@@ -636,7 +634,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           <div>
             <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
               <span>Coursework Score</span>
-              <span className="text-emerald-400 font-mono font-bold">{courseworkScore}%</span>
+              <span className="text-cyan-400 font-mono font-bold">{courseworkScore}%</span>
             </div>
             <input
               type="range"
@@ -644,7 +642,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               max="100"
               value={courseworkScore}
               onChange={(e) => setCourseworkScore(Number(e.target.value))}
-              className="w-full mt-2 accent-emerald-400"
+              className="w-full mt-2 accent-cyan-400"
             />
           </div>
 
@@ -677,7 +675,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   onClick={() => setTargetFinalGrade(t)}
                   className={`flex-1 py-1 rounded-lg text-xs font-bold transition border ${
                     targetFinalGrade === t
-                      ? 'bg-amber-400/20 border-amber-400 text-amber-300'
+                      ? 'bg-amber-500/15 border-amber-500 text-amber-300'
                       : 'aura-subtle-surface text-slate-400 hover:text-white'
                   }`}
                 >
@@ -688,12 +686,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-3">
+        <div className="p-4 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
           <div>
             <div className="text-[11px] text-slate-400">
               Exam Weight: {examForecaster.examWeight}% • Current Points: {examForecaster.currentPoints} pts
             </div>
-            <div className="text-xl font-mono font-extrabold text-white mt-0.5">
+            <div className="text-xl font-mono font-bold mt-0.5">
               {examForecaster.isPossible ? `${examForecaster.requiredExamScore}% on Final` : 'Out of Reach'}
             </div>
           </div>
@@ -701,8 +699,8 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             <span
               className={`px-3 py-1 rounded-lg text-xs font-bold ${
                 examForecaster.isPossible
-                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'
-                  : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
               }`}
             >
               {examForecaster.status}
@@ -712,16 +710,16 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* Feature: Attendance Risk Shield */}
-      <div className="aura-glass rounded-3xl p-5 space-y-4 border border-sky-400/30">
+      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
+          <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
             <Shield className="w-4 h-4" /> ATTENDANCE SAFETY SHIELD
           </span>
           <span
-            className={`text-xs px-2.5 py-0.5 rounded-full font-extrabold ${
+            className={`text-xs px-2.5 py-0.5 rounded-md font-bold ${
               attendanceShield.isAtRisk
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
             }`}
           >
             {attendanceShield.pct}% Attendance
@@ -740,7 +738,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               min="0"
               value={attendedClasses}
               onChange={(e) => setAttendedClasses(Number(e.target.value) || 0)}
-              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
             />
           </div>
           <div>
@@ -750,7 +748,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               min="1"
               value={totalClasses}
               onChange={(e) => setTotalClasses(Math.max(1, Number(e.target.value) || 1))}
-              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
             />
           </div>
           <div>
@@ -761,15 +759,15 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               max="100"
               value={policyThreshold}
               onChange={(e) => setPolicyThreshold(Math.max(50, Math.min(100, Number(e.target.value) || 75)))}
-              className="aura-input w-full px-3 py-2 rounded-xl text-xs font-mono text-center mt-1"
+              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
             />
           </div>
         </div>
 
-        <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3">
+        <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
           <div>
             <div className="text-[11px] text-slate-400">Absence Safety Buffer</div>
-            <div className="text-sm font-extrabold text-white">
+            <div className="text-sm font-bold">
               {attendanceShield.isAtRisk
                 ? `Debarment Warning: Attend next ${attendanceShield.neededClassesToRecover} classes`
                 : `Safe Margin: Up to ${attendanceShield.safeCutsLeft} classes available`}
@@ -779,25 +777,25 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* AURA Semester Academic Summary */}
-      <div className="rounded-3xl p-5 bg-slate-900/80 border border-slate-800 space-y-3">
-        <div className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+      <div className="aura-glass rounded-xl p-5 border border-slate-800 space-y-3">
+        <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
           <Sparkles className="w-4 h-4" /> Academic Progress Metrics
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-          <div className="p-3 rounded-2xl bg-black/25">
-            <div className="text-xl font-extrabold text-sky-300">{vault.courses.length}</div>
+          <div className="p-3 rounded-lg aura-subtle-surface">
+            <div className="text-xl font-bold font-mono text-cyan-400">{vault.courses.length}</div>
             <div className="text-[11px] text-slate-400">Courses</div>
           </div>
-          <div className="p-3 rounded-2xl bg-black/25">
-            <div className="text-xl font-extrabold text-emerald-300">{vault.lectures.length}</div>
+          <div className="p-3 rounded-lg aura-subtle-surface">
+            <div className="text-xl font-bold font-mono text-emerald-400">{vault.lectures.length}</div>
             <div className="text-[11px] text-slate-400">Weekly Slots</div>
           </div>
-          <div className="p-3 rounded-2xl bg-black/25">
-            <div className="text-xl font-extrabold text-violet-300">{vault.flashcards.length}</div>
+          <div className="p-3 rounded-lg aura-subtle-surface">
+            <div className="text-xl font-bold font-mono text-violet-400">{vault.flashcards.length}</div>
             <div className="text-[11px] text-slate-400">SM-2 Cards</div>
           </div>
-          <div className="p-3 rounded-2xl bg-black/25">
-            <div className="text-xl font-extrabold text-amber-300">{totalFocusHrs}h</div>
+          <div className="p-3 rounded-lg aura-subtle-surface">
+            <div className="text-xl font-bold font-mono text-amber-400">{totalFocusHrs}h</div>
             <div className="text-[11px] text-slate-400">Deep Focus</div>
           </div>
         </div>

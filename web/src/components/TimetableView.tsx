@@ -251,14 +251,14 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   return (
     <div className="space-y-4">
       {/* Live Now / Up Next Hero Card */}
-      <div className="aura-glass rounded-3xl p-4 border border-emerald-400/30">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="aura-glass rounded-xl p-4 sm:p-5 border border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-400/20 text-emerald-300">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/25">
               <Sparkles className="w-3.5 h-3.5" />
               {liveBanner ? liveBanner.badge : 'TIMETABLE & COURSE ARCHITECT'}
             </span>
-            <h2 className="text-lg font-extrabold mt-1.5">
+            <h2 className="text-lg font-bold mt-1.5 tracking-tight">
               {liveBanner
                 ? `${liveBanner.lecture.courseCode} • ${liveBanner.lecture.courseName}`
                 : `${vault.profile.semester} Smart Schedule`}
@@ -273,13 +273,13 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <div className="flex items-center gap-2">
             <button
               onClick={openAddCourse}
-              className="px-3 py-2 rounded-xl text-xs font-bold bg-sky-500/20 border border-sky-400/40 text-sky-300 hover:bg-sky-500/30 flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg text-xs font-semibold aura-subtle-surface hover:border-cyan-500/50 text-cyan-400 flex items-center gap-1.5 transition"
             >
               <BookOpen className="w-3.5 h-3.5" /> + Course
             </button>
             <button
               onClick={openAddLecture}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400 flex items-center gap-1.5 transition"
             >
               <Plus className="w-4 h-4" /> + Class Slot
             </button>
@@ -299,10 +299,10 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
-            className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold border transition ${
+            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold border transition ${
               viewMode === mode
-                ? 'bg-sky-500/25 border-sky-400 text-white'
-                : 'aura-glass border-white/10 text-slate-400'
+                ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
+                : 'aura-glass border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
           >
             {label}
@@ -320,10 +320,10 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 <button
                   key={d.num}
                   onClick={() => setSelectedDay(d.num)}
-                  className={`min-w-[62px] py-2.5 px-2 rounded-2xl text-center border transition ${
+                  className={`min-w-[64px] py-2 px-2 rounded-lg text-center border transition ${
                     active
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-300 font-extrabold'
-                      : 'aura-glass text-slate-300 border-white/10'
+                      ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold'
+                      : 'aura-glass text-slate-300 border-slate-800 hover:border-slate-700'
                   }`}
                 >
                   <div className="text-xs">{d.short}</div>
@@ -336,8 +336,8 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           </div>
 
           {dayLectures.length === 0 ? (
-            <div className="aura-glass rounded-3xl p-8 text-center space-y-2">
-              <Calendar className="w-8 h-8 text-sky-400 mx-auto" />
+            <div className="aura-glass rounded-xl p-8 text-center space-y-2">
+              <Calendar className="w-8 h-8 text-cyan-400 mx-auto" />
               <div className="font-bold text-sm">
                 Free Day on {DAYS.find((d) => d.num === selectedDay)?.full}
               </div>
@@ -350,30 +350,30 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               {dayLectures.map((lec) => (
                 <div
                   key={lec.id}
-                  className="aura-glass rounded-2xl p-4 flex items-center justify-between gap-3 border-l-4"
-                  style={{ borderLeftColor: lec.colorHex || '#38BDF8' }}
+                  className="aura-glass rounded-xl p-4 flex items-center justify-between gap-3 border-l-4"
+                  style={{ borderLeftColor: lec.colorHex || '#06B6D4' }}
                 >
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className="px-2 py-0.5 rounded-md text-[11px] font-extrabold"
+                        className="px-2 py-0.5 rounded-md text-[11px] font-bold"
                         style={{
-                          backgroundColor: `${lec.colorHex}28`,
+                          backgroundColor: `${lec.colorHex}24`,
                           color: lec.colorHex
                         }}
                       >
                         {lec.courseCode}
                       </span>
-                      <span className="text-xs font-mono text-emerald-300 flex items-center gap-1">
+                      <span className="text-xs font-mono text-cyan-300 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {lec.startTime} – {lec.endTime}
                       </span>
                     </div>
-                    <div className="font-bold text-sm truncate">{lec.courseName}</div>
+                    <div className="font-semibold text-sm truncate">{lec.courseName}</div>
                     <div className="text-xs text-slate-400 flex flex-wrap items-center gap-3">
                       {lec.venue && (
                         <span className="inline-flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-sky-400" /> {lec.venue}
+                          <MapPin className="w-3.5 h-3.5 text-cyan-400" /> {lec.venue}
                         </span>
                       )}
                       {lec.lecturer && (
@@ -388,14 +388,14 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                     <button
                       onClick={() => openEditLecture(lec)}
                       aria-label="Edit class slot"
-                      className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-sky-300"
+                      className="p-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-400"
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => deleteLecture(lec.id)}
                       aria-label="Delete class slot"
-                      className="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400"
+                      className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -414,9 +414,9 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               .filter((l) => l.dayOfWeek === d.num)
               .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime));
             return (
-              <div key={d.num} className="aura-glass rounded-2xl p-3.5 space-y-2">
+              <div key={d.num} className="aura-glass rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-extrabold text-xs text-sky-300 uppercase tracking-wider">
+                  <span className="font-bold text-xs text-cyan-400 uppercase tracking-wider">
                     {d.full}
                   </span>
                   <span className="text-[11px] text-slate-400">{slots.length} slot(s)</span>
@@ -427,10 +427,10 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                   slots.map((s) => (
                     <div
                       key={s.id}
-                      className="p-2.5 rounded-xl bg-white/5 flex items-center justify-between gap-2"
+                      className="p-2.5 rounded-lg aura-subtle-surface flex items-center justify-between gap-2"
                     >
                       <div className="min-w-0">
-                        <div className="text-xs font-bold truncate">
+                        <div className="text-xs font-semibold truncate">
                           <span style={{ color: s.colorHex }}>{s.courseCode}</span> • {s.courseName}
                         </div>
                         <div className="text-[11px] text-slate-400 font-mono">
@@ -439,7 +439,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                       </div>
                       <button
                         onClick={() => deleteLecture(s.id)}
-                        className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/20"
+                        className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15"
                         title="Delete slot"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -456,27 +456,27 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       {viewMode === 'COURSES' && (
         <div className="space-y-3">
           {vault.courses.length === 0 ? (
-            <div className="aura-glass rounded-3xl p-8 text-center text-xs text-slate-400">
+            <div className="aura-glass rounded-xl p-8 text-center text-xs text-slate-400">
               No courses registered yet. Tap <strong>+ Course</strong> above to add your semester courses.
             </div>
           ) : (
             vault.courses.map((c) => (
               <div
                 key={c.id}
-                className="aura-glass rounded-2xl p-4 flex items-center justify-between gap-3 border-l-4"
+                className="aura-glass rounded-xl p-4 flex items-center justify-between gap-3 border-l-4"
                 style={{ borderLeftColor: c.colorHex }}
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span
-                      className="px-2 py-0.5 rounded-md text-xs font-extrabold"
+                      className="px-2 py-0.5 rounded-md text-xs font-bold"
                       style={{ backgroundColor: `${c.colorHex}26`, color: c.colorHex }}
                     >
                       {c.code}
                     </span>
                     <span className="text-xs text-slate-400">{c.creditHours} Credits</span>
                   </div>
-                  <div className="font-bold text-sm mt-1 truncate">{c.name}</div>
+                  <div className="font-semibold text-sm mt-1 truncate">{c.name}</div>
                   <div className="text-xs text-slate-400">
                     {[c.lecturer, c.venue].filter(Boolean).join(' • ') || 'Tap edit to set lecturer & venue'}
                   </div>
@@ -484,14 +484,14 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => openEditCourse(c)}
-                    className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-sky-300"
+                    className="p-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-400"
                     title="Edit Course"
                   >
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteCourse(c)}
-                    className="p-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400"
+                    className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400"
                     title="Delete Course & Its Slots"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -566,14 +566,14 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               type="button"
               onClick={() => setShowCourseModal(false)}
-              className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+              className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={saveCourse}
-              className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+              className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold"
             >
               Save Course
             </button>
@@ -588,7 +588,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
         badge="CLASS SCHEDULE"
         title={editingLecture ? 'Edit Class Slot' : 'Add Weekly Class Slot'}
         subtitle="Includes live countdown banners & walking buffer reminders."
-        accentColor="emerald"
+        accentColor="sky"
       >
         <div className="space-y-3">
           <div className="space-y-1">
@@ -598,7 +598,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={lCourseCode}
               onChange={(e) => setLCourseCode(e.target.value)}
               placeholder="e.g. CS301"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
             />
             <datalist id="aura-course-codes">
               {vault.courses.map((c) => (
@@ -614,7 +614,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <select
               value={lDay}
               onChange={(e) => setLDay(Number(e.target.value))}
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
             >
               {DAYS.map((d) => (
                 <option key={d.num} value={d.num}>
@@ -631,7 +631,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 type="time"
                 value={lStart}
                 onChange={(e) => setLStart(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-mono"
+                className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-mono"
               />
             </div>
             <div className="space-y-1">
@@ -640,7 +640,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 type="time"
                 value={lEnd}
                 onChange={(e) => setLEnd(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-mono"
+                className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-mono"
               />
             </div>
           </div>
@@ -652,7 +652,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 value={lVenue}
                 onChange={(e) => setLVenue(e.target.value)}
                 placeholder="Hall / Lab"
-                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+                className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
               />
             </div>
             <div className="space-y-1">
@@ -663,7 +663,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 max={120}
                 value={lWalk}
                 onChange={(e) => setLWalk(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl aura-input text-xs font-mono text-center"
+                className="w-full px-3 py-2.5 rounded-lg aura-input text-xs font-mono text-center"
               />
             </div>
           </div>
@@ -672,14 +672,14 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               type="button"
               onClick={() => setShowLectureModal(false)}
-              className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+              className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={saveLecture}
-              className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+              className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold"
             >
               Save Slot
             </button>

@@ -7,8 +7,7 @@ import {
   User as UserIcon,
   X,
   AlertCircle,
-  Sparkles,
-  HelpCircle,
+  ShieldCheck,
   Copy,
   Check
 } from 'lucide-react';
@@ -47,7 +46,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
     try {
       const user = await signInWithGoogleBrowser();
       if (user) {
-        onNotify(`👋 Signed in as ${user.displayName || user.email}!`);
+        onNotify(`Signed in as ${user.displayName || user.email}.`);
         onClose();
       }
     } catch (err: unknown) {
@@ -79,11 +78,11 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
           password,
           fullName.trim() || 'Scholar'
         );
-        onNotify(`🎉 Scholar account created for ${user.email}! Welcome.`);
+        onNotify(`Scholar account created for ${user.email}.`);
         onClose();
       } else {
         const user = await signInWithEmailBrowser(email.trim(), password);
-        onNotify(`👋 Welcome back, ${user.displayName || user.email}!`);
+        onNotify(`Welcome back, ${user.displayName || user.email}.`);
         onClose();
       }
     } catch (err: unknown) {
@@ -117,24 +116,22 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md aura-glass rounded-3xl p-6 sm:p-7 border border-emerald-400/40 shadow-2xl space-y-5">
-        {/* Close Button */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85">
+      <div className="relative w-full max-w-md aura-glass rounded-xl p-6 sm:p-7 border border-slate-800 shadow-2xl space-y-5">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition"
+          className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-1.5 pr-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-400 to-sky-500 mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/20 mb-2">
-            <Sparkles className="w-6 h-6 text-slate-950" />
+          <div className="w-11 h-11 rounded-lg bg-cyan-500/15 border border-cyan-500/30 mx-auto flex items-center justify-center mb-2">
+            <ShieldCheck className="w-5 h-5 text-cyan-400" />
           </div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
             {mode === 'SIGN_IN' ? 'Sign In to AURA Web' : 'Create Scholar Account'}
           </h2>
           <p className="text-xs text-slate-400">
@@ -142,9 +139,8 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
           </p>
         </div>
 
-        {/* Error Alert */}
         {errorMessage && (
-          <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-2.5">
+          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-semibold block">{errorMessage}</span>
@@ -160,7 +156,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
                     {copiedHost ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
                   <p className="mt-1 text-slate-300">
-                    💡 Tip: You can also sign in instantly using <strong>Email &amp; Password</strong> below without waiting for Google OAuth domain approval!
+                    Tip: You can also sign in using <strong>Email &amp; Password</strong> below without waiting for Google OAuth domain approval.
                   </p>
                 </div>
               )}
@@ -244,7 +240,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-400 hover:to-sky-400 text-slate-950 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
           >
             {mode === 'SIGN_IN' ? (
               <>
@@ -261,7 +257,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
         </form>
 
         {/* Toggle Mode Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs text-slate-400">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
           <span>{mode === 'SIGN_IN' ? "Don't have an account yet?" : 'Already have an account?'}</span>
           <button
             type="button"
@@ -269,7 +265,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
               setMode(mode === 'SIGN_IN' ? 'REGISTER' : 'SIGN_IN');
               setErrorMessage('');
             }}
-            className="font-bold text-emerald-400 hover:underline"
+            className="font-semibold text-cyan-400 hover:underline"
           >
             {mode === 'SIGN_IN' ? 'Create Account' : 'Sign In'}
           </button>

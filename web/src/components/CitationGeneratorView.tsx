@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   BookOpen,
-  Check,
   Copy,
   Download,
   FileCode,
@@ -169,17 +168,17 @@ export const CitationGeneratorView: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       {/* Header Banner */}
-      <div className="aura-hero-card rounded-3xl p-4 sm:p-5">
+      <div className="aura-hero-card rounded-xl p-4 sm:p-5">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-sky-500/20 text-sky-300 flex items-center justify-center border border-sky-400/30 shrink-0">
-            <Quote className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-lg bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30 shrink-0">
+            <Quote className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-extrabold text-white">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-bold">
                 Academic Citation &amp; Bibliography Generator
               </h2>
-              <span className="px-2 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/30 text-[10px] font-extrabold text-sky-300 uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
                 APA • MLA • IEEE • Harvard
               </span>
             </div>
@@ -193,7 +192,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Form Inputs */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+          <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
             {/* Source Type Selector */}
             <div>
               <label className="text-xs font-bold text-slate-300 uppercase">Source Type</label>
@@ -208,9 +207,9 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     key={item.id}
                     type="button"
                     onClick={() => setSourceType(item.id as any)}
-                    className={`p-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition border ${
+                    className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition border ${
                       sourceType === item.id
-                        ? 'bg-sky-500/20 border-sky-400 text-sky-300 shadow-sm'
+                        ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
                         : 'aura-subtle-surface text-slate-400 hover:text-white'
                     }`}
                   >
@@ -236,7 +235,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                       ? 'e.g. Deep Learning'
                       : 'e.g. Distributed Consensus in Distributed Systems'
                   }
-                  className="aura-input w-full px-4 py-2.5 rounded-2xl text-xs sm:text-sm mt-1"
+                  className="aura-input w-full px-3.5 py-2.5 rounded-lg text-xs sm:text-sm mt-1"
                 />
               </div>
 
@@ -248,7 +247,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     value={authors}
                     onChange={(e) => setAuthors(e.target.value)}
                     placeholder="e.g. Vaswani, A., Shazeer, N., &amp; Parmar, N."
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
                 <div>
@@ -258,7 +257,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     value={year}
                     onChange={(e) => setYear(e.target.value)}
                     placeholder="2024"
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
               </div>
@@ -285,7 +284,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                         ? 'e.g. MIT Press'
                         : 'e.g. Stanford CS224N'
                     }
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
                 <div>
@@ -297,7 +296,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     value={volumeOrEdition}
                     onChange={(e) => setVolumeOrEdition(e.target.value)}
                     placeholder="e.g. Vol. 30, Issue 2"
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
               </div>
@@ -312,7 +311,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     value={pagesOrUrl}
                     onChange={(e) => setPagesOrUrl(e.target.value)}
                     placeholder="pp. 120–145 or https://..."
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
                 <div>
@@ -322,17 +321,17 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     value={doiOrIsbn}
                     onChange={(e) => setDoiOrIsbn(e.target.value)}
                     placeholder="10.1145/3372278.3390670"
-                    className="aura-input w-full px-3.5 py-2 rounded-xl mt-1"
+                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
               <button
                 type="button"
                 onClick={handleSaveToVault}
-                className="aura-pill-btn px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md transition"
+                className="aura-pill-btn px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
                 Save to Bibliography
@@ -343,9 +342,9 @@ export const CitationGeneratorView: React.FC<Props> = ({
 
         {/* Live Formatted Preview & Style Tabs */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <span className="text-xs font-extrabold text-white uppercase tracking-wider">
+          <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <span className="text-xs font-bold uppercase tracking-wider">
                 Style Preview
               </span>
               <div className="flex items-center gap-1">
@@ -354,9 +353,9 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     key={st}
                     type="button"
                     onClick={() => setActiveStyle(st)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-extrabold transition ${
+                    className={`px-2 py-1 rounded-md text-[10px] font-bold transition ${
                       activeStyle === st
-                        ? 'bg-sky-400 text-slate-950'
+                        ? 'bg-cyan-500 text-slate-950'
                         : 'aura-subtle-surface text-slate-300 hover:text-white'
                     }`}
                   >
@@ -367,18 +366,18 @@ export const CitationGeneratorView: React.FC<Props> = ({
             </div>
 
             {/* Formatted Citation Block */}
-            <div className="p-3.5 rounded-2xl bg-black/40 border border-sky-400/30 space-y-2">
-              <div className="text-[10px] font-bold text-sky-400 uppercase">
+            <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 space-y-2">
+              <div className="text-[10px] font-bold text-cyan-400 uppercase">
                 {activeStyle} 7th/9th Format
               </div>
               <p className="text-xs sm:text-sm text-slate-100 font-serif leading-relaxed italic select-all">
                 {activeFormattedText}
               </p>
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={handleCopyCitation}
-                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-sky-300 hover:border-sky-400/50 flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 rounded-lg aura-subtle-surface text-xs font-semibold text-cyan-300 hover:border-cyan-500/50 flex items-center gap-1.5 transition"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   Copy Citation
@@ -386,7 +385,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={handleCopyBibtex}
-                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-emerald-300 hover:border-emerald-400/50 flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 rounded-lg aura-subtle-surface text-xs font-semibold text-emerald-300 hover:border-emerald-500/50 flex items-center gap-1.5 transition"
                 >
                   <FileCode className="w-3.5 h-3.5" />
                   Copy BibTeX
@@ -397,7 +396,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
             {/* BibTeX Code Preview */}
             <div className="space-y-1">
               <div className="text-[10px] font-bold text-slate-400 uppercase">Raw BibTeX</div>
-              <pre className="p-3 rounded-2xl bg-slate-950 border border-white/10 text-[11px] font-mono text-emerald-300 overflow-x-auto select-all">
+              <pre className="p-3 rounded-lg bg-[#0B1220] border border-slate-800 text-[11px] font-mono text-cyan-300 overflow-x-auto select-all">
                 {computedCitations.bibtex}
               </pre>
             </div>
@@ -406,10 +405,10 @@ export const CitationGeneratorView: React.FC<Props> = ({
       </div>
 
       {/* Saved Bibliography Section */}
-      <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10 flex-wrap gap-2">
+      <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-800 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm sm:text-base font-extrabold text-white">
+            <h3 className="text-sm sm:text-base font-bold">
               My Academic Bibliography ({vault.citations?.length || 0})
             </h3>
             <span className="text-xs text-slate-400">Stored locally in your vault</span>
@@ -419,9 +418,9 @@ export const CitationGeneratorView: React.FC<Props> = ({
             <button
               type="button"
               onClick={handleExportAllBibtex}
-              className="aura-pill-btn px-3 py-1.5 aura-subtle-surface text-xs font-bold text-slate-300 hover:text-white flex items-center gap-1.5"
+              className="aura-pill-btn px-3 py-1.5 aura-subtle-surface text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5"
             >
-              <Download className="w-3.5 h-3.5 text-sky-400" />
+              <Download className="w-3.5 h-3.5 text-cyan-400" />
               Export All BibTeX
             </button>
           )}
@@ -436,11 +435,11 @@ export const CitationGeneratorView: React.FC<Props> = ({
             {vault.citations.map((c) => (
               <div
                 key={c.id}
-                className="p-3.5 rounded-2xl aura-subtle-surface flex items-start justify-between gap-3"
+                className="p-3.5 rounded-lg aura-subtle-surface flex items-start justify-between gap-3"
               >
                 <div className="space-y-1 min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold uppercase">
+                    <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 text-[10px] font-bold uppercase">
                       {c.sourceType}
                     </span>
                     <span className="text-xs text-slate-400 font-semibold">{c.year}</span>
@@ -458,7 +457,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                       onNotify('Copied APA citation!');
                     }}
                     title="Copy APA"
-                    className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-slate-300 hover:text-white"
+                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-300 hover:text-white"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -469,7 +468,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                       onNotify('Copied BibTeX!');
                     }}
                     title="Copy BibTeX"
-                    className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-emerald-400 hover:text-emerald-300"
+                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-emerald-400 hover:text-emerald-300"
                   >
                     <FileCode className="w-3.5 h-3.5" />
                   </button>
@@ -477,7 +476,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     type="button"
                     onClick={() => handleDeleteCitation(c.id)}
                     title="Delete"
-                    className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-rose-400 hover:text-rose-300"
+                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-rose-400 hover:text-rose-300"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

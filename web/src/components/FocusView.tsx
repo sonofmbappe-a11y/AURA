@@ -230,12 +230,12 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   return (
     <div className="space-y-4">
-      <div className="aura-glass rounded-3xl p-6 text-center space-y-5 border border-sky-400/30">
+      <div className="aura-glass rounded-xl p-6 text-center space-y-5 border border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-300 inline-flex items-center gap-1.5">
+          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 inline-flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" /> DEEP FOCUS SANCTUARY
           </span>
-          <span className="text-xs text-emerald-300 font-mono font-bold">
+          <span className="text-xs text-emerald-400 font-mono font-bold">
             {(totalLoggedMins / 60).toFixed(1)}h Logged
           </span>
         </div>
@@ -245,7 +245,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-3.5 py-1.5 rounded-xl aura-input text-xs font-bold"
+            className="px-3.5 py-1.5 rounded-lg aura-input text-xs font-bold"
           >
             {vault.courses.map((c) => (
               <option key={c.id} value={c.code}>
@@ -257,7 +257,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
           <button
             onClick={() => setShowCustomModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-violet-500/20 border border-violet-400/40 text-violet-200 text-xs font-bold inline-flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-400 text-xs font-semibold inline-flex items-center gap-1.5 transition"
           >
             <Sliders className="w-3.5 h-3.5" /> Any Custom Time (10s – 12h)
           </button>
@@ -271,7 +271,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               cy="120"
               r="104"
               fill="none"
-              stroke="rgba(255,255,255,0.08)"
+              stroke="#1E293B"
               strokeWidth="12"
             />
             <circle
@@ -279,21 +279,15 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               cy="120"
               r="104"
               fill="none"
-              stroke="url(#focusGrad)"
+              stroke="#06B6D4"
               strokeWidth="12"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - progress)}
             />
-            <defs>
-              <linearGradient id="focusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#34D399" />
-                <stop offset="100%" stopColor="#38BDF8" />
-              </linearGradient>
-            </defs>
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-4xl font-mono font-extrabold tracking-tight">{formatted}</div>
+            <div className="text-4xl font-mono font-bold tracking-tight">{formatted}</div>
             <div className="text-[11px] uppercase tracking-widest text-slate-400 mt-1">
               {isRunning ? 'Locked In' : 'Ready to Sprint'}
             </div>
@@ -312,10 +306,10 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={label}
               onClick={() => setPresetSeconds(sec as number)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
                 totalSeconds === sec
-                  ? 'bg-emerald-500 text-slate-950 border-emerald-300'
-                  : 'bg-white/5 border-white/15 text-slate-300 hover:bg-white/10'
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                  : 'aura-subtle-surface text-slate-300 hover:border-slate-600'
               }`}
             >
               {label}
@@ -327,7 +321,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setIsRunning((r) => !r)}
-            className="px-7 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm inline-flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+            className="px-7 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm inline-flex items-center gap-2 transition"
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             {isRunning ? 'Pause Focus' : 'Start Focus'}
@@ -337,7 +331,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               setIsRunning(false);
               setRemainingSeconds(totalSeconds);
             }}
-            className="p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-200"
+            className="p-2.5 rounded-lg aura-subtle-surface hover:border-slate-600 text-slate-200 transition"
             title="Reset Timer"
           >
             <RotateCcw className="w-4 h-4" />
@@ -346,9 +340,9 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       </div>
 
       {/* Zero-Cost Synthesized Focus Soundscapes */}
-      <div className="aura-glass rounded-3xl p-4 space-y-3">
+      <div className="aura-glass rounded-xl p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-sky-300">
+          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
             <Headphones className="w-4 h-4" /> ACOUSTIC FOCUS SOUNDSCAPES (OFFLINE SYNTH)
           </div>
           {soundMode !== 'OFF' ? (
@@ -361,18 +355,18 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           {(
             [
               ['OFF', 'Silent'],
-              ['RAIN', '🌧️ Soft Rain'],
-              ['BROWN', '🌊 Brown Noise'],
-              ['GAMMA', '🧠 40Hz Gamma']
+              ['RAIN', 'Soft Rain'],
+              ['BROWN', 'Brown Noise'],
+              ['GAMMA', '40Hz Gamma']
             ] as const
           ).map(([mode, label]) => (
             <button
               key={mode}
               onClick={() => applySoundscape(mode)}
-              className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition ${
+              className={`py-2 px-3 rounded-lg text-xs font-semibold border transition ${
                 soundMode === mode
-                  ? 'bg-sky-500/25 border-sky-400 text-white'
-                  : 'bg-white/5 border-white/10 text-slate-400'
+                  ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
+                  : 'aura-subtle-surface text-slate-400 hover:text-slate-200'
               }`}
             >
               {label}
@@ -382,9 +376,9 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       </div>
 
       {/* Distraction Parking Pad */}
-      <div className="aura-glass rounded-3xl p-4 space-y-3">
-        <div className="text-xs font-extrabold text-violet-300">
-          🧠 DISTRACTION PARKING PAD (CAPTURE THOUGHTS & KEEP STUDYING)
+      <div className="aura-glass rounded-xl p-4 space-y-3">
+        <div className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+          Distraction Parking Pad (Capture Thoughts &amp; Keep Studying)
         </div>
         <div className="flex gap-2">
           <input
@@ -392,11 +386,11 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             onChange={(e) => setDistractionInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
             placeholder="Park an intrusive thought or to-do here..."
-            className="flex-1 px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="flex-1 px-3.5 py-2.5 rounded-lg aura-input text-xs"
           />
           <button
             onClick={addDistraction}
-            className="px-3.5 py-2 rounded-xl bg-violet-500 text-white text-xs font-bold inline-flex items-center gap-1"
+            className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold inline-flex items-center gap-1 transition"
           >
             <Plus className="w-3.5 h-3.5" /> Park
           </button>
@@ -406,12 +400,12 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             {vault.distractions.map((item, idx) => (
               <div
                 key={`${item}_${idx}`}
-                className="p-2.5 rounded-xl bg-white/5 flex items-center justify-between gap-2 text-xs"
+                className="p-2.5 rounded-lg aura-subtle-surface flex items-center justify-between gap-2 text-xs"
               >
                 <span className="truncate">{item}</span>
                 <button
                   onClick={() => promoteDistractionToNote(item, idx)}
-                  className="text-[11px] font-bold text-emerald-300 shrink-0 hover:underline"
+                  className="text-[11px] font-semibold text-cyan-400 shrink-0 hover:underline"
                 >
                   Save to Notes
                 </button>
@@ -428,7 +422,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
         badge="CUSTOM SPRINT CLOCK"
         title="Set Any Custom Focus Time"
         subtitle="Choose any duration from 10 seconds up to 12 hours."
-        accentColor="violet"
+        accentColor="sky"
         maxWidthClass="max-w-sm"
       >
         <div className="grid grid-cols-3 gap-2">
@@ -440,7 +434,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               max={12}
               value={customHours}
               onChange={(e) => setCustomHours(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
             />
           </div>
           <div className="space-y-1">
@@ -451,7 +445,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               max={59}
               value={customMinutes}
               onChange={(e) => setCustomMinutes(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
             />
           </div>
           <div className="space-y-1">
@@ -462,7 +456,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               max={59}
               value={customSecs}
               onChange={(e) => setCustomSecs(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
             />
           </div>
         </div>
@@ -470,14 +464,14 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <button
             type="button"
             onClick={() => setShowCustomModal(false)}
-            className="flex-1 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+            className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={applyCustomDuration}
-            className="flex-1 py-2.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold"
+            className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold"
           >
             Apply Time
           </button>

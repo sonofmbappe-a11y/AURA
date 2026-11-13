@@ -79,8 +79,7 @@ interface Props {
   onNotify: (msg: string) => void;
 }
 
-const EMOJI_OPTIONS = ['👥', '🚀', '💡', '🔬', '💻', '🎯', '📚', '🏆', '🧪', '🎨'];
-const COLOR_OPTIONS = ['#10B981', '#38BDF8', '#8B5CF6', '#F59E0B', '#F43F5E', '#06B6D4'];
+const COLOR_OPTIONS = ['#06B6D4', '#10B981', '#38BDF8', '#8B5CF6', '#F59E0B', '#F43F5E'];
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -212,7 +211,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       setPomodoroSeconds((prev) => {
         if (prev <= 1) {
           setPomodoroRunning(false);
-          onNotify('🎉 Group 25-minute Pomodoro Sprint Complete! Time for a team break.');
+          onNotify('Group 25-minute Pomodoro Sprint Complete! Time for a team break.');
           return 25 * 60;
         }
         return prev - 1;
@@ -252,7 +251,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           (snap) => {
             const list: WebGroupInvitation[] = [];
             snap.forEach((d) => {
-              const data = d.data();
+              const data = (d.data() || {}) as Record<string, any>;
               if (data.status === 'PENDING') {
                 list.push({
                   id: d.id,
@@ -261,8 +260,8 @@ export const GroupProjectsView: React.FC<Props> = ({
                   projectTitle: data.projectTitle || 'Assignment',
                   courseCode: data.courseCode || 'GENERAL',
                   groupTarget: data.groupTarget || 'Grade A',
-                  avatarEmoji: data.avatarEmoji || '👥',
-                  avatarColorHex: data.avatarColorHex || '#10B981',
+                  avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || 'GRP',
+                  avatarColorHex: data.avatarColorHex || '#06B6D4',
                   senderUid: data.senderUid || '',
                   senderEmail: data.senderEmail || '',
                   senderName: data.senderName || 'Teammate',
@@ -305,8 +304,8 @@ export const GroupProjectsView: React.FC<Props> = ({
       Map<string, { project: WebGroupProject; updatedAtMs: number }>
     >();
 
-    const mapDoc = (d: { id: string; data: () => Record<string, any> }) => {
-      const data = d.data();
+    const mapDoc = (d: { id: string; data: () => unknown }) => {
+      const data = (d.data() || {}) as Record<string, any>;
       const updatedAtMs =
         data.updatedAt?.toMillis?.() ?? data.createdAt?.toMillis?.() ?? 0;
       const project: WebGroupProject = {
@@ -316,8 +315,8 @@ export const GroupProjectsView: React.FC<Props> = ({
         teamName: data.teamName || 'Team 1',
         objective: data.objective || data.groupTarget || '',
         groupTarget: data.groupTarget || 'Grade A',
-        avatarEmoji: data.avatarEmoji || 'CS',
-        avatarColorHex: data.avatarColorHex || '#10B981',
+        avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || 'GRP',
+        avatarColorHex: data.avatarColorHex || '#06B6D4',
         creatorUid: data.creatorUid || '',
         creatorEmail: data.creatorEmail || '',
         adminEmails: data.adminEmails || [data.creatorEmail || ''],
@@ -1551,16 +1550,16 @@ export const GroupProjectsView: React.FC<Props> = ({
     <div className="space-y-4">
       {/* 1. PENDING INVITATIONS BANNER */}
       {pendingInvitations.length > 0 && (
-        <div className="rounded-3xl p-4 bg-slate-900 border border-amber-500/40 shadow-xl space-y-3">
+        <div className="rounded-xl p-4 bg-slate-900 border border-amber-500/40 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="font-extrabold text-sm sm:text-base text-white">
-                Team Invitations Waiting For You ({pendingInvitations.length})
+              <h3 className="font-bold text-sm sm:text-base text-white">
+                Team Invitations ({pendingInvitations.length})
               </h3>
             </div>
-            <span className="text-[11px] font-bold text-amber-300 px-2.5 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/30 uppercase">
-              Action Required
+            <span className="text-[10px] font-bold text-amber-300 px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/30 uppercase tracking-wider">
+              Pending
             </span>
           </div>
 
@@ -1568,27 +1567,27 @@ export const GroupProjectsView: React.FC<Props> = ({
             {pendingInvitations.map((inv) => (
               <div
                 key={inv.id}
-                className="p-3.5 rounded-2xl bg-black/40 border border-slate-800 flex flex-col justify-between gap-3"
+                className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 flex flex-col justify-between gap-3"
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 border border-slate-700 bg-slate-800 text-white"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border border-slate-700 bg-slate-800 text-white"
                   >
                     {inv.teamName.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-extrabold text-white text-sm">{inv.teamName}</span>
-                      <span className="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 text-[10px] font-bold">
+                      <span className="font-bold text-white text-sm">{inv.teamName}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 text-[10px] font-bold">
                         {inv.courseCode}
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 line-clamp-1">{inv.projectTitle}</p>
-                    <p className="text-[11px] text-amber-300 font-semibold mt-0.5">
+                    <p className="text-[11px] text-amber-300 font-medium mt-0.5">
                       Target: {inv.groupTarget}
                     </p>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Invited by: <span className="text-emerald-400 font-bold">{inv.senderName}</span> ({inv.senderEmail})
+                      Invited by: <span className="text-cyan-400 font-semibold">{inv.senderName}</span> ({inv.senderEmail})
                     </p>
                   </div>
                 </div>
@@ -1597,15 +1596,15 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => handleAcceptInvitation(inv)}
-                    className="flex-1 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1"
                   >
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <Check className="w-3.5 h-3.5" />
                     Accept &amp; Join
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeclineInvitation(inv)}
-                    className="px-3 py-1.5 rounded-xl aura-subtle-surface text-slate-400 hover:text-rose-400 text-xs font-bold transition"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-400 text-xs font-semibold transition"
                   >
                     Decline
                   </button>
@@ -1617,23 +1616,23 @@ export const GroupProjectsView: React.FC<Props> = ({
       )}
 
       {/* Top Header Card */}
-      <div className="aura-hero-card rounded-2xl p-4 sm:p-5">
+      <div className="aura-hero-card rounded-xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-bold text-white">
                   Academic Team Hub
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
                   Live Cloud
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Voice notes, shared slide vault, live sprints &amp; task tracking.
+                Voice notes, shared slide vault, focus sprints &amp; deliverable tracking.
               </p>
             </div>
           </div>
@@ -1642,7 +1641,7 @@ export const GroupProjectsView: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
-              className="px-3 py-2 rounded-xl aura-subtle-surface text-slate-200 hover:border-slate-500 text-xs font-semibold transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-slate-500 text-xs font-semibold transition flex items-center gap-1.5"
             >
               <KeyRound className="w-3.5 h-3.5" />
               <span>Join with Code</span>
@@ -1651,7 +1650,7 @@ export const GroupProjectsView: React.FC<Props> = ({
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               New Team
@@ -1661,7 +1660,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
         {/* Prominent Teams Workspace Grid (Supports unlimited teams) */}
         {vault.groupProjects.length > 0 && (
-          <div className="pt-4 border-t border-white/10 mt-4 space-y-2">
+          <div className="pt-4 border-t border-slate-800 mt-4 space-y-2">
             <div className="flex items-center justify-between text-xs text-slate-400">
               <span className="font-semibold uppercase tracking-wider text-[11px]">
                 Your Teams ({vault.groupProjects.length})
@@ -1676,19 +1675,19 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <div
                     key={p.id}
                     onClick={() => setSelectedProjectId(p.id)}
-                    className={`cursor-pointer p-3 rounded-xl border transition-all flex items-center justify-between gap-2.5 ${
+                    className={`cursor-pointer p-3 rounded-lg border transition-all flex items-center justify-between gap-2.5 ${
                       isActive
-                        ? 'bg-slate-800 border-emerald-500/70 shadow-md'
-                        : 'aura-subtle-surface hover:border-slate-600'
+                        ? 'bg-slate-800 border-cyan-500'
+                        : 'bg-slate-900 border-slate-800 hover:border-slate-700'
                     }`}
                   >
                     <div className="min-w-0 flex items-center gap-2.5">
                       <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border"
+                        className="w-8 h-8 rounded-md flex items-center justify-center font-bold text-xs shrink-0 border"
                         style={{
-                          backgroundColor: `${p.avatarColorHex || '#10b981'}15`,
-                          borderColor: `${p.avatarColorHex || '#10b981'}40`,
-                          color: p.avatarColorHex || '#10b981'
+                          backgroundColor: `${p.avatarColorHex || '#06B6D4'}15`,
+                          borderColor: `${p.avatarColorHex || '#06B6D4'}40`,
+                          color: p.avatarColorHex || '#06B6D4'
                         }}
                       >
                         {p.courseCode.slice(0, 3)}
@@ -1697,7 +1696,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         <div className="flex items-center gap-1.5">
                           <span className="font-bold text-xs text-white truncate">{p.teamName}</span>
                           {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
                           )}
                         </div>
                         <div className="text-[10px] text-slate-400 truncate">
@@ -1712,7 +1711,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => handleDeleteProject(p.id)}
                           title="Delete Team Workspace"
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-white/5 flex items-center justify-center transition"
+                          className="w-7 h-7 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800 flex items-center justify-center transition"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -1721,7 +1720,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => handleLeaveGroup(p.id)}
                           title="Leave Team"
-                          className="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-white/5 flex items-center justify-center transition"
+                          className="w-7 h-7 rounded-md text-slate-400 hover:text-amber-400 hover:bg-slate-800 flex items-center justify-center transition"
                         >
                           <LogOut className="w-3.5 h-3.5" />
                         </button>
@@ -1740,23 +1739,24 @@ export const GroupProjectsView: React.FC<Props> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column: Team Overview, Countdown & Live Sprint */}
           <div className="space-y-4">
-            <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+            <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border shrink-0"
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold border shrink-0"
                     style={{
-                      backgroundColor: `${activeProject.avatarColorHex}25`,
-                      borderColor: activeProject.avatarColorHex
+                      backgroundColor: `${activeProject.avatarColorHex || '#06B6D4'}20`,
+                      borderColor: activeProject.avatarColorHex || '#06B6D4',
+                      color: activeProject.avatarColorHex || '#06B6D4'
                     }}
                   >
-                    {activeProject.avatarEmoji || '👥'}
+                    {activeProject.courseCode.slice(0, 3)}
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-white text-base leading-tight">
+                    <h3 className="font-bold text-white text-base leading-tight">
                       {activeProject.teamName}
                     </h3>
-                    <p className="text-xs text-sky-400 font-bold">{activeProject.courseCode}</p>
+                    <p className="text-xs text-cyan-400 font-semibold">{activeProject.courseCode}</p>
                     <p className="text-[11px] text-slate-400 line-clamp-1">
                       {activeProject.projectTitle}
                     </p>
@@ -1768,7 +1768,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     type="button"
                     onClick={() => handleCopyInviteLink(activeProject)}
                     title="Copy 1-Click Invite Link"
-                    className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-sky-400 hover:border-sky-400/50 transition"
+                    className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400 hover:border-cyan-400/50 transition"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
@@ -1784,16 +1784,16 @@ export const GroupProjectsView: React.FC<Props> = ({
                       }
                     }}
                     title={voiceHuddleActive ? 'Leave Voice Huddle' : 'Start Voice Huddle'}
-                    className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                       voiceHuddleActive
-                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
-                        : 'aura-subtle-surface text-sky-400 hover:border-sky-400/60'
+                        ? 'bg-cyan-500 text-slate-950 font-bold'
+                        : 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'
                     }`}
                   >
                     {voiceHuddleActive ? (
                       <>
-                        <PhoneCall className="w-3.5 h-3.5 animate-pulse" />
-                        <span>Huddle Live</span>
+                        <PhoneCall className="w-3.5 h-3.5" />
+                        <span>Voice Live</span>
                       </>
                     ) : (
                       <>
@@ -1808,7 +1808,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => setShowSettingsModal(true)}
                       title="Group Admin Settings"
-                      className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-amber-300 hover:border-amber-400/50 transition"
+                      className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-300 hover:border-amber-400/50 transition"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
@@ -1818,7 +1818,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => handleDeleteProject(activeProject.id)}
                       title="Permanently Delete Team"
-                      className="w-8 h-8 rounded-xl aura-subtle-surface flex items-center justify-center text-rose-400 hover:border-rose-400/50 transition"
+                      className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-rose-400 hover:border-rose-400/50 transition"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1827,7 +1827,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => handleLeaveGroup(activeProject.id)}
                       title="Leave Team"
-                      className="px-2.5 py-1.5 rounded-xl aura-subtle-surface flex items-center gap-1 text-amber-400 hover:border-amber-400/50 text-xs font-semibold transition"
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 flex items-center gap-1 text-amber-400 hover:border-amber-400/50 text-xs font-semibold transition"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Leave</span>
@@ -1838,18 +1838,18 @@ export const GroupProjectsView: React.FC<Props> = ({
 
               {/* Live Voice Huddle Indicator */}
               {voiceHuddleActive && (
-                <div className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-between gap-2">
+                <div className="p-3 rounded-lg bg-slate-900 border border-cyan-500/40 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                    <span className="text-xs font-extrabold text-emerald-300 truncate">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
+                    <span className="text-xs font-bold text-cyan-300 truncate">
                       Team Voice Active ({isWebMicMuted ? 'Muted' : 'Speaking'})
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsWebMicMuted(!isWebMicMuted)}
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition ${
-                      isWebMicMuted ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-400 text-slate-950'
+                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold transition ${
+                      isWebMicMuted ? 'bg-rose-500/20 text-rose-300' : 'bg-cyan-400 text-slate-950'
                     }`}
                   >
                     {isWebMicMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -1858,35 +1858,35 @@ export const GroupProjectsView: React.FC<Props> = ({
               )}
 
               {/* Target & Submission Countdown */}
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/30 space-y-1">
+              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                    Target &amp; Milestone
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                    Target Milestone
                   </span>
-                  <span className="text-[10px] font-bold text-sky-300 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
+                  <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-cyan-400" />
                     {daysLeft > 0 ? `${daysLeft} days left` : 'Due Soon'}
                   </span>
                 </div>
-                <div className="text-xs font-extrabold text-amber-200">
-                  🎯 {activeProject.groupTarget || 'Complete final prototype & presentation'}
+                <div className="text-xs font-semibold text-slate-200">
+                  {activeProject.groupTarget || 'Complete deliverables and report'}
                 </div>
                 {activeProject.joinCode && (
-                  <div className="text-[10px] text-slate-400 font-mono pt-1 border-t border-white/5 flex items-center justify-between">
+                  <div className="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-800 flex items-center justify-between">
                     <span>Team Code:</span>
-                    <span className="text-emerald-300 font-bold">{activeProject.joinCode}</span>
+                    <span className="text-cyan-300 font-bold">{activeProject.joinCode}</span>
                   </div>
                 )}
               </div>
 
-              {/* Group Pomodoro Live Sprint Widget (New Feature) */}
-              <div className="p-3 rounded-2xl aura-subtle-surface space-y-2">
+              {/* Group Pomodoro Live Sprint Widget */}
+              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-emerald-400" />
+                    <Flame className="w-4 h-4 text-cyan-400" />
                     <span className="text-xs font-bold text-white">Group Focus Sprint</span>
                   </div>
-                  <span className="text-[11px] font-mono font-extrabold text-emerald-400">
+                  <span className="text-[11px] font-mono font-bold text-cyan-400">
                     {Math.floor(pomodoroSeconds / 60)
                       .toString()
                       .padStart(2, '0')}
@@ -1902,10 +1902,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                         onNotify('Started synchronized 25-minute study sprint!');
                       }
                     }}
-                    className={`flex-1 py-1 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
                       pomodoroRunning
                         ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                        : 'bg-emerald-400 text-slate-950 shadow-md'
+                        : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
                     }`}
                   >
                     {pomodoroRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
@@ -1917,7 +1917,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       setPomodoroRunning(false);
                       setPomodoroSeconds(25 * 60);
                     }}
-                    className="px-2.5 py-1 rounded-xl aura-subtle-surface text-slate-400 hover:text-white text-xs font-bold"
+                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
                   >
                     Reset
                   </button>
@@ -1927,27 +1927,27 @@ export const GroupProjectsView: React.FC<Props> = ({
               {/* Progress Bar */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-semibold">Deliverables Complete</span>
-                  <span className="font-bold text-emerald-400">
+                  <span className="text-slate-400 font-medium">Deliverables Complete</span>
+                  <span className="font-bold text-cyan-400">
                     {doneTasks}/{tasks.length} ({taskProgressPct}%)
                   </span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 transition-all duration-300"
+                    className="h-full bg-cyan-500 transition-all duration-300"
                     style={{ width: `${taskProgressPct}%` }}
                   />
                 </div>
               </div>
 
               {/* Navigation Sub-Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab('CHAT')}
-                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'CHAT'
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1957,9 +1957,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('DELIVERABLES')}
-                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'DELIVERABLES'
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1969,9 +1969,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('RESOURCES')}
-                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'RESOURCES'
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1981,9 +1981,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('MEMBERS')}
-                  className={`py-1.5 px-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
                     activeTab === 'MEMBERS'
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
@@ -1993,21 +1993,21 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
 
               {/* Quick Actions */}
-              <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={handleExportChat}
-                  className="flex-1 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 hover:border-sky-400/50 transition"
+                  className="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 hover:border-slate-500 transition"
                 >
-                  <Copy className="w-3.5 h-3.5 text-sky-400" />
+                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
                   Export Chat
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddMemberModal(true)}
-                  className="flex-1 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300 flex items-center justify-center gap-1.5 hover:border-emerald-400/50 transition"
+                  className="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 hover:border-slate-500 transition"
                 >
-                  <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
+                  <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
                   Add Member
                 </button>
               </div>
@@ -2017,12 +2017,12 @@ export const GroupProjectsView: React.FC<Props> = ({
           {/* Right Column: Tab Content Stage */}
           <div className="lg:col-span-2">
             {activeTab === 'CHAT' && (
-              <div className="aura-glass rounded-3xl p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px] border border-white/15 shadow-2xl">
+              <div className="aura-glass rounded-xl p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px] border border-slate-800 shadow-sm">
                 {/* Pinned Messages Bar */}
                 {pinnedMessages.length > 0 && (
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center gap-2 mb-3 shrink-0">
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 mb-3 shrink-0">
                     <Pin className="w-4 h-4 text-amber-300 shrink-0" />
-                    <div className="text-xs text-amber-200 font-bold truncate flex-1">
+                    <div className="text-xs text-amber-200 font-semibold truncate flex-1">
                       {pinnedMessages[pinnedMessages.length - 1].messageText}
                     </div>
                   </div>
@@ -2033,9 +2033,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                   {projectMessages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
                       <MessageSquare className="w-10 h-10 text-slate-600 mb-2" />
-                      <p className="font-extrabold text-sm text-white">No messages yet</p>
+                      <p className="font-bold text-sm text-white">No messages yet</p>
                       <p className="text-xs mt-1">
-                        Send text messages, record voice notes, share slides &amp; photos in real time!
+                        Send messages, record voice notes, and coordinate deliverables in real time.
                       </p>
                     </div>
                   ) : (
@@ -2049,7 +2049,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       if (isNotice) {
                         return (
                           <div key={msg.id} className="flex justify-center my-1.5">
-                            <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-slate-300">
+                            <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-300">
                               {msg.messageText}
                             </span>
                           </div>
@@ -2062,14 +2062,14 @@ export const GroupProjectsView: React.FC<Props> = ({
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-2xl p-3 space-y-2 relative group ${
+                            className={`max-w-[85%] rounded-lg p-3 space-y-2 relative group ${
                               isMe
-                                ? 'bg-emerald-600 text-white shadow-md'
-                                : 'bg-slate-800/85 border border-white/10 text-slate-100'
+                                ? 'bg-cyan-500 text-slate-950 font-medium'
+                                : 'bg-slate-900 border border-slate-800 text-slate-100'
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-3 text-[11px] opacity-85">
-                              <span className="font-extrabold flex items-center gap-1">
+                            <div className="flex items-center justify-between gap-3 text-[11px] opacity-80">
+                              <span className="font-bold flex items-center gap-1">
                                 {isMe ? 'You' : msg.senderName}
                                 {isAdmin && (
                                   <span title="Admin">
@@ -2092,7 +2092,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                               </p>
                             )}
 
-                            {/* Voice Note Player (New Feature) */}
+                            {/* Voice Note Player */}
                             {msg.messageType === 'VOICE_NOTE' && msg.audioUrl && (
                               <VoiceNotePlayer
                                 audioUrl={msg.audioUrl}
@@ -2101,9 +2101,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                               />
                             )}
 
-                            {/* Image Attachment (New Feature) */}
+                            {/* Image Attachment */}
                             {msg.messageType === 'IMAGE_SHARE' && msg.imageUrl && (
-                              <div className="rounded-xl overflow-hidden border border-white/20 mt-1 cursor-pointer">
+                              <div className="rounded-lg overflow-hidden border border-slate-700 mt-1 cursor-pointer">
                                 <img
                                   src={msg.imageUrl}
                                   alt="Attached Diagram or Photo"
@@ -2115,9 +2115,8 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Poll Card */}
                             {msg.pollData && (
-                              <div className="p-3 rounded-xl bg-black/35 border border-sky-400/40 text-xs space-y-2 mt-2">
-                                <div className="font-extrabold text-sky-300 flex items-center gap-1.5">
-                                  <span>📊</span>
+                              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-2 mt-2">
+                                <div className="font-bold text-cyan-300 flex items-center gap-1.5">
                                   <span>{msg.pollData.question}</span>
                                 </div>
                                 <div className="space-y-1.5">
@@ -2137,10 +2136,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                                         key={opt.text}
                                         type="button"
                                         onClick={() => handleVotePoll(msg, opt.text)}
-                                        className={`w-full text-left p-2 rounded-lg border transition ${
+                                        className={`w-full text-left p-2 rounded-md border transition ${
                                           hasVoted
-                                            ? 'bg-sky-500/25 border-sky-400/80 text-white font-bold'
-                                            : 'bg-white/5 border-white/10 hover:bg-white/10 text-slate-200'
+                                            ? 'bg-cyan-500/15 border-cyan-400 text-white font-bold'
+                                            : 'bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-200'
                                         }`}
                                       >
                                         <div className="flex justify-between text-[11px] mb-1">
@@ -2149,9 +2148,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                                             {voteCount} ({pct}%)
                                           </span>
                                         </div>
-                                        <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                        <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                                           <div
-                                            className="h-full bg-sky-400 transition-all duration-300"
+                                            className="h-full bg-cyan-400 transition-all duration-300"
                                             style={{ width: `${pct}%` }}
                                           />
                                         </div>
@@ -2164,15 +2163,15 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Shared Doc Card */}
                             {msg.docData && (
-                              <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-400/40 text-xs flex items-center justify-between gap-2 mt-2">
+                              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs flex items-center justify-between gap-2 mt-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className="text-base">📎</span>
+                                  <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
                                   <div className="min-w-0">
-                                    <div className="font-bold text-emerald-300 truncate">
+                                    <div className="font-bold text-white truncate">
                                       {msg.docData.title}
                                     </div>
                                     {msg.docData.linkOrFileName && (
-                                      <div className="text-[10px] text-slate-400 truncate">
+                                      <div className="text-[10px] text-slate-400 truncate font-mono">
                                         {msg.docData.linkOrFileName}
                                       </div>
                                     )}
@@ -2187,9 +2186,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                                     }
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[10px] shrink-0"
+                                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-[10px] shrink-0"
                                   >
-                                    Open ↗
+                                    Open
                                   </a>
                                 )}
                               </div>
@@ -2197,24 +2196,24 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Tagged Deliverable Box */}
                             {msg.taggedDeliverableTitle && (
-                              <div className="p-2 rounded-xl bg-black/25 border border-white/15 text-xs flex items-center justify-between gap-2 mt-2">
-                                <span className="font-bold truncate text-white">
-                                  🎯 {msg.taggedDeliverableTitle}
+                              <div className="p-2 rounded-md bg-slate-950 border border-slate-800 text-xs flex items-center justify-between gap-2 mt-2">
+                                <span className="font-semibold truncate text-white">
+                                  Task: {msg.taggedDeliverableTitle}
                                 </span>
                               </div>
                             )}
 
                             {/* Unsend / Delete Message Action (Author or Admin) */}
                             {(isMe || isCurrentUserAdmin || !activeProject.creatorUid || activeProject.creatorUid === user?.uid || !activeProject.adminEmails?.length) && (
-                              <div className="flex items-center justify-end gap-1.5 pt-1.5 mt-1 border-t border-white/10">
+                              <div className="flex items-center justify-end gap-1.5 pt-1.5 mt-1 border-t border-black/10">
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteMessage(msg)}
-                                  className="px-2 py-0.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/30 text-[11px] font-bold text-rose-200 flex items-center gap-1.5 transition"
+                                  className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-[10px] font-semibold text-rose-300 flex items-center gap-1 transition"
                                   title={isMe ? 'Unsend this message for everyone' : 'Delete message as Group Admin'}
                                 >
                                   <Trash2 className="w-3 h-3 text-rose-300" />
-                                  <span>{isMe ? 'Unsend' : 'Delete (Admin)'}</span>
+                                  <span>{isMe ? 'Unsend' : 'Delete'}</span>
                                 </button>
                               </div>
                             )}
@@ -2227,11 +2226,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                 </div>
 
                 {/* Composer Dock */}
-                <div className="pt-3 border-t border-white/10 space-y-2 shrink-0">
+                <div className="pt-3 border-t border-slate-800 space-y-2 shrink-0">
                   {selectedDeliverableTag && (
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                        <span>🎯 Tagged: {selectedDeliverableTag}</span>
+                      <span className="px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-1.5">
+                        <span>Task: {selectedDeliverableTag}</span>
                         <X
                           className="w-3 h-3 cursor-pointer hover:text-white"
                           onClick={() => setSelectedDeliverableTag('')}
@@ -2242,28 +2241,22 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                   {/* Dynamic Recording Dock vs Standard Text Dock */}
                   {isRecordingVoice ? (
-                    <div className="p-2.5 rounded-2xl bg-rose-950/40 border border-rose-500/50 flex items-center justify-between gap-3 animate-pulse">
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-rose-500/50 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="w-3.5 h-3.5 rounded-full bg-rose-500 animate-ping" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                         <span className="text-xs font-bold text-rose-300">
-                          Recording Voice Note... (
-                          {Math.floor(recordingSeconds / 60)
+                          Recording Voice Note ({Math.floor(recordingSeconds / 60)
                             .toString()
                             .padStart(2, '0')}
                           :{(recordingSeconds % 60).toString().padStart(2, '0')})
                         </span>
-                        <div className="flex items-center gap-0.5">
-                          <span className="w-1 h-3 bg-rose-400 rounded-full aura-sound-bar" />
-                          <span className="w-1 h-4 bg-rose-400 rounded-full aura-sound-bar" />
-                          <span className="w-1 h-2 bg-rose-400 rounded-full aura-sound-bar" />
-                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={handleCancelVoiceRecording}
-                          className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold transition flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1"
                         >
                           <X className="w-3.5 h-3.5" />
                           Cancel
@@ -2271,7 +2264,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={handleSendVoiceRecording}
-                          className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md flex items-center gap-1.5 transition"
+                          className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition"
                         >
                           <Send className="w-3.5 h-3.5" />
                           Send
@@ -2286,7 +2279,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={handleStartVoiceRecording}
                           title="Record Voice Note"
-                          className="w-9 h-9 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-300 flex items-center justify-center shrink-0 transition"
+                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-300 flex items-center justify-center shrink-0 transition"
                         >
                           <Mic className="w-4 h-4" />
                         </button>
@@ -2296,7 +2289,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           title="Share Photo / Diagram"
-                          className="w-9 h-9 rounded-2xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-300 flex items-center justify-center shrink-0 transition"
+                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 flex items-center justify-center shrink-0 transition"
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>
@@ -2313,7 +2306,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowPollModal(true)}
                           title="Create Team Poll"
-                          className="w-9 h-9 rounded-2xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
                         >
                           Poll
                         </button>
@@ -2323,7 +2316,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowDocModal(true)}
                           title="Share Resource Link"
-                          className="w-9 h-9 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
                         >
                           Link
                         </button>
@@ -2335,7 +2328,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         placeholder="Message your team..."
-                        className="aura-input flex-1 px-4 py-2.5 rounded-2xl text-xs sm:text-sm min-w-[140px]"
+                        className="aura-input flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm min-w-[140px]"
                       />
 
                       {tasks.length > 0 && (
@@ -2343,7 +2336,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           aria-label="Tag deliverable to message"
                           value={selectedDeliverableTag}
                           onChange={(e) => setSelectedDeliverableTag(e.target.value)}
-                          className="aura-input px-3 py-2.5 rounded-2xl text-xs bg-slate-900 border-white/15 max-w-[120px] truncate"
+                          className="aura-input px-3 py-2.5 rounded-lg text-xs bg-slate-900 border-slate-800 max-w-[120px] truncate"
                         >
                           <option value="">Tag Task</option>
                           {tasks.map((t) => (
@@ -2357,7 +2350,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={handleSendMessage}
-                        className="w-10 h-10 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow-md active:scale-95 transition shrink-0"
+                        className="w-10 h-10 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center font-bold shadow-sm transition shrink-0"
                       >
                         <Send className="w-4 h-4" />
                       </button>

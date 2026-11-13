@@ -257,20 +257,20 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {(
           [
-            ['NOTES', '📝 Notes Vault'],
-            ['FLASHCARDS', `🃏 SM-2 Cards (${vault.flashcards.length})`],
-            ['QUIZ_SIM', '🎓 Exam Simulator'],
-            ['EXAMS', `📅 Exams/Tasks (${vault.assessments.length})`],
-            ['SLIDE_PARSER', '⚡ Slide Extractor']
+            ['NOTES', 'Notes Vault'],
+            ['FLASHCARDS', `SM-2 Cards (${vault.flashcards.length})`],
+            ['QUIZ_SIM', 'Exam Simulator'],
+            ['EXAMS', `Exams & Tasks (${vault.assessments.length})`],
+            ['SLIDE_PARSER', 'Slide Extractor']
           ] as const
         ).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setSubTab(id)}
-            className={`px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap border transition ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition ${
               subTab === id
-                ? 'bg-emerald-500 text-slate-950 border-emerald-300'
-                : 'aura-glass border-white/10 text-slate-300'
+                ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                : 'aura-glass border-slate-800 text-slate-300 hover:text-white'
             }`}
           >
             {label}
@@ -280,8 +280,8 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
       {subTab === 'NOTES' && (
         <div className="space-y-4">
-          <div className="aura-glass rounded-3xl p-4 space-y-3 border border-sky-400/30">
-            <div className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
+          <div className="aura-glass rounded-xl p-4 space-y-3 border border-slate-800">
+            <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
               <FileText className="w-4 h-4" /> ADD STUDY NOTE OR FORMULA SHEET
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -289,12 +289,12 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 value={noteCourse}
                 onChange={(e) => setNoteCourse(e.target.value)}
                 placeholder="Course (e.g. CS301)"
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
               />
               <select
                 value={noteCategory}
                 onChange={(e) => setNoteCategory(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
               >
                 <option value="Lecture">Lecture</option>
                 <option value="Formula">Formula</option>
@@ -306,18 +306,18 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="Note Title (e.g. Laplace Transform Identities)"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
             <textarea
               rows={4}
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write lecture takeaways, proofs, or formulas..."
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
             <button
               onClick={addNote}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
             >
               <Plus className="w-4 h-4" /> Save to Study Vault
             </button>
@@ -401,9 +401,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       {subTab === 'FLASHCARDS' && (
         <div className="space-y-4">
           {activeCard ? (
-            <div className="aura-glass rounded-3xl p-6 text-center space-y-4 border border-emerald-400/35">
+            <div className="aura-glass rounded-xl p-6 text-center space-y-4 border border-slate-800">
               <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 font-bold">
                   {activeCard.courseCode}
                 </span>
                 <span>
@@ -427,9 +427,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
               <div
                 onClick={() => setFlipped((f) => !f)}
-                className="min-h-[170px] rounded-2xl bg-white/5 border border-white/10 p-6 flex flex-col items-center justify-center cursor-pointer select-none"
+                className="min-h-[170px] rounded-xl aura-subtle-surface p-6 flex flex-col items-center justify-center cursor-pointer select-none"
               >
-                <span className="text-[10px] uppercase tracking-widest text-sky-300 font-bold mb-2">
+                <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold mb-2">
                   {flipped ? 'VERIFIED ANSWER' : 'QUESTION PROMPT (TAP TO FLIP)'}
                 </span>
                 <p className="text-base font-bold leading-relaxed">
@@ -441,25 +441,25 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 <div className="grid grid-cols-4 gap-2">
                   <button
                     onClick={() => rateCurrentCard(1)}
-                    className="py-2.5 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 text-xs font-bold"
+                    className="py-2.5 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-300 text-xs font-semibold"
                   >
                     Again (1d)
                   </button>
                   <button
                     onClick={() => rateCurrentCard(3)}
-                    className="py-2.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold"
+                    className="py-2.5 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold"
                   >
                     Hard
                   </button>
                   <button
                     onClick={() => rateCurrentCard(4)}
-                    className="py-2.5 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-300 text-xs font-bold"
+                    className="py-2.5 rounded-lg bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 text-xs font-semibold"
                   >
                     Good
                   </button>
                   <button
                     onClick={() => rateCurrentCard(5)}
-                    className="py-2.5 rounded-xl bg-emerald-500/25 border border-emerald-400 text-emerald-200 text-xs font-extrabold"
+                    className="py-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold"
                   >
                     Easy
                   </button>
@@ -467,44 +467,44 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               ) : (
                 <button
                   onClick={() => setFlipped(true)}
-                  className="w-full py-2.5 rounded-xl bg-sky-500/25 border border-sky-400/50 text-sky-200 text-xs font-bold inline-flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
                 >
                   <RotateCw className="w-3.5 h-3.5" /> Reveal Answer
                 </button>
               )}
             </div>
           ) : (
-            <div className="aura-glass rounded-3xl p-6 text-center text-xs text-slate-400">
+            <div className="aura-glass rounded-xl p-6 text-center text-xs text-slate-400">
               No flashcards yet. Create one below or extract cards from slides!
             </div>
           )}
 
-          <div className="aura-glass rounded-3xl p-4 space-y-2.5">
-            <div className="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5">
+          <div className="aura-glass rounded-xl p-4 space-y-2.5">
+            <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
               <Layers className="w-4 h-4" /> ADD SM-2 FLASHCARD
             </div>
             <input
               value={newCardCourse}
               onChange={(e) => setNewCardCourse(e.target.value)}
               placeholder="Course Code (e.g. CS301)"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
             />
             <input
               value={newCardQ}
               onChange={(e) => setNewCardQ(e.target.value)}
               placeholder="Question / Front of Card"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
             <textarea
               rows={2}
               value={newCardA}
               onChange={(e) => setNewCardA(e.target.value)}
               placeholder="Verified Answer / Back of Card"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
             <button
               onClick={addCard}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
+              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
             >
               + Add Card to Deck
             </button>
@@ -513,9 +513,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       )}
 
       {subTab === 'QUIZ_SIM' && (
-        <div className="aura-glass rounded-3xl p-5 space-y-4 border border-violet-400/35">
+        <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-violet-300 flex items-center gap-1.5">
+            <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
               <Award className="w-4 h-4" /> EXAM HALL MOCK SIMULATOR
             </span>
             <span className="text-[11px] text-slate-400">Built from your Flashcard Vault</span>
@@ -537,14 +537,14 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                   setQuizStep(0);
                   setQuizScore(0);
                 }}
-                className="px-6 py-2.5 rounded-2xl bg-emerald-500 text-slate-950 font-extrabold text-xs"
+                className="px-6 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs transition"
               >
                 Start Mock Exam
               </button>
             </div>
           ) : quizFinished ? (
             <div className="text-center py-4 space-y-3">
-              <div className="text-3xl font-extrabold text-emerald-400">
+              <div className="text-3xl font-bold text-cyan-400 font-mono">
                 {quizScore} / {quizQuestions.length}
               </div>
               <p className="text-xs text-slate-300">
@@ -552,14 +552,14 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               </p>
               <button
                 onClick={() => setQuizStarted(false)}
-                className="px-5 py-2 rounded-xl bg-white/10 text-xs font-bold"
+                className="px-5 py-2 rounded-lg aura-subtle-surface text-xs font-semibold"
               >
                 Done
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="text-xs text-sky-300 font-bold">
+              <div className="text-xs text-cyan-400 font-bold">
                 Question {quizStep + 1} of {quizQuestions.length} • {quizQuestions[quizStep].courseCode}
               </div>
               <div className="font-bold text-sm">{quizQuestions[quizStep].question}</div>
@@ -577,9 +577,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                         setQuizStep((s) => s + 1);
                       }
                     }}
-                    className="w-full text-left p-3 rounded-2xl bg-white/5 hover:bg-sky-500/20 border border-white/10 text-xs"
+                    className="w-full text-left p-3 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-xs transition"
                   >
-                    <strong className="text-emerald-300 mr-2">
+                    <strong className="text-cyan-400 mr-2">
                       {['A', 'B', 'C', 'D'][idx]}.
                     </strong>
                     {opt}
@@ -593,8 +593,8 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
       {subTab === 'EXAMS' && (
         <div className="space-y-4">
-          <div className="aura-glass rounded-3xl p-4 space-y-2.5">
-            <div className="text-xs font-extrabold text-amber-300 flex items-center gap-1.5">
+          <div className="aura-glass rounded-xl p-4 space-y-2.5">
+            <div className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
               <BookMarked className="w-4 h-4" /> TRACK EXAM, QUIZ OR ASSIGNMENT
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -602,12 +602,12 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 value={examCourse}
                 onChange={(e) => setExamCourse(e.target.value)}
                 placeholder="Course Code"
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-bold uppercase"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
               />
               <select
                 value={examType}
                 onChange={(e) => setExamType(e.target.value as 'EXAM' | 'ASSIGNMENT' | 'QUIZ')}
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs font-semibold"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
               >
                 <option value="EXAM">EXAM</option>
                 <option value="QUIZ">QUIZ</option>
@@ -618,25 +618,25 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
               placeholder="Title (e.g. Final Paper 1 / Lab Report)"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="date"
                 value={examDate}
                 onChange={(e) => setExamDate(e.target.value)}
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs"
               />
               <input
                 value={examVenue}
                 onChange={(e) => setExamVenue(e.target.value)}
                 placeholder="Exam Hall / Venue"
-                className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+                className="px-3.5 py-2.5 rounded-lg aura-input text-xs"
               />
             </div>
             <button
               onClick={addAssessment}
-              className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
+              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
             >
               + Add Assessment
             </button>
@@ -648,19 +648,19 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               return (
                 <div
                   key={a.id}
-                  className="aura-glass rounded-2xl p-3.5 flex items-center justify-between gap-3"
+                  className="aura-glass rounded-xl p-3.5 flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-amber-400/20 text-amber-300 text-[10px] font-extrabold">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 text-[10px] font-bold">
                         {a.courseCode} • {a.type}
                       </span>
-                      <span className="text-[11px] text-emerald-300 font-mono">
+                      <span className="text-[11px] text-cyan-400 font-mono">
                         {daysLeft >= 0 ? `In ${daysLeft}d` : 'Past'}
                       </span>
                     </div>
                     <div
-                      className={`font-bold text-sm mt-1 ${
+                      className={`font-semibold text-sm mt-1 ${
                         a.status === 'COMPLETED' ? 'line-through text-slate-500' : ''
                       }`}
                     >
@@ -683,10 +683,10 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                           )
                         }))
                       }
-                      className={`p-2 rounded-xl ${
+                      className={`p-2 rounded-lg ${
                         a.status === 'COMPLETED'
-                          ? 'bg-emerald-500/25 text-emerald-300'
-                          : 'bg-white/5 text-slate-400'
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : 'aura-subtle-surface text-slate-400'
                       }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -698,7 +698,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                           assessments: prev.assessments.filter((item) => item.id !== a.id)
                         }))
                       }
-                      className="p-2 rounded-xl bg-rose-500/15 text-rose-400"
+                      className="p-2 rounded-lg bg-rose-500/10 text-rose-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -711,9 +711,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       )}
 
       {subTab === 'SLIDE_PARSER' && (
-        <div className="aura-glass rounded-3xl p-5 space-y-3 border border-emerald-400/35">
-          <div className="text-xs font-extrabold text-emerald-300">
-            ⚡ LOCAL SLIDE & LECTURE NOTE EXTRACTOR (100% BROWSER-SIDE)
+        <div className="aura-glass rounded-xl p-5 space-y-3 border border-slate-800">
+          <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+            Local Slide &amp; Lecture Note Extractor (100% Browser-Side)
           </div>
           <p className="text-xs text-slate-400">
             Paste lecture slide text or upload a <code>.txt</code> / <code>.md</code> outline. Definitions like{' '}
@@ -725,9 +725,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={slideCourse}
               onChange={(e) => setSlideCourse(e.target.value)}
               placeholder="Course Code"
-              className="px-3.5 py-2 rounded-xl aura-input text-xs font-bold uppercase w-36"
+              className="px-3.5 py-2 rounded-lg aura-input text-xs font-bold uppercase w-36"
             />
-            <label className="px-3.5 py-2 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5">
+            <label className="px-3.5 py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition">
               <Upload className="w-3.5 h-3.5" /> Load .txt / .md File
               <input type="file" accept=".txt,.md,.csv" onChange={handleFileUpload} className="hidden" />
             </label>
@@ -740,18 +740,18 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             placeholder={
               'Paste lecture text here...\nExample:\nDeadlock: A state where processes wait indefinitely for resources held by each other.\nMutex - Mutual exclusion lock ensuring single-thread critical section access.'
             }
-            className="w-full px-3.5 py-2.5 rounded-2xl aura-input text-xs"
+            className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
           />
 
           <button
             onClick={extractNotesAndCardsLocally}
-            className="w-full py-2.5 rounded-xl bg-emerald-500 text-slate-950 text-xs font-extrabold"
+            className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
           >
-            Extract Summary Note & SM-2 Flashcards
+            Extract Summary Note &amp; SM-2 Flashcards
           </button>
 
           {extractSummaryMsg && (
-            <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-400/40 text-xs text-emerald-200">
+            <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300">
               {extractSummaryMsg}
             </div>
           )}

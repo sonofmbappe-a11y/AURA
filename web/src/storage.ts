@@ -149,8 +149,8 @@ export function createDefaultVault(): AuraLocalVault {
         teamName: 'Team AURA Alpha',
         objective: 'Build Raft consensus engine with 99.9% uptime',
         groupTarget: 'Achieve 95%+ / Grade A',
-        avatarEmoji: '🚀',
-        avatarColorHex: '#10B981',
+        avatarEmoji: 'CS3',
+        avatarColorHex: '#06B6D4',
         creatorEmail: 'scholar@university.edu',
         adminEmails: ['scholar@university.edu'],
         memberEmails: ['scholar@university.edu'],
@@ -181,7 +181,7 @@ export function createDefaultVault(): AuraLocalVault {
         projectId: 'gp_1',
         senderEmail: 'scholar@university.edu',
         senderName: 'Scholar',
-        messageText: 'Welcome to our Team AURA workspace! Goal is 95% on the consensus engine demo 🚀',
+        messageText: 'Welcome to our Team AURA workspace! Goal is 95% on the consensus engine demo.',
         timestamp: Date.now() - 3600_000,
         isPinned: true,
         messageType: 'TEXT'
@@ -418,6 +418,10 @@ export async function saveCloudBackupFromWeb(
   }
 }
 
+function isFulfilled<T>(res: PromiseSettledResult<T>): res is PromiseFulfilledResult<T> {
+  return res.status === 'fulfilled';
+}
+
 /**
  * Fetches user_backups/{uid} created on Android (or Web) and merges/restores into local vault!
  */
@@ -431,15 +435,15 @@ export async function fetchAndMergeCloudBackupToWeb(
 
   const results = await Promise.allSettled(refs.map((r) => getDoc(r)));
   const existingSnaps = results
-    .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof getDoc>>> => r.status === 'fulfilled')
+    .filter(isFulfilled)
     .map((r) => r.value)
     .filter((s) => s.exists());
 
   if (existingSnaps.length === 0) return null;
 
   const snap = existingSnaps.reduce((best, cur) => {
-    const bestData = best.data();
-    const curData = cur.data();
+    const bestData = (best.data() || {}) as Record<string, any>;
+    const curData = (cur.data() || {}) as Record<string, any>;
     const bestMs =
       bestData?.updatedAt?.toMillis?.() ??
       bestData?.createdAt?.toMillis?.() ??
@@ -451,7 +455,7 @@ export async function fetchAndMergeCloudBackupToWeb(
     return curMs > bestMs ? cur : best;
   });
 
-  const data = snap.data();
+  const data = (snap.data() || {}) as Record<string, any>;
   const settingsArr: string[] = Array.isArray(data.profileSettings) ? data.profileSettings : [];
   const settingsMap: Record<string, string> = {};
   settingsArr.forEach((entry) => {
