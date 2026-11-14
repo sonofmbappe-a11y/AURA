@@ -108,7 +108,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
   // Track deleted or left project IDs in memory to avoid stale snapshot revival
   const deletedProjectIdsRef = useRef<Set<string>>(new Set());
-  const targetDbs = useMemo(() => (defaultDb !== db ? [db, defaultDb] : [db]), []);
+  const targetDbs = useMemo(() => (defaultDb !== db ? [defaultDb, db] : [defaultDb]), []);
 
   // Pending Invitations received by the current user
   const [pendingInvitations, setPendingInvitations] = useState<WebGroupInvitation[]>([]);

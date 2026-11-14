@@ -430,8 +430,8 @@ export async function fetchAndMergeCloudBackupToWeb(
   current: AuraLocalVault
 ): Promise<{ updatedVault: AuraLocalVault; summary: string } | null> {
   const refs = db !== defaultDb
-    ? [doc(db, 'user_backups', uid), doc(defaultDb, 'user_backups', uid)]
-    : [doc(db, 'user_backups', uid)];
+    ? [doc(defaultDb, 'user_backups', uid), doc(db, 'user_backups', uid)]
+    : [doc(defaultDb, 'user_backups', uid)];
 
   const results = await Promise.allSettled(refs.map((r) => getDoc(r)));
   const existingSnaps = results
