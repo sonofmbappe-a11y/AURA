@@ -1,8 +1,13 @@
 import {
   doc,
   getDoc,
+  getDocFromServer,
   setDoc,
-  serverTimestamp
+  updateDoc,
+  serverTimestamp,
+  type DocumentReference,
+  type DocumentSnapshot,
+  type DocumentData
 } from 'firebase/firestore';
 import { db, defaultDb } from './firebase';
 import type {
@@ -22,6 +27,26 @@ export function uidGen(prefix = 'id'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
+export function emailBackupKey(email: string): string {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes('@')) return '';
+  return normalized.replace(/[^a-z0-9_-]/g, '_');
+}
+
+async function getDocServerFirst(
+  ref: DocumentReference<DocumentData>
+): Promise<DocumentSnapshot<DocumentData> | null> {
+  try {
+    return await getDocFromServer(ref);
+  } catch {
+    try {
+      return await getDoc(ref);
+    } catch {
+      return null;
+    }
+  }
+}
+
 export function createDefaultVault(): AuraLocalVault {
   return {
     profile: {
@@ -32,7 +57,7 @@ export function createDefaultVault(): AuraLocalVault {
       academicLevel: 'Level 300',
       semester: 'Semester 1',
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-      isDarkTheme: true,
+      isDarkTheme: false,
       attendanceTargetPercent: 75,
       studyGoalHoursPerWeek: 18,
       semesterBudgetLimit: 1500,
@@ -46,7 +71,7 @@ export function createDefaultVault(): AuraLocalVault {
         creditHours: 3,
         lecturer: 'Dr. Mensah',
         venue: 'JQB Room 14',
-        colorHex: '#38BDF8'
+        colorHex: '#1E3A8A'
       },
       {
         id: 'c_math304',
@@ -55,7 +80,7 @@ export function createDefaultVault(): AuraLocalVault {
         creditHours: 3,
         lecturer: 'Prof. Owusu',
         venue: 'N-Block Hall 2',
-        colorHex: '#34D399'
+        colorHex: '#0F766E'
       }
     ],
     lectures: [
@@ -68,7 +93,7 @@ export function createDefaultVault(): AuraLocalVault {
         endTime: '11:00',
         venue: 'JQB Room 14',
         walkingMinutes: 10,
-        colorHex: '#38BDF8',
+        colorHex: '#1E3A8A',
         lecturer: 'Dr. Mensah',
         reminderEnabled: true,
         reminderMinutesBefore: 15
@@ -82,7 +107,7 @@ export function createDefaultVault(): AuraLocalVault {
         endTime: '15:30',
         venue: 'N-Block Hall 2',
         walkingMinutes: 12,
-        colorHex: '#34D399',
+        colorHex: '#0F766E',
         lecturer: 'Prof. Owusu',
         reminderEnabled: true,
         reminderMinutesBefore: 15
@@ -141,52 +166,8 @@ export function createDefaultVault(): AuraLocalVault {
     grades: [],
     focusSessions: [],
     distractions: [],
-    groupProjects: [
-      {
-        id: 'gp_1',
-        courseCode: 'CS301',
-        projectTitle: 'Distributed Cache & Consensus Engine',
-        teamName: 'Team AURA Alpha',
-        objective: 'Build Raft consensus engine with 99.9% uptime',
-        groupTarget: 'Achieve 95%+ / Grade A',
-        avatarEmoji: 'CS3',
-        avatarColorHex: '#06B6D4',
-        creatorEmail: 'scholar@university.edu',
-        adminEmails: ['scholar@university.edu'],
-        memberEmails: ['scholar@university.edu'],
-        dueEpochMillis: Date.now() + 14 * 86_400_000,
-        tasks: [
-          {
-            id: 'gt_1',
-            projectId: 'gp_1',
-            memberName: 'Scholar',
-            memberContact: 'scholar@university.edu',
-            taskTitle: 'Implement Heartbeat Leader Election',
-            isCompleted: true
-          },
-          {
-            id: 'gt_2',
-            projectId: 'gp_1',
-            memberName: 'Teammate',
-            memberContact: 'teammate@university.edu',
-            taskTitle: 'Write Distributed Benchmarks & Report',
-            isCompleted: false
-          }
-        ]
-      }
-    ],
-    groupMessages: [
-      {
-        id: 'gm_1',
-        projectId: 'gp_1',
-        senderEmail: 'scholar@university.edu',
-        senderName: 'Scholar',
-        messageText: 'Welcome to our Team AURA workspace! Goal is 95% on the consensus engine demo.',
-        timestamp: Date.now() - 3600_000,
-        isPinned: true,
-        messageType: 'TEXT'
-      }
-    ],
+    groupProjects: [],
+    groupMessages: [],
     deletedGroupIds: [],
     citations: [
       {
@@ -206,7 +187,9 @@ export function createDefaultVault(): AuraLocalVault {
         bibtexCode: '@book{cormen2022algorithms,\n  author = {Cormen, Thomas H. and Leiserson, Charles E. and Rivest, Ronald L. and Stein, Clifford},\n  title = {Introduction to Algorithms},\n  edition = {4th},\n  publisher = {MIT Press},\n  year = {2022}\n}',
         createdAt: Date.now()
       }
-    ]
+    ],
+    lastAutoRestoredUid: '',
+    lastBackupUpdatedAtMs: 0
   };
 }
 
@@ -217,7 +200,7 @@ export function loadLocalVault(): AuraLocalVault {
     const parsed = JSON.parse(raw) as Partial<AuraLocalVault>;
     const def = createDefaultVault();
     return {
-      profile: { ...def.profile, ...(parsed.profile || {}) },
+      profile: { ...def.profile, ...(parsed.profile || {}), isDarkTheme: false },
       courses: Array.isArray(parsed.courses) ? parsed.courses : def.courses,
       lectures: Array.isArray(parsed.lectures) ? parsed.lectures : def.lectures,
       assessments: Array.isArray(parsed.assessments) ? parsed.assessments : def.assessments,
@@ -226,10 +209,12 @@ export function loadLocalVault(): AuraLocalVault {
       grades: Array.isArray(parsed.grades) ? parsed.grades : def.grades,
       focusSessions: Array.isArray(parsed.focusSessions) ? parsed.focusSessions : [],
       distractions: Array.isArray(parsed.distractions) ? parsed.distractions : [],
-      groupProjects: Array.isArray(parsed.groupProjects) ? parsed.groupProjects : def.groupProjects,
-      groupMessages: Array.isArray(parsed.groupMessages) ? parsed.groupMessages : def.groupMessages,
+      groupProjects: Array.isArray(parsed.groupProjects) ? parsed.groupProjects : [],
+      groupMessages: Array.isArray(parsed.groupMessages) ? parsed.groupMessages : [],
+      deletedGroupIds: Array.isArray(parsed.deletedGroupIds) ? parsed.deletedGroupIds : [],
       citations: Array.isArray(parsed.citations) ? parsed.citations : def.citations,
-      lastAutoRestoredUid: parsed.lastAutoRestoredUid
+      lastAutoRestoredUid: parsed.lastAutoRestoredUid || '',
+      lastBackupUpdatedAtMs: Number(parsed.lastBackupUpdatedAtMs) || 0
     };
   } catch {
     return createDefaultVault();
@@ -244,22 +229,77 @@ export function saveLocalVault(vault: AuraLocalVault): void {
   }
 }
 
+export function isDefaultStarterVault(v: AuraLocalVault): boolean {
+  const courseIds = v.courses.map((c) => c.id);
+  const onlyStarterCourses =
+    courseIds.length <= 2 && courseIds.every((id) => id === 'c_cs301' || id === 'c_math304');
+  const assessmentIds = v.assessments.map((a) => a.id);
+  const onlyStarterAssessments =
+    assessmentIds.length <= 1 && assessmentIds.every((id) => id === 'a_1');
+  const noteIds = v.notes.map((n) => n.id);
+  const onlyStarterNotes = noteIds.length <= 1 && noteIds.every((id) => id === 'n_1');
+  return (
+    onlyStarterCourses &&
+    onlyStarterAssessments &&
+    onlyStarterNotes &&
+    v.grades.length === 0 &&
+    v.focusSessions.length === 0 &&
+    (v.profile.name === 'Scholar' || !v.profile.name.trim())
+  );
+}
+
+export function computeCloudVaultSignature(v: AuraLocalVault): string {
+  const focusMins = v.focusSessions.reduce((s, f) => s + f.durationMinutes, 0);
+  return JSON.stringify({
+    p: [
+      v.profile.name,
+      v.profile.institution,
+      v.profile.programme,
+      v.profile.academicLevel,
+      v.profile.semester,
+      v.profile.attendanceTargetPercent,
+      v.profile.studyGoalHoursPerWeek,
+      v.profile.semesterBudgetLimit,
+      v.profile.currencySymbol
+    ],
+    c: v.courses.map((c) => [c.code, c.name, c.creditHours, c.lecturer, c.venue, c.colorHex]),
+    l: v.lectures.map((l) => [l.courseCode, l.dayOfWeek, l.startTime, l.endTime, l.venue, l.walkingMinutes]),
+    a: v.assessments.map((a) => [a.courseCode, a.title, a.type, a.dueEpochMillis, a.status, a.priority]),
+    f: v.flashcards.map((f) => [f.courseCode, f.deckTitle, f.question, f.answer, f.repetitions]),
+    n: v.notes.map((n) => [n.courseCode, n.title, n.category, n.isPinned, n.content]),
+    g: v.grades.map((g) => [g.courseCode, g.creditHours, g.letterGrade, g.gradePoint, g.semester]),
+    fm: focusMins
+  });
+}
+
 function cleanField(val: string | number | boolean): string {
   return String(val ?? '').replace(/\|\|/g, ' ').trim();
 }
 
+function countPayloadRecords(d: Record<string, any>): number {
+  const arrCount = (k: string) => (Array.isArray(d[k]) ? d[k].length : 0);
+  return (
+    arrCount('courseRecords') +
+    arrCount('lectureRecords') +
+    arrCount('assessmentRecords') +
+    arrCount('flashcardRecords') +
+    arrCount('noteRecords') +
+    arrCount('gradeRecords')
+  );
+}
+
 /**
- * Saves local Web/iPhone vault to user_backups/{uid} using the EXACT same ||-delimited schema
- * and Firestore Security Rule constraints as the Android AuraViewModel!
+ * Saves local Web/iPhone vault to user_backups/{uid} using updateDoc when document already exists
+ * (satisfying Firestore Rules `createdAt == existing.createdAt` and `affectedKeys` restrictions),
+ * and setDoc only on initial creation. Also mirrors best-effort to user_backups_by_email.
  */
 export async function saveCloudBackupFromWeb(
   uid: string,
   accountEmail: string,
   vault: AuraLocalVault
-): Promise<void> {
+): Promise<number> {
   const ref = doc(db, 'user_backups', uid);
-  const existingSnap = await getDoc(ref);
-  const existingCreatedAt = existingSnap.exists() ? existingSnap.data()?.createdAt : null;
+  const existingSnap = await getDocServerFirst(ref);
 
   const p = vault.profile;
   const effectiveEmail = accountEmail || p.email;
@@ -274,7 +314,7 @@ export async function saveCloudBackupFromWeb(
     `academicLevel=${p.academicLevel}`,
     `semester=${p.semester}`,
     `timeZone=${p.timeZone}`,
-    `isDarkTheme=${p.isDarkTheme}`,
+    `isDarkTheme=false`,
     `attendanceTargetPercent=${p.attendanceTargetPercent}`,
     `studyGoalHoursPerWeek=${p.studyGoalHoursPerWeek}`,
     `semesterBudgetLimit=${p.semesterBudgetLimit}`,
@@ -372,8 +412,7 @@ export async function saveCloudBackupFromWeb(
 
   const totalFocusMinutes = vault.focusSessions.reduce((acc, s) => acc + s.durationMinutes, 0);
 
-  const basePayload = {
-    userId: uid,
+  const mutableFields = {
     studentName: (p.name.trim() || 'Scholar').slice(0, 100),
     institution: (p.institution.trim() || 'University').slice(0, 150),
     department: (p.programme.trim() || 'General Studies').slice(0, 150),
@@ -390,51 +429,102 @@ export async function saveCloudBackupFromWeb(
     flashcardRecords,
     noteRecords,
     gradeRecords,
-    expenseRecords: existingSnap.exists() && Array.isArray(existingSnap.data()?.expenseRecords)
-      ? existingSnap.data()?.expenseRecords
-      : [],
-    createdAt: existingCreatedAt || serverTimestamp(),
+    expenseRecords:
+      existingSnap?.exists() && Array.isArray(existingSnap.data()?.expenseRecords)
+        ? existingSnap.data()?.expenseRecords
+        : [],
     updatedAt: serverTimestamp()
   };
 
-  await setDoc(ref, basePayload);
+  if (existingSnap?.exists()) {
+    await updateDoc(ref, mutableFields);
+  } else {
+    await setDoc(ref, {
+      ...mutableFields,
+      userId: uid,
+      createdAt: serverTimestamp()
+    });
+  }
+
+  // Secondary DB sync if distinct
   if (db !== defaultDb) {
     try {
       const defaultRef = doc(defaultDb, 'user_backups', uid);
-      const defaultSnap = await getDoc(defaultRef).catch(() => null);
-      const defaultCreatedAt = defaultSnap?.exists() ? defaultSnap.data()?.createdAt : null;
+      const defaultSnap = await getDocServerFirst(defaultRef);
       const defaultExpenses =
         defaultSnap?.exists() && Array.isArray(defaultSnap.data()?.expenseRecords)
           ? defaultSnap.data()?.expenseRecords
-          : basePayload.expenseRecords;
-      await setDoc(defaultRef, {
-        ...basePayload,
-        expenseRecords: defaultExpenses,
-        createdAt: defaultCreatedAt || serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+          : mutableFields.expenseRecords;
+      if (defaultSnap?.exists()) {
+        await updateDoc(defaultRef, {
+          ...mutableFields,
+          expenseRecords: defaultExpenses,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await setDoc(defaultRef, {
+          ...mutableFields,
+          expenseRecords: defaultExpenses,
+          userId: uid,
+          createdAt: serverTimestamp()
+        });
+      }
     } catch {
       // Secondary fallback DB best-effort sync
     }
   }
+
+  // Best-effort email mirror for cross-provider account recovery
+  const eKey = emailBackupKey(effectiveEmail);
+  if (eKey) {
+    try {
+      const emailRef = doc(db, 'user_backups_by_email', eKey);
+      const emailSnap = await getDocServerFirst(emailRef);
+      if (emailSnap?.exists()) {
+        await updateDoc(emailRef, {
+          ...mutableFields,
+          userId: uid,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await setDoc(emailRef, {
+          ...mutableFields,
+          userId: uid,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch {
+      // Rules may restrict user_backups_by_email until deployed by owner
+    }
+  }
+
+  return Date.now();
 }
 
-function isFulfilled<T>(res: PromiseSettledResult<T>): res is PromiseFulfilledResult<T> {
-  return res.status === 'fulfilled';
+function isFulfilled<T>(res: PromiseSettledResult<T>): res is PromiseFulfilledResult<NonNullable<T>> {
+  return res.status === 'fulfilled' && res.value !== null && res.value !== undefined;
 }
 
 /**
- * Fetches user_backups/{uid} created on Android (or Web) and merges/restores into local vault!
+ * Fetches user_backups/{uid} (plus cross-provider email backup fallback) from Firestore server
+ * and merges/restores into the local vault.
  */
 export async function fetchAndMergeCloudBackupToWeb(
   uid: string,
-  current: AuraLocalVault
-): Promise<{ updatedVault: AuraLocalVault; summary: string } | null> {
-  const refs = db !== defaultDb
-    ? [doc(defaultDb, 'user_backups', uid), doc(db, 'user_backups', uid)]
-    : [doc(defaultDb, 'user_backups', uid)];
+  current: AuraLocalVault,
+  accountEmail = ''
+): Promise<{ updatedVault: AuraLocalVault; summary: string; serverUpdatedAtMs: number } | null> {
+  const refs: DocumentReference<DocumentData>[] =
+    db !== defaultDb
+      ? [doc(defaultDb, 'user_backups', uid), doc(db, 'user_backups', uid)]
+      : [doc(defaultDb, 'user_backups', uid)];
 
-  const results = await Promise.allSettled(refs.map((r) => getDoc(r)));
+  const eKey = emailBackupKey(accountEmail || current.profile.email);
+  if (eKey) {
+    refs.push(doc(defaultDb, 'user_backups_by_email', eKey));
+  }
+
+  const results = await Promise.allSettled(refs.map((r) => getDocServerFirst(r)));
   const existingSnaps = results
     .filter(isFulfilled)
     .map((r) => r.value)
@@ -453,10 +543,16 @@ export async function fetchAndMergeCloudBackupToWeb(
       curData?.updatedAt?.toMillis?.() ??
       curData?.createdAt?.toMillis?.() ??
       0;
-    return curMs > bestMs ? cur : best;
+    if (curMs !== bestMs) return curMs > bestMs ? cur : best;
+    return countPayloadRecords(curData) > countPayloadRecords(bestData) ? cur : best;
   });
 
   const data = (snap.data() || {}) as Record<string, any>;
+  const serverUpdatedAtMs =
+    data?.updatedAt?.toMillis?.() ??
+    data?.createdAt?.toMillis?.() ??
+    Date.now();
+
   const settingsArr: string[] = Array.isArray(data.profileSettings) ? data.profileSettings : [];
   const settingsMap: Record<string, string> = {};
   settingsArr.forEach((entry) => {
@@ -469,16 +565,13 @@ export async function fetchAndMergeCloudBackupToWeb(
   const updatedProfile = {
     ...current.profile,
     name: settingsMap.name || data.studentName || current.profile.name,
-    email: settingsMap.email || current.profile.email,
+    email: settingsMap.email || accountEmail || current.profile.email,
     institution: settingsMap.institution || data.institution || current.profile.institution,
     programme: settingsMap.programme || data.department || current.profile.programme,
     academicLevel: settingsMap.academicLevel || current.profile.academicLevel,
     semester: settingsMap.semester || current.profile.semester,
     timeZone: settingsMap.timeZone || current.profile.timeZone,
-    isDarkTheme:
-      settingsMap.isDarkTheme !== undefined
-        ? settingsMap.isDarkTheme === 'true'
-        : current.profile.isDarkTheme,
+    isDarkTheme: false,
     attendanceTargetPercent:
       Number(settingsMap.attendanceTargetPercent) || current.profile.attendanceTargetPercent,
     studyGoalHoursPerWeek:
@@ -500,7 +593,7 @@ export async function fetchAndMergeCloudBackupToWeb(
         creditHours: Number(p[2]) || 3,
         lecturer: p[3] || '',
         venue: p[4] || '',
-        colorHex: p[5] || '#38BDF8'
+        colorHex: p[5] || '#1E3A8A'
       };
     })
     .filter(Boolean) as WebCourse[];
@@ -519,7 +612,7 @@ export async function fetchAndMergeCloudBackupToWeb(
         endTime: p[4] || '11:00',
         venue: p[5] || '',
         walkingMinutes: Number(p[6]) || 10,
-        colorHex: p[7] || '#38BDF8',
+        colorHex: p[7] || '#1E3A8A',
         lecturer: p[8] || '',
         reminderEnabled: p[9] !== 'false',
         reminderMinutesBefore: Number(p[10]) || 15
@@ -602,20 +695,61 @@ export async function fetchAndMergeCloudBackupToWeb(
     })
     .filter(Boolean) as WebGrade[];
 
+  const cloudFocusMins = Number(data.totalFocusMinutes) || 0;
+  const localFocusMins = current.focusSessions.reduce((s, f) => s + f.durationMinutes, 0);
+  const nextFocusSessions =
+    cloudFocusMins > 0 && localFocusMins === 0
+      ? [
+          {
+            id: uidGen('foc_cloud'),
+            courseCode: importedCourses[0]?.code || 'GENERAL',
+            durationMinutes: cloudFocusMins,
+            completedAt: serverUpdatedAtMs
+          }
+        ]
+      : current.focusSessions;
+
+  const starterOnly = isDefaultStarterVault(current);
+  const cloudHasAnyAcademic =
+    importedCourses.length > 0 ||
+    importedLectures.length > 0 ||
+    importedAssessments.length > 0 ||
+    importedCards.length > 0 ||
+    importedNotes.length > 0 ||
+    importedGrades.length > 0;
+
   const updatedVault: AuraLocalVault = {
     ...current,
     profile: updatedProfile,
-    courses: importedCourses.length > 0 ? importedCourses : current.courses,
-    lectures: importedLectures.length > 0 ? importedLectures : current.lectures,
-    assessments: importedAssessments.length > 0 ? importedAssessments : current.assessments,
-    flashcards: importedCards.length > 0 ? importedCards : current.flashcards,
-    notes: importedNotes.length > 0 ? importedNotes : current.notes,
+    courses:
+      importedCourses.length > 0 || (starterOnly && cloudHasAnyAcademic)
+        ? importedCourses
+        : current.courses,
+    lectures:
+      importedLectures.length > 0 || (starterOnly && cloudHasAnyAcademic)
+        ? importedLectures
+        : current.lectures,
+    assessments:
+      importedAssessments.length > 0 || (starterOnly && cloudHasAnyAcademic)
+        ? importedAssessments
+        : current.assessments,
+    flashcards:
+      importedCards.length > 0 || (starterOnly && cloudHasAnyAcademic)
+        ? importedCards
+        : current.flashcards,
+    notes:
+      importedNotes.length > 0 || (starterOnly && cloudHasAnyAcademic)
+        ? importedNotes
+        : current.notes,
     grades: importedGrades.length > 0 ? importedGrades : current.grades,
-    lastAutoRestoredUid: uid
+    focusSessions: nextFocusSessions,
+    lastAutoRestoredUid: uid,
+    lastBackupUpdatedAtMs: serverUpdatedAtMs
   };
 
   return {
     updatedVault,
-    summary: `${importedCourses.length} courses, ${importedLectures.length} classes, ${importedCards.length} flashcards & ${importedNotes.length} notes synced!`
+    serverUpdatedAtMs,
+    summary: `${importedCourses.length} courses, ${importedLectures.length} classes, ${importedCards.length} flashcards & ${importedNotes.length} notes`
   };
 }

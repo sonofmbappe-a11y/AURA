@@ -30,7 +30,6 @@ export const CitationGeneratorView: React.FC<Props> = ({
   const [sourceType, setSourceType] = useState<'BOOK' | 'JOURNAL' | 'WEBSITE' | 'SLIDES'>('JOURNAL');
   const [activeStyle, setActiveStyle] = useState<CitationStyle>('APA');
 
-  // Input fields
   const [title, setTitle] = useState('');
   const [authors, setAuthors] = useState('');
   const [year, setYear] = useState('2024');
@@ -39,7 +38,6 @@ export const CitationGeneratorView: React.FC<Props> = ({
   const [pagesOrUrl, setPagesOrUrl] = useState('');
   const [doiOrIsbn, setDoiOrIsbn] = useState('');
 
-  // Formatted citations preview computed dynamically
   const computedCitations = useMemo(() => {
     const cleanTitle = title.trim() || 'Untitled Academic Work';
     const cleanAuthors = authors.trim() || 'Author, A. A.';
@@ -49,7 +47,6 @@ export const CitationGeneratorView: React.FC<Props> = ({
     const cleanPages = pagesOrUrl.trim();
     const cleanDoi = doiOrIsbn.trim();
 
-    // APA 7th
     let apa = '';
     if (sourceType === 'JOURNAL') {
       apa = `${cleanAuthors} (${cleanYear}). ${cleanTitle}. ${cleanPub}${cleanVol ? `, ${cleanVol}` : ''}${cleanPages ? `, ${cleanPages}` : ''}.${cleanDoi ? ` https://doi.org/${cleanDoi}` : ''}`;
@@ -61,7 +58,6 @@ export const CitationGeneratorView: React.FC<Props> = ({
       apa = `${cleanAuthors} (${cleanYear}). ${cleanTitle} [Lecture slides]. ${cleanPub}.${cleanPages ? ` ${cleanPages}` : ''}`;
     }
 
-    // MLA 9th
     let mla = '';
     if (sourceType === 'JOURNAL') {
       mla = `${cleanAuthors}. "${cleanTitle}." ${cleanPub}${cleanVol ? `, vol. ${cleanVol}` : ''}${cleanYear ? `, ${cleanYear}` : ''}${cleanPages ? `, pp. ${cleanPages}` : ''}.${cleanDoi ? ` DOI: ${cleanDoi}` : ''}`;
@@ -71,16 +67,10 @@ export const CitationGeneratorView: React.FC<Props> = ({
       mla = `${cleanAuthors}. "${cleanTitle}." ${cleanPub}, ${cleanYear}${cleanPages ? `, ${cleanPages}` : ''}.`;
     }
 
-    // Harvard
     const harvard = `${cleanAuthors} (${cleanYear}) '${cleanTitle}', ${cleanPub}${cleanVol ? `, ${cleanVol}` : ''}${cleanPages ? `, pp. ${cleanPages}` : ''}.`;
-
-    // Chicago 17th
     const chicago = `${cleanAuthors}. "${cleanTitle}." ${cleanPub}${cleanVol ? ` ${cleanVol}` : ''} (${cleanYear})${cleanPages ? `: ${cleanPages}` : ''}.${cleanDoi ? ` https://doi.org/${cleanDoi}` : ''}`;
-
-    // IEEE
     const ieee = `[1] ${cleanAuthors}, "${cleanTitle}," ${cleanPub}${cleanVol ? `, vol. ${cleanVol}` : ''}${cleanPages ? `, pp. ${cleanPages}` : ''}, ${cleanYear}.`;
 
-    // BibTeX
     const firstAuthorLastName = cleanAuthors.split(',')[0].split(' ').pop()?.toLowerCase() || 'cite';
     const bibKey = `${firstAuthorLastName}${cleanYear}${cleanTitle.split(' ')[0].toLowerCase()}`;
     const bibType = sourceType === 'BOOK' ? 'book' : sourceType === 'JOURNAL' ? 'article' : 'misc';
@@ -104,19 +94,16 @@ export const CitationGeneratorView: React.FC<Props> = ({
     }
   }, [activeStyle, computedCitations]);
 
-  // Copy active citation
   const handleCopyCitation = () => {
     navigator.clipboard.writeText(activeFormattedText);
-    onNotify(`Copied ${activeStyle} citation to clipboard!`);
+    onNotify(`Copied ${activeStyle} citation to clipboard.`);
   };
 
-  // Copy BibTeX
   const handleCopyBibtex = () => {
     navigator.clipboard.writeText(computedCitations.bibtex);
-    onNotify('Copied BibTeX citation to clipboard!');
+    onNotify('Copied BibTeX entry to clipboard.');
   };
 
-  // Save to Bibliography Vault
   const handleSaveToVault = () => {
     if (!title.trim()) {
       onNotify('Please enter a source title.');
@@ -144,10 +131,9 @@ export const CitationGeneratorView: React.FC<Props> = ({
       ...prev,
       citations: [newCit, ...(prev.citations || [])]
     }));
-    onNotify('Saved reference to your Academic Bibliography Vault!');
+    onNotify('Saved reference to Bibliography.');
   };
 
-  // Delete citation
   const handleDeleteCitation = (id: string) => {
     onUpdateVault((prev) => ({
       ...prev,
@@ -156,295 +142,277 @@ export const CitationGeneratorView: React.FC<Props> = ({
     onNotify('Removed citation.');
   };
 
-  // Export full bibliography
   const handleExportAllBibtex = () => {
     const list = vault.citations || [];
     if (list.length === 0) return;
     const bibStr = list.map((c) => c.bibtexCode).join('\n\n');
     navigator.clipboard.writeText(bibStr);
-    onNotify(`Exported ${list.length} citations as BibTeX to clipboard!`);
+    onNotify(`Exported ${list.length} citations as BibTeX.`);
   };
 
   return (
     <div className="space-y-4">
-      {/* Header Banner */}
-      <div className="aura-hero-card rounded-xl p-4 sm:p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30 shrink-0">
-            <Quote className="w-5 h-5" />
+      {/* Editorial Header */}
+      <div className="aura-glass rounded-lg p-4 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-md bg-[#EFF6FF] text-[#1E3A8A] flex items-center justify-center border border-[#BFDBFE] shrink-0">
+          <Quote className="w-4 h-4" />
+        </div>
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-base font-bold text-[#111827]">
+              Citation &amp; Bibliography Engine
+            </h2>
+            <span className="px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[10px] font-semibold text-[#4B5563] uppercase">
+              APA · MLA · IEEE · Harvard · BibTeX
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-bold">
-                Academic Citation &amp; Bibliography Generator
-              </h2>
-              <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 border border-cyan-500/30 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
-                APA • MLA • IEEE • Harvard
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              Format peer-reviewed journal papers, textbooks, web sources &amp; lecture slides with instant BibTeX export.
-            </p>
-          </div>
+          <p className="text-xs text-[#6B7280] mt-0.5">
+            Format scholarly references and export clean BibTeX blocks for papers and theses.
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Form Inputs */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
-            {/* Source Type Selector */}
+        <div className="lg:col-span-7 aura-glass rounded-lg p-4 space-y-4">
+          <div>
+            <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase tracking-wider">
+              Source Classification
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
+              {[
+                { id: 'JOURNAL', label: 'Journal', icon: <FileText className="w-3.5 h-3.5" /> },
+                { id: 'BOOK', label: 'Textbook', icon: <BookOpen className="w-3.5 h-3.5" /> },
+                { id: 'WEBSITE', label: 'Web Source', icon: <Globe className="w-3.5 h-3.5" /> },
+                { id: 'SLIDES', label: 'Slides', icon: <GraduationCap className="w-3.5 h-3.5" /> }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSourceType(item.id as any)}
+                  className={`p-2 rounded-md text-xs font-semibold flex items-center justify-center gap-1.5 border transition-colors duration-150 ${
+                    sourceType === item.id
+                      ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                      : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 text-xs">
             <div>
-              <label className="text-xs font-bold text-slate-300 uppercase">Source Type</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1.5">
-                {[
-                  { id: 'JOURNAL', label: 'Journal Paper', icon: <FileText className="w-3.5 h-3.5" /> },
-                  { id: 'BOOK', label: 'Textbook / Book', icon: <BookOpen className="w-3.5 h-3.5" /> },
-                  { id: 'WEBSITE', label: 'Website / Doc', icon: <Globe className="w-3.5 h-3.5" /> },
-                  { id: 'SLIDES', label: 'Lecture Slides', icon: <GraduationCap className="w-3.5 h-3.5" /> }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => setSourceType(item.id as any)}
-                    className={`p-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition border ${
-                      sourceType === item.id
-                        ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
-                        : 'aura-subtle-surface text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
+              <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">Title of Work</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={
+                  sourceType === 'JOURNAL'
+                    ? 'e.g. Attention Is All You Need'
+                    : sourceType === 'BOOK'
+                    ? 'e.g. Introduction to Algorithms'
+                    : 'e.g. Distributed Consensus Notes'
+                }
+                className="aura-input w-full px-3 py-2 rounded-md text-xs mt-1"
+              />
             </div>
 
-            {/* Inputs Grid */}
-            <div className="space-y-3 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="font-bold text-slate-300 uppercase">Title of Work</label>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">Authors (Last, First M.)</label>
                 <input
                   type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={
-                    sourceType === 'JOURNAL'
-                      ? 'e.g. Attention Is All You Need'
-                      : sourceType === 'BOOK'
-                      ? 'e.g. Deep Learning'
-                      : 'e.g. Distributed Consensus in Distributed Systems'
-                  }
-                  className="aura-input w-full px-3.5 py-2.5 rounded-lg text-xs sm:text-sm mt-1"
+                  value={authors}
+                  onChange={(e) => setAuthors(e.target.value)}
+                  placeholder="Vaswani, A., Shazeer, N."
+                  className="aura-input w-full px-3 py-2 rounded-md mt-1"
                 />
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">Authors (Last, First M.)</label>
-                  <input
-                    type="text"
-                    value={authors}
-                    onChange={(e) => setAuthors(e.target.value)}
-                    placeholder="e.g. Vaswani, A., Shazeer, N., &amp; Parmar, N."
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">Year of Publication</label>
-                  <input
-                    type="text"
-                    value={year}
-                    onChange={(e) => setYear(e.target.value)}
-                    placeholder="2024"
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">
-                    {sourceType === 'JOURNAL'
-                      ? 'Journal / Conference'
-                      : sourceType === 'BOOK'
-                      ? 'Publisher'
-                      : sourceType === 'WEBSITE'
-                      ? 'Website Name'
-                      : 'University / Lecturer'}
-                  </label>
-                  <input
-                    type="text"
-                    value={publisherOrJournal}
-                    onChange={(e) => setPublisherOrJournal(e.target.value)}
-                    placeholder={
-                      sourceType === 'JOURNAL'
-                        ? 'e.g. NeurIPS Proceedings'
-                        : sourceType === 'BOOK'
-                        ? 'e.g. MIT Press'
-                        : 'e.g. Stanford CS224N'
-                    }
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">
-                    {sourceType === 'BOOK' ? 'Edition (e.g. 3rd ed.)' : 'Volume / Issue'}
-                  </label>
-                  <input
-                    type="text"
-                    value={volumeOrEdition}
-                    onChange={(e) => setVolumeOrEdition(e.target.value)}
-                    placeholder="e.g. Vol. 30, Issue 2"
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">
-                    {sourceType === 'WEBSITE' ? 'Full URL' : 'Page Range (pp. 45–60)'}
-                  </label>
-                  <input
-                    type="text"
-                    value={pagesOrUrl}
-                    onChange={(e) => setPagesOrUrl(e.target.value)}
-                    placeholder="pp. 120–145 or https://..."
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="font-bold text-slate-300 uppercase">DOI or ISBN</label>
-                  <input
-                    type="text"
-                    value={doiOrIsbn}
-                    onChange={(e) => setDoiOrIsbn(e.target.value)}
-                    placeholder="10.1145/3372278.3390670"
-                    className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
-                  />
-                </div>
+              <div>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">Year</label>
+                <input
+                  type="text"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  placeholder="2024"
+                  className="aura-input w-full px-3 py-2 rounded-md font-mono mt-1"
+                />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={handleSaveToVault}
-                className="aura-pill-btn px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Save to Bibliography
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">
+                  {sourceType === 'JOURNAL'
+                    ? 'Journal / Conference'
+                    : sourceType === 'BOOK'
+                    ? 'Publisher'
+                    : sourceType === 'WEBSITE'
+                    ? 'Website Name'
+                    : 'Institution / Lecturer'}
+                </label>
+                <input
+                  type="text"
+                  value={publisherOrJournal}
+                  onChange={(e) => setPublisherOrJournal(e.target.value)}
+                  placeholder={sourceType === 'BOOK' ? 'MIT Press' : 'NeurIPS Proceedings'}
+                  className="aura-input w-full px-3 py-2 rounded-md mt-1"
+                />
+              </div>
+              <div>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">
+                  {sourceType === 'BOOK' ? 'Edition' : 'Volume / Issue'}
+                </label>
+                <input
+                  type="text"
+                  value={volumeOrEdition}
+                  onChange={(e) => setVolumeOrEdition(e.target.value)}
+                  placeholder="Vol. 30, No. 2"
+                  className="aura-input w-full px-3 py-2 rounded-md mt-1"
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">
+                  {sourceType === 'WEBSITE' ? 'Full URL' : 'Page Range'}
+                </label>
+                <input
+                  type="text"
+                  value={pagesOrUrl}
+                  onChange={(e) => setPagesOrUrl(e.target.value)}
+                  placeholder="pp. 120–145 or https://..."
+                  className="aura-input w-full px-3 py-2 rounded-md mt-1"
+                />
+              </div>
+              <div>
+                <label className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">DOI or ISBN</label>
+                <input
+                  type="text"
+                  value={doiOrIsbn}
+                  onChange={(e) => setDoiOrIsbn(e.target.value)}
+                  placeholder="10.1145/3372278"
+                  className="aura-input w-full px-3 py-2 rounded-md font-mono mt-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end pt-2 border-t border-[#E5E7EB]">
+            <button
+              type="button"
+              onClick={handleSaveToVault}
+              className="aura-pill-btn px-4 py-2 bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Save to Bibliography
+            </button>
           </div>
         </div>
 
-        {/* Live Formatted Preview & Style Tabs */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-              <span className="text-xs font-bold uppercase tracking-wider">
-                Style Preview
-              </span>
-              <div className="flex items-center gap-1">
-                {(['APA', 'MLA', 'HARVARD', 'CHICAGO', 'IEEE'] as CitationStyle[]).map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => setActiveStyle(st)}
-                    className={`px-2 py-1 rounded-md text-[10px] font-bold transition ${
-                      activeStyle === st
-                        ? 'bg-cyan-500 text-slate-950'
-                        : 'aura-subtle-surface text-slate-300 hover:text-white'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Formatted Citation Block */}
-            <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 space-y-2">
-              <div className="text-[10px] font-bold text-cyan-400 uppercase">
-                {activeStyle} 7th/9th Format
-              </div>
-              <p className="text-xs sm:text-sm text-slate-100 font-serif leading-relaxed italic select-all">
-                {activeFormattedText}
-              </p>
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+        {/* Live Formatted Preview */}
+        <div className="lg:col-span-5 aura-glass rounded-lg p-4 space-y-4 h-fit">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E7EB]">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
+              Preview
+            </span>
+            <div className="flex items-center gap-1">
+              {(['APA', 'MLA', 'HARVARD', 'CHICAGO', 'IEEE'] as CitationStyle[]).map((st) => (
                 <button
+                  key={st}
                   type="button"
-                  onClick={handleCopyCitation}
-                  className="px-3 py-1.5 rounded-lg aura-subtle-surface text-xs font-semibold text-cyan-300 hover:border-cyan-500/50 flex items-center gap-1.5 transition"
+                  onClick={() => setActiveStyle(st)}
+                  className={`px-2 py-1 rounded font-mono text-[10px] font-bold transition-colors duration-150 ${
+                    activeStyle === st
+                      ? 'bg-[#1E3A8A] text-[#FFFFFF]'
+                      : 'bg-[#F3F4F6] text-[#4B5563] hover:text-[#111827]'
+                  }`}
                 >
-                  <Copy className="w-3.5 h-3.5" />
-                  Copy Citation
+                  {st}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleCopyBibtex}
-                  className="px-3 py-1.5 rounded-lg aura-subtle-surface text-xs font-semibold text-emerald-300 hover:border-emerald-500/50 flex items-center gap-1.5 transition"
-                >
-                  <FileCode className="w-3.5 h-3.5" />
-                  Copy BibTeX
-                </button>
-              </div>
+              ))}
             </div>
+          </div>
 
-            {/* BibTeX Code Preview */}
-            <div className="space-y-1">
-              <div className="text-[10px] font-bold text-slate-400 uppercase">Raw BibTeX</div>
-              <pre className="p-3 rounded-lg bg-[#0B1220] border border-slate-800 text-[11px] font-mono text-cyan-300 overflow-x-auto select-all">
-                {computedCitations.bibtex}
-              </pre>
+          <div className="p-3.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
+            <div className="font-mono text-[10px] font-bold text-[#1E3A8A] uppercase">
+              {activeStyle} Format
             </div>
+            <p className="text-xs sm:text-sm text-[#111827] font-serif leading-relaxed italic select-all">
+              {activeFormattedText}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <button
+                type="button"
+                onClick={handleCopyCitation}
+                className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#1E3A8A] flex items-center gap-1.5 transition-colors duration-150"
+              >
+                <Copy className="w-3.5 h-3.5" /> Copy
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyBibtex}
+                className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-xs font-semibold text-[#111827] flex items-center gap-1.5 transition-colors duration-150"
+              >
+                <FileCode className="w-3.5 h-3.5" /> BibTeX
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="font-mono text-[10px] font-bold text-[#6B7280] uppercase">BibTeX Output</div>
+            <pre className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] text-[11px] font-mono text-[#111827] overflow-x-auto select-all">
+              {computedCitations.bibtex}
+            </pre>
           </div>
         </div>
       </div>
 
-      {/* Saved Bibliography Section */}
-      <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-800 flex-wrap gap-2">
+      {/* Saved Bibliography Table */}
+      <div className="aura-glass rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between pb-2.5 border-b border-[#E5E7EB] flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm sm:text-base font-bold">
-              My Academic Bibliography ({vault.citations?.length || 0})
+            <h3 className="text-sm font-bold text-[#111827]">
+              Saved Bibliography
             </h3>
-            <span className="text-xs text-slate-400">Stored locally in your vault</span>
+            <span className="font-mono text-xs text-[#6B7280]">({vault.citations?.length || 0})</span>
           </div>
 
           {(vault.citations?.length || 0) > 0 && (
             <button
               type="button"
               onClick={handleExportAllBibtex}
-              className="aura-pill-btn px-3 py-1.5 aura-subtle-surface text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#1E3A8A] flex items-center gap-1.5 transition-colors duration-150"
             >
-              <Download className="w-3.5 h-3.5 text-cyan-400" />
-              Export All BibTeX
+              <Download className="w-3.5 h-3.5" /> Export All BibTeX
             </button>
           )}
         </div>
 
-        {(!vault.citations || vault.citations.length === 0) ? (
-          <div className="text-center py-6 text-xs text-slate-400">
-            No citations saved yet. Generate and save citations above to build your paper bibliography.
+        {!vault.citations || vault.citations.length === 0 ? (
+          <div className="text-center py-6 text-xs text-[#6B7280]">
+            No citations saved yet.
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="border border-[#E5E7EB] rounded-md divide-y divide-[#E5E7EB]">
             {vault.citations.map((c) => (
               <div
                 key={c.id}
-                className="p-3.5 rounded-lg aura-subtle-surface flex items-start justify-between gap-3"
+                className="p-3.5 flex items-start justify-between gap-3 hover:bg-[#F9FAFB] transition-colors duration-150"
               >
                 <div className="space-y-1 min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 text-[10px] font-bold uppercase">
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-[10px] font-bold uppercase">
                       {c.sourceType}
                     </span>
-                    <span className="text-xs text-slate-400 font-semibold">{c.year}</span>
+                    <span className="text-xs text-[#6B7280] font-semibold">{c.year}</span>
                   </div>
-                  <p className="text-xs sm:text-sm font-serif italic text-slate-100 select-all">
+                  <p className="text-xs sm:text-sm font-serif italic text-[#111827] select-all">
                     {c.formattedApa}
                   </p>
                 </div>
@@ -454,10 +422,10 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(c.formattedApa);
-                      onNotify('Copied APA citation!');
+                      onNotify('Copied APA citation.');
                     }}
                     title="Copy APA"
-                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-300 hover:text-white"
+                    className="w-8 h-8 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] flex items-center justify-center text-[#4B5563] hover:text-[#111827] transition-colors duration-150"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -465,10 +433,10 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     type="button"
                     onClick={() => {
                       navigator.clipboard.writeText(c.bibtexCode);
-                      onNotify('Copied BibTeX!');
+                      onNotify('Copied BibTeX.');
                     }}
                     title="Copy BibTeX"
-                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-emerald-400 hover:text-emerald-300"
+                    className="w-8 h-8 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] flex items-center justify-center text-[#1E3A8A] transition-colors duration-150"
                   >
                     <FileCode className="w-3.5 h-3.5" />
                   </button>
@@ -476,7 +444,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
                     type="button"
                     onClick={() => handleDeleteCitation(c.id)}
                     title="Delete"
-                    className="w-8 h-8 rounded-lg aura-subtle-surface flex items-center justify-center text-rose-400 hover:text-rose-300"
+                    className="w-8 h-8 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#FECACA] hover:bg-[#FEF2F2] flex items-center justify-center text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

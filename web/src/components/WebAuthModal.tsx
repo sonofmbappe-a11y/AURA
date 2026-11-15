@@ -90,9 +90,9 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
       let friendly = (err as Error)?.message || 'Authentication error.';
 
       if (rawCode === 'auth/invalid-credential' || rawCode === 'auth/wrong-password' || rawCode === 'auth/user-not-found') {
-        friendly = 'Incorrect email or password. If you haven\'t created an account yet, click "Create Account" below!';
+        friendly = 'Incorrect email or password. If you have not created an account yet, click "Create Account" below.';
       } else if (rawCode === 'auth/email-already-in-use') {
-        friendly = 'An account with this email already exists! Please click "Sign In" below.';
+        friendly = 'An account with this email already exists. Please switch to Sign In.';
       } else if (rawCode === 'auth/weak-password') {
         friendly = 'Password is too weak. Please use at least 6 characters.';
       } else if (rawCode === 'auth/invalid-api-key') {
@@ -111,53 +111,50 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
       navigator.clipboard.writeText(currentHost);
       setCopiedHost(true);
       setTimeout(() => setCopiedHost(false), 2000);
-      onNotify(`Copied "${currentHost}" to clipboard!`);
+      onNotify(`Copied "${currentHost}" to clipboard.`);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85">
-      <div className="relative w-full max-w-md aura-glass rounded-xl p-6 sm:p-7 border border-slate-800 shadow-2xl space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+      <div className="relative w-full max-w-md bg-[#FFFFFF] rounded-lg p-6 border border-[#E5E7EB] space-y-5">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition"
+          className="absolute top-4 right-4 w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] flex items-center justify-center text-[#6B7280] hover:text-[#111827] transition-colors duration-150"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
 
-        <div className="text-center space-y-1.5 pr-6">
-          <div className="w-11 h-11 rounded-lg bg-cyan-500/15 border border-cyan-500/30 mx-auto flex items-center justify-center mb-2">
-            <ShieldCheck className="w-5 h-5 text-cyan-400" />
+        <div className="space-y-1.5 pr-8">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider text-[#1E3A8A]">
+            <ShieldCheck className="w-3.5 h-3.5" /> Cloud Sync Auth
           </div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight">
-            {mode === 'SIGN_IN' ? 'Sign In to AURA Web' : 'Create Scholar Account'}
+          <h2 className="text-lg font-bold tracking-tight text-[#111827]">
+            {mode === 'SIGN_IN' ? 'Sign In to AURA' : 'Create Scholar Account'}
           </h2>
-          <p className="text-xs text-slate-400">
-            Sync your timetable, lecture slides, flashcards &amp; group projects with your phone
+          <p className="text-xs text-[#6B7280]">
+            Restore and sync your timetable, notes, flashcards, and team workspaces across Android and Web.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-[#DC2626] shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-semibold block">{errorMessage}</span>
               {errorMessage.includes('not authorized yet') && (
-                <div className="text-[11px] text-rose-300/90 pt-1">
+                <div className="text-[11px] text-[#7F1D1D] pt-1">
                   <span>Domain to authorize in Firebase Console: </span>
                   <button
                     type="button"
                     onClick={copyHostname}
-                    className="inline-flex items-center gap-1 font-mono bg-rose-900/40 px-1.5 py-0.5 rounded border border-rose-700/50 hover:bg-rose-900/70"
+                    className="inline-flex items-center gap-1 font-mono bg-[#FFFFFF] px-1.5 py-0.5 rounded border border-[#FECACA] hover:border-[#DC2626] transition-colors duration-150"
                   >
                     <span>{currentHost}</span>
-                    {copiedHost ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    {copiedHost ? <Check className="w-3 h-3 text-[#059669]" /> : <Copy className="w-3 h-3" />}
                   </button>
-                  <p className="mt-1 text-slate-300">
-                    Tip: You can also sign in using <strong>Email &amp; Password</strong> below without waiting for Google OAuth domain approval.
-                  </p>
                 </div>
               )}
             </div>
@@ -169,7 +166,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
           type="button"
           onClick={handleGoogleSignIn}
           disabled={isSubmitting}
-          className="w-full py-3 px-4 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-md disabled:opacity-50"
+          className="w-full py-2.5 px-4 rounded-md bg-[#FFFFFF] hover:bg-[#F9FAFB] border border-[#D1D5DB] hover:border-[#9CA3AF] text-[#111827] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-colors duration-150 disabled:opacity-50"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
@@ -193,54 +190,56 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-white/10" />
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">or email &amp; password</span>
-          <div className="flex-1 h-px bg-white/10" />
+          <div className="flex-1 h-px bg-[#E5E7EB]" />
+          <span className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">
+            or email &amp; password
+          </span>
+          <div className="flex-1 h-px bg-[#E5E7EB]" />
         </div>
 
-        {/* Primary Action 2: Direct Email & Password (Works anywhere, zero domain restriction) */}
+        {/* Email & Password Form */}
         <form onSubmit={handleEmailAuth} className="space-y-3">
           {mode === 'REGISTER' && (
             <div className="relative">
-              <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+              <UserIcon className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Full Name (e.g. Maya Lin)"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl aura-input text-xs"
+                className="w-full pl-9 pr-3 py-2 rounded-md aura-input text-xs"
               />
             </div>
           )}
 
           <div className="relative">
-            <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+            <Mail className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="scholar@university.edu"
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full pl-9 pr-3 py-2 rounded-md aura-input text-xs"
             />
           </div>
 
           <div className="relative">
-            <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+            <Lock className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="•••••••• (min 6 characters)"
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full pl-9 pr-3 py-2 rounded-md aura-input text-xs"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
+            className="w-full py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors duration-150 disabled:opacity-50"
           >
             {mode === 'SIGN_IN' ? (
               <>
@@ -257,7 +256,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
         </form>
 
         {/* Toggle Mode Footer */}
-        <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+        <div className="flex items-center justify-between pt-3 border-t border-[#E5E7EB] text-xs text-[#6B7280]">
           <span>{mode === 'SIGN_IN' ? "Don't have an account yet?" : 'Already have an account?'}</span>
           <button
             type="button"
@@ -265,7 +264,7 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
               setMode(mode === 'SIGN_IN' ? 'REGISTER' : 'SIGN_IN');
               setErrorMessage('');
             }}
-            className="font-semibold text-cyan-400 hover:underline"
+            className="font-semibold text-[#1E3A8A] hover:underline"
           >
             {mode === 'SIGN_IN' ? 'Create Account' : 'Sign In'}
           </button>

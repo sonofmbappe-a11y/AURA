@@ -52,7 +52,6 @@ import {
   Send,
   Share2,
   Shield,
-  Sparkles,
   Trash2,
   Unlock,
   Users,
@@ -635,7 +634,7 @@ export const LiveStudyStage: React.FC<Props> = ({
             ],
             SHOW_JITSI_WATERMARK: false,
             SHOW_WATERMARK_FOR_GUESTS: false,
-            DEFAULT_BACKGROUND: '#070B14'
+            DEFAULT_BACKGROUND: '#111827'
           }
         });
 
@@ -1385,22 +1384,24 @@ export const LiveStudyStage: React.FC<Props> = ({
     };
 
     return (
-      <div className="aura-glass rounded-3xl p-6 sm:p-8 text-center space-y-6 border border-sky-400/35 max-w-xl mx-auto shadow-2xl">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 via-sky-500 to-violet-500 mx-auto flex items-center justify-center shadow-lg shadow-sky-500/25">
-          <Users className="w-8 h-8 text-slate-950" />
+      <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-6 sm:p-8 text-center space-y-6 max-w-xl mx-auto">
+        <div className="w-12 h-12 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] mx-auto flex items-center justify-center">
+          <Users className="w-6 h-6" />
         </div>
-        <div className="space-y-1.5">
-          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/35">
+        <div className="space-y-2">
+          <span className="inline-block px-2.5 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#F9FAFB] text-[#4B5563] border border-[#E5E7EB]">
             ANDROID • IPHONE SAFARI • CHROME • MAC / PC
           </span>
-          <h2 className="text-xl sm:text-2xl font-extrabold pt-1">Universal Live Study Stage</h2>
-          <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111827] pt-1">
+            Universal Live Study Stage
+          </h2>
+          <p className="text-xs text-[#6B7280] max-w-md mx-auto leading-relaxed">
             Join Android & Web study rooms via 6-character code or QR link, knock on Waiting Rooms, share live slides & screen cast, or host your own session.
           </p>
         </div>
 
         {authError && (
-          <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-xs text-rose-300 text-left">
+          <div className="p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#DC2626] text-left">
             {authError}
           </div>
         )}
@@ -1411,31 +1412,31 @@ export const LiveStudyStage: React.FC<Props> = ({
             type="button"
             disabled={authBusy}
             onClick={handleGoogleAuth}
-            className="w-full py-3.5 px-4 rounded-2xl aura-shimmer-btn text-slate-950 font-extrabold text-sm inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-lg bg-[#FFFFFF] border border-[#D1D5DB] hover:border-[#1E3A8A] text-[#111827] font-semibold text-sm inline-flex items-center justify-center gap-2 transition-colors duration-150 disabled:opacity-50"
           >
-            <LogIn className="w-4 h-4" />
+            <LogIn className="w-4 h-4 text-[#1E3A8A]" />
             {authBusy ? 'Connecting...' : 'Sign in with Google'}
           </button>
         </div>
 
         {/* Divider */}
         <div className="relative flex items-center justify-center">
-          <div className="border-t border-white/10 w-full" />
-          <span className="bg-slate-900/90 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-            Or Use Scholar Account (Works on All Domains)
+          <div className="border-t border-[#E5E7EB] w-full" />
+          <span className="bg-[#FFFFFF] px-3 text-[10px] font-mono font-semibold text-[#6B7280] uppercase tracking-wider shrink-0">
+            Or Use Scholar Account
           </span>
-          <div className="border-t border-white/10 w-full" />
+          <div className="border-t border-[#E5E7EB] w-full" />
         </div>
 
         {/* Tab switch between Sign In and Create Account */}
-        <div className="flex rounded-xl bg-white/5 p-1 border border-white/10">
+        <div className="flex rounded-lg bg-[#F3F4F6] p-1 border border-[#E5E7EB]">
           <button
             type="button"
             onClick={() => { setAuthMode('EMAIL_SIGN_IN'); setAuthError(''); }}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors duration-150 ${
               authMode !== 'EMAIL_REGISTER'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FFFFFF] text-[#1E3A8A] border border-[#E5E7EB]'
+                : 'text-[#6B7280] hover:text-[#111827]'
             }`}
           >
             Sign In
@@ -1443,10 +1444,10 @@ export const LiveStudyStage: React.FC<Props> = ({
           <button
             type="button"
             onClick={() => { setAuthMode('EMAIL_REGISTER'); setAuthError(''); }}
-            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors duration-150 ${
               authMode === 'EMAIL_REGISTER'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-[#FFFFFF] text-[#1E3A8A] border border-[#E5E7EB]'
+                : 'text-[#6B7280] hover:text-[#111827]'
             }`}
           >
             Create Account
@@ -1457,32 +1458,32 @@ export const LiveStudyStage: React.FC<Props> = ({
         <form onSubmit={handleEmailAuthSubmit} className="space-y-3 text-left">
           {authMode === 'EMAIL_REGISTER' && (
             <div>
-              <label className="block text-[11px] font-bold text-slate-300 mb-1">Scholar Full Name</label>
+              <label className="block text-[11px] font-semibold text-[#374151] mb-1">Scholar Full Name</label>
               <input
                 type="text"
                 required
                 value={authName}
                 onChange={(e) => setAuthName(e.target.value)}
                 placeholder="e.g. Alex Morgan"
-                className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+                className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1">Email Address</label>
+            <label className="block text-[11px] font-semibold text-[#374151] mb-1">Email Address</label>
             <input
               type="email"
               required
               value={authEmail}
               onChange={(e) => setAuthEmail(e.target.value)}
               placeholder="scholar@university.edu"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1">Password</label>
+            <label className="block text-[11px] font-semibold text-[#374151] mb-1">Password</label>
             <input
               type="password"
               required
@@ -1490,14 +1491,14 @@ export const LiveStudyStage: React.FC<Props> = ({
               value={authPassword}
               onChange={(e) => setAuthPassword(e.target.value)}
               placeholder="•••••••• (min 6 characters)"
-              className="w-full px-3.5 py-2.5 rounded-xl aura-input text-xs"
+              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
             />
           </div>
 
           <button
             type="submit"
             disabled={authBusy}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 text-slate-950 font-extrabold text-xs shadow-md shadow-sky-500/20 hover:brightness-110 transition disabled:opacity-50"
+            className="w-full py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150 disabled:opacity-50"
           >
             {authBusy
               ? 'Authenticating...'
@@ -1538,13 +1539,19 @@ export const LiveStudyStage: React.FC<Props> = ({
 
     return (
       <div className="space-y-4">
-        <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4 border border-emerald-400/40">
+        <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
           {/* Header Row */}
-          <div className="flex flex-wrap items-start justify-between gap-2.5">
+          <div className="flex flex-wrap items-start justify-between gap-2.5 pb-3 border-b border-[#E5E7EB]">
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/35">
-                  {isLocked ? 'SESSION COMPLETED' : '● LIVE STAGE'} • {liveRoom.courseCode}
+                <span
+                  className={`px-2 py-0.5 rounded font-mono text-[10px] font-semibold border ${
+                    isLocked
+                      ? 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]'
+                      : 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
+                  }`}
+                >
+                  {isLocked ? 'SESSION COMPLETED' : 'LIVE STAGE'} • {liveRoom.courseCode}
                 </span>
                 <button
                   type="button"
@@ -1552,20 +1559,22 @@ export const LiveStudyStage: React.FC<Props> = ({
                     navigator.clipboard.writeText(displayCode);
                     onNotify(`Copied 6-character Join Code: ${displayCode}`);
                   }}
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-sky-500/20 text-sky-200 border border-sky-400/35 inline-flex items-center gap-1 hover:bg-sky-500/30"
+                  className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] inline-flex items-center gap-1 hover:border-[#1E3A8A] transition-colors duration-150"
                   title="Tap to copy 6-character code"
                 >
                   CODE: {displayCode} <Copy className="w-3 h-3" />
                 </button>
                 {liveRoom.visibility === 'UNLISTED' && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-500/20 text-violet-300">
-                    🔑 Code-Only
+                  <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-[#F3F4F6] text-[#4B5563] border border-[#E5E7EB]">
+                    Code-Only
                   </span>
                 )}
               </div>
-              <h2 className="text-lg sm:text-xl font-extrabold leading-snug">{liveRoom.roomTitle}</h2>
-              <p className="text-xs text-slate-400">
-                Hosted by <strong>{liveRoom.ownerName}</strong>
+              <h2 className="text-lg sm:text-xl font-bold text-[#111827] leading-snug tracking-tight">
+                {liveRoom.roomTitle}
+              </h2>
+              <p className="text-xs text-[#6B7280]">
+                Hosted by <strong className="text-[#111827]">{liveRoom.ownerName}</strong>
                 {liveRoom.focusTopic ? ` • ${liveRoom.focusTopic}` : ''}
               </p>
             </div>
@@ -1574,21 +1583,21 @@ export const LiveStudyStage: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => setShowQrModal(true)}
-                className="px-3 py-2 rounded-xl bg-sky-500/20 border border-sky-400/45 text-sky-200 text-xs font-extrabold inline-flex items-center gap-1.5 hover:bg-sky-500/30"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
               >
-                <QrCode className="w-3.5 h-3.5" /> Invite
+                <QrCode className="w-3.5 h-3.5 text-[#1E3A8A]" /> Invite
               </button>
               <button
                 type="button"
                 onClick={() => setShowRecapModal(true)}
-                className="px-3 py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/45 text-emerald-200 text-xs font-extrabold inline-flex items-center gap-1.5 hover:bg-emerald-500/30"
+                className="px-3 py-1.5 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] hover:border-[#1E3A8A] text-[#1E3A8A] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
               >
                 <BookmarkPlus className="w-3.5 h-3.5" /> Recap
               </button>
               <button
                 type="button"
                 onClick={leaveStage}
-                className="px-3 py-2 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 text-xs font-extrabold inline-flex items-center gap-1 hover:bg-rose-500/30"
+                className="px-3 py-1.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] hover:border-[#DC2626] text-[#DC2626] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                 title="Leave Stage"
               >
                 <LogOut className="w-3.5 h-3.5" /> Leave
@@ -1598,30 +1607,30 @@ export const LiveStudyStage: React.FC<Props> = ({
 
           {/* Removed Gate */}
           {myAdmission === 'REMOVED' ? (
-            <div className="p-6 rounded-2xl bg-rose-500/15 border border-rose-400/50 text-center space-y-2">
-              <div className="text-sm font-extrabold text-rose-300">
+            <div className="p-6 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-center space-y-2.5">
+              <div className="text-sm font-bold text-[#DC2626]">
                 You were removed from this study session by the host.
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedRoomId(null)}
-                className="px-4 py-2 rounded-xl aura-subtle-surface text-xs font-bold"
+                className="px-4 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150"
               >
                 Return to Study Lobby
               </button>
             </div>
           ) : myAdmission === 'WAITING' && !canControl ? (
             /* Knocking / Waiting Room Screen for Guests */
-            <div className="p-6 rounded-3xl bg-amber-500/15 border border-amber-400/55 text-center space-y-4">
-              <div className="w-14 h-14 rounded-full bg-amber-400/20 border border-amber-400/50 mx-auto flex items-center justify-center animate-pulse">
-                <DoorOpen className="w-7 h-7 text-amber-300" />
+            <div className="p-6 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-center space-y-4">
+              <div className="w-12 h-12 rounded-lg bg-[#FFFFFF] border border-[#FDE68A] mx-auto flex items-center justify-center text-[#B45309]">
+                <DoorOpen className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <div className="text-base font-extrabold text-amber-200">
+                <div className="text-base font-bold text-[#92400E]">
                   Knocked! Waiting for {liveRoom.ownerName} to Admit You...
                 </div>
-                <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                  Your knock has been delivered to the host & co-hosts in real time. Keep this tab open—the stage will unlock automatically the instant they tap <strong>Admit</strong>!
+                <p className="text-xs text-[#78350F] max-w-md mx-auto leading-relaxed">
+                  Your knock has been delivered to the host & co-hosts in real time. Keep this tab open—the stage will unlock automatically the instant they tap <strong>Admit</strong>.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
@@ -1635,19 +1644,19 @@ export const LiveStudyStage: React.FC<Props> = ({
                         true,
                         '🚪'
                       );
-                      onNotify(`🔔 Rang the Waiting Room bell for ${liveRoom.ownerName}!`);
+                      onNotify(`Rang the Waiting Room bell for ${liveRoom.ownerName}.`);
                     } catch (e: unknown) {
                       onNotify((e as Error)?.message || 'Could not ring bell.');
                     }
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-amber-400 text-slate-950 text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md"
+                  className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
                 >
                   <BellRing className="w-3.5 h-3.5" /> Ring Bell Again
                 </button>
                 <button
                   type="button"
                   onClick={leaveStage}
-                  className="px-4 py-2.5 rounded-xl aura-subtle-surface text-xs font-bold"
+                  className="px-4 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold transition-colors duration-150"
                 >
                   Cancel & Leave
                 </button>
@@ -1655,13 +1664,13 @@ export const LiveStudyStage: React.FC<Props> = ({
             </div>
           ) : (
             <>
-              {/* Host / Co-Host Waiting Room Knock Queue (Pulses Amber When Someone Knocks!) */}
+              {/* Host / Co-Host Waiting Room Knock Queue */}
               {canControl && waitingList.length > 0 && (
-                <div className="p-4 rounded-2xl bg-amber-500/20 border-2 border-amber-400 aura-knock-pulse space-y-2.5">
+                <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#F59E0B] space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-xs font-extrabold uppercase tracking-wider text-amber-200 flex items-center gap-1.5">
-                      <BellRing className="w-4 h-4 text-amber-300 animate-bounce" />
-                      🚪 WAITING ROOM KNOCKS ({waitingList.length})
+                    <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#92400E] flex items-center gap-1.5">
+                      <BellRing className="w-4 h-4 text-[#B45309]" />
+                      WAITING ROOM KNOCKS ({waitingList.length})
                     </div>
                     {waitingList.length > 1 && (
                       <button
@@ -1680,7 +1689,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                           );
                           onNotify(`Admitted all ${waitingList.length} waiting scholars!`);
                         }}
-                        className="px-3 py-1 rounded-lg bg-emerald-400 text-slate-950 text-[11px] font-extrabold"
+                        className="px-3 py-1 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-[11px] font-semibold transition-colors duration-150"
                       >
                         Admit All ({waitingList.length})
                       </button>
@@ -1691,16 +1700,16 @@ export const LiveStudyStage: React.FC<Props> = ({
                     {waitingList.map((w) => (
                       <div
                         key={w.userId}
-                        className="flex items-center justify-between gap-2 bg-slate-950/55 p-3 rounded-xl border border-amber-400/35"
+                        className="flex items-center justify-between gap-2 bg-[#FFFFFF] p-3 rounded-lg border border-[#FDE68A]"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-extrabold text-white truncate">
+                          <div className="text-xs font-semibold text-[#111827] truncate">
                             {w.displayName}{' '}
-                            <span className="text-[10px] font-semibold text-amber-300">
-                              ({w.devicePlatform === 'ANDROID' ? '📱 Android' : w.devicePlatform === 'IPHONE_WEB' ? '🍏 iPhone' : '💻 Web'})
+                            <span className="text-[10px] font-mono text-[#6B7280]">
+                              ({w.devicePlatform === 'ANDROID' ? 'Android' : w.devicePlatform === 'IPHONE_WEB' ? 'iPhone' : 'Web'})
                             </span>
                           </div>
-                          <div className="text-[11px] text-slate-300 truncate">
+                          <div className="text-[11px] text-[#6B7280] truncate">
                             {w.cityOrCampus || 'Remote Campus'}
                           </div>
                         </div>
@@ -1715,9 +1724,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                                   updatedAt: serverTimestamp()
                                 }
                               );
-                              onNotify(`✅ Admitted ${w.displayName} into the room!`);
+                              onNotify(`Admitted ${w.displayName} into the room.`);
                             }}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-extrabold"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
                           >
                             Admit
                           </button>
@@ -1733,7 +1742,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                               );
                               onNotify(`Declined ${w.displayName}.`);
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-rose-500/25 text-rose-200 text-xs font-bold"
+                            className="px-3 py-1.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-xs font-semibold hover:border-[#DC2626] transition-colors duration-150"
                           >
                             Decline
                           </button>
@@ -1757,10 +1766,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                             updatedAt: serverTimestamp()
                           })
                         }
-                        className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap border transition ${
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition-colors duration-150 ${
                           liveRoom.waitingRoomEnabled
-                            ? 'bg-amber-400/20 border-amber-400 text-amber-200'
-                            : 'aura-subtle-surface text-slate-300'
+                            ? 'bg-[#FFFBEB] border-[#F59E0B] text-[#92400E]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
                         }`}
                       >
                         <Shield className="w-3 h-3 inline mr-1" />
@@ -1775,10 +1784,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                             updatedAt: serverTimestamp()
                           })
                         }
-                        className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap border transition ${
+                        className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap border transition-colors duration-150 ${
                           liveRoom.whiteboardLocked
-                            ? 'bg-violet-500/25 border-violet-400 text-violet-200'
-                            : 'aura-subtle-surface text-slate-300'
+                            ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
                         }`}
                       >
                         {liveRoom.whiteboardLocked ? (
@@ -1794,17 +1803,17 @@ export const LiveStudyStage: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => setShowPollModal(true)}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap bg-sky-500/20 border border-sky-400/50 text-sky-200"
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] transition-colors duration-150"
                   >
-                    <BarChart3 className="w-3 h-3 inline mr-1" /> Pop-Quiz Poll
+                    <BarChart3 className="w-3 h-3 inline mr-1 text-[#1E3A8A]" /> Pop-Quiz Poll
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowSpotlightModal(true)}
-                    className="px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap bg-emerald-500/20 border border-emerald-400/50 text-emerald-200"
+                    className="px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] transition-colors duration-150"
                   >
-                    <Pin className="w-3 h-3 inline mr-1" /> Pin Spotlight
+                    <Pin className="w-3 h-3 inline mr-1 text-[#1E3A8A]" /> Pin Spotlight
                   </button>
 
                   {isHost && (
@@ -1817,9 +1826,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                           timerRemainingSeconds: 0,
                           updatedAt: serverTimestamp()
                         });
-                        onNotify('Session marked Completed. Tap Recap to save minutes!');
+                        onNotify('Session marked Completed. Tap Recap to save minutes.');
                       }}
-                      className="px-3 py-1.5 rounded-full text-[11px] font-extrabold whitespace-nowrap bg-rose-500/20 border border-rose-400/45 text-rose-200"
+                      className="px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap bg-[#FEF2F2] border border-[#FECACA] hover:border-[#DC2626] text-[#DC2626] transition-colors duration-150"
                     >
                       <CheckCircle2 className="w-3 h-3 inline mr-1" /> End Session
                     </button>
@@ -1837,7 +1846,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                       await deleteDoc(doc(db, 'study_rooms', rid));
                       onNotify('Deleted completed room.');
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-rose-500/20 border border-rose-400/40 text-rose-300 text-xs font-bold inline-flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] hover:border-[#DC2626] text-[#DC2626] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Delete Room Permanently
                   </button>
@@ -1846,12 +1855,12 @@ export const LiveStudyStage: React.FC<Props> = ({
 
               {/* Spotlight Banner */}
               {liveRoom.spotlightCardText && (
-                <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-400/55 flex items-start justify-between gap-2">
+                <div className="p-3.5 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
-                      📌 STAGE SPOTLIGHT
+                    <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#B45309]">
+                      STAGE SPOTLIGHT
                     </div>
-                    <div className="text-xs font-bold mt-1 leading-relaxed">
+                    <div className="text-xs font-semibold text-[#111827] mt-1 leading-relaxed">
                       {liveRoom.spotlightCardText}
                     </div>
                   </div>
@@ -1864,7 +1873,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                           updatedAt: serverTimestamp()
                         })
                       }
-                      className="text-xs font-bold text-amber-300 px-2 py-1 rounded-lg hover:bg-amber-400/20"
+                      className="text-xs font-semibold text-[#B45309] px-2 py-1 rounded hover:bg-[#FEF3C7] transition-colors duration-150"
                     >
                       Clear
                     </button>
@@ -1874,13 +1883,13 @@ export const LiveStudyStage: React.FC<Props> = ({
 
               {/* Live Pop-Quiz Poll Card */}
               {liveRoom.activePollQuestion && liveRoom.activePollOptions.length >= 2 && (
-                <div className="p-4 rounded-2xl bg-indigo-950/65 border border-violet-400/50 space-y-2.5">
+                <div className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-[11px] font-extrabold text-violet-200">
-                      📊 LIVE POP-QUIZ POLL • {totalVotes} VOTE(S)
+                    <span className="text-[11px] font-mono font-bold text-[#1E3A8A]">
+                      LIVE POP-QUIZ POLL • {totalVotes} VOTE(S)
                     </span>
                     {canControl && !isLocked && (
-                      <div className="flex gap-2 text-[11px] font-extrabold">
+                      <div className="flex gap-3 text-[11px] font-semibold">
                         {liveRoom.activePollCorrectIndex >= 0 && (
                           <button
                             type="button"
@@ -1890,7 +1899,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                                 updatedAt: serverTimestamp()
                               })
                             }
-                            className="text-emerald-300 hover:underline"
+                            className="text-[#1E3A8A] hover:underline"
                           >
                             {liveRoom.activePollRevealed ? 'Hide Answer' : 'Reveal Answer'}
                           </button>
@@ -1906,7 +1915,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                               updatedAt: serverTimestamp()
                             })
                           }
-                          className="text-rose-300 hover:underline"
+                          className="text-[#DC2626] hover:underline"
                         >
                           Close Poll
                         </button>
@@ -1914,7 +1923,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                     )}
                   </div>
 
-                  <div className="text-sm font-extrabold text-white">
+                  <div className="text-sm font-bold text-[#111827]">
                     {liveRoom.activePollQuestion}
                   </div>
 
@@ -1942,19 +1951,19 @@ export const LiveStudyStage: React.FC<Props> = ({
                               }
                             );
                           }}
-                          className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between text-xs transition ${
+                          className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between text-xs transition-colors duration-150 ${
                             isCorrect
-                              ? 'bg-emerald-500/30 border-emerald-400 text-white'
+                              ? 'bg-[#ECFDF5] border-[#10B981] text-[#065F46] font-semibold'
                               : myVote
-                              ? 'bg-sky-500/25 border-sky-400 text-white'
-                              : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
+                              ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A] font-semibold'
+                              : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]'
                           }`}
                         >
                           <span>
-                            <strong className="mr-1.5">{['A', 'B', 'C', 'D'][idx]}.</strong>
+                            <strong className="font-mono mr-1.5">{['A', 'B', 'C', 'D'][idx]}.</strong>
                             {opt}
                           </span>
-                          <span className="font-mono font-bold">
+                          <span className="font-mono font-semibold tabular-nums">
                             {votes} ({pct}%)
                           </span>
                         </button>
@@ -1964,14 +1973,14 @@ export const LiveStudyStage: React.FC<Props> = ({
                 </div>
               )}
 
-              {/* Shared Synchronized Countdown + Voice Stage Row */}
+              {/* Shared Synchronized Countdown + Sprints Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-4 rounded-2xl aura-subtle-surface flex items-center justify-between gap-3">
+                <div className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400">
+                    <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-[#6B7280]">
                       SYNCED ROOM CLOCK ({liveRoom.timerState})
                     </div>
-                    <div className="text-3xl font-mono font-extrabold text-emerald-400 mt-0.5">
+                    <div className="text-3xl font-mono font-bold text-[#1E3A8A] mt-0.5 tabular-nums">
                       {formattedClock}
                     </div>
                   </div>
@@ -1980,7 +1989,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={toggleSharedTimer}
-                        className="p-2.5 rounded-xl bg-emerald-400 text-slate-950 font-bold shadow-md hover:bg-emerald-300 transition"
+                        className="p-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] transition-colors duration-150"
                         title={liveRoom.timerState === 'RUNNING' ? 'Pause Clock' : 'Start Clock'}
                       >
                         {liveRoom.timerState === 'RUNNING' ? (
@@ -1992,10 +2001,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => setShowCustomTimerModal(true)}
-                        className="px-2.5 py-2 rounded-xl aura-subtle-surface text-[11px] font-bold inline-flex items-center gap-1 hover:border-sky-400/50"
+                        className="px-2.5 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-[11px] font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                         title="Set Custom Sprint Duration"
                       >
-                        <Clock className="w-3.5 h-3.5" /> Set
+                        <Clock className="w-3.5 h-3.5 text-[#1E3A8A]" /> Set
                       </button>
                     </div>
                   )}
@@ -2003,39 +2012,41 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                 {/* QUICK STUDY SPRINT PRESETS */}
                 {canControl && !isLocked && (
-                  <div className="pt-2 border-t border-white/10 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                    <span className="text-[10px] font-extrabold uppercase text-slate-400 shrink-0">
-                      ⚡ Sprints:
+                  <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col justify-center gap-2">
+                    <span className="text-[10px] font-mono font-semibold uppercase text-[#6B7280]">
+                      Quick Sprint Presets
                     </span>
-                    {[
-                      { label: '🍅 Pomodoro 25m', mins: 25 },
-                      { label: '⚡ Deep Work 50m', mins: 50 },
-                      { label: '🚀 Exam Cram 90m', mins: 90 },
-                      { label: '☕ Break 10m', mins: 10 }
-                    ].map((sp) => (
-                      <button
-                        key={sp.mins}
-                        type="button"
-                        onClick={() => handleApplySprintPreset(sp.mins, sp.label)}
-                        className="px-2.5 py-1 rounded-lg aura-subtle-surface hover:border-emerald-400 text-[11px] font-bold text-slate-200 aura-sprint-chip whitespace-nowrap shrink-0"
-                      >
-                        {sp.label}
-                      </button>
-                    ))}
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                      {[
+                        { label: 'Pomodoro 25m', mins: 25 },
+                        { label: 'Deep Work 50m', mins: 50 },
+                        { label: 'Exam Cram 90m', mins: 90 },
+                        { label: 'Break 10m', mins: 10 }
+                      ].map((sp) => (
+                        <button
+                          key={sp.mins}
+                          type="button"
+                          onClick={() => handleApplySprintPreset(sp.mins, sp.label)}
+                          className="px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[11px] font-semibold text-[#111827] whitespace-nowrap shrink-0 transition-colors duration-150"
+                        >
+                          {sp.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* HAND-RAISE SPEAKER QUEUE */}
               {handRaisedScholars.length > 0 && (
-                <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-400/50 flex items-center justify-between gap-2 flex-wrap">
+                <div className="p-3 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-base">✋</span>
+                    <Hand className="w-4 h-4 text-[#B45309] shrink-0" />
                     <div>
-                      <div className="text-xs font-black text-amber-300">
+                      <div className="text-xs font-mono font-bold text-[#92400E]">
                         HAND-RAISE QUEUE ({handRaisedScholars.length} Waiting to Speak)
                       </div>
-                      <div className="text-[11px] text-slate-300 truncate max-w-xs sm:max-w-md">
+                      <div className="text-[11px] text-[#78350F] truncate max-w-xs sm:max-w-md">
                         {handRaisedScholars.map((s) => s.displayName).join(', ')}
                       </div>
                     </div>
@@ -2045,15 +2056,15 @@ export const LiveStudyStage: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => handleCallOnScholar(handRaisedScholars[0].userId)}
-                        className="px-3 py-1 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs transition"
+                        className="px-3 py-1 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150"
                         title="Call on first scholar in queue and unmute"
                       >
-                        🎙️ Call On {handRaisedScholars[0].displayName.split(' ')[0]}
+                        Call On {handRaisedScholars[0].displayName.split(' ')[0]}
                       </button>
                       <button
                         type="button"
                         onClick={handleLowerAllHands}
-                        className="px-2.5 py-1 rounded-xl aura-subtle-surface text-slate-300 hover:text-white text-xs font-bold transition"
+                        className="px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold transition-colors duration-150"
                       >
                         Lower All
                       </button>
@@ -2062,503 +2073,496 @@ export const LiveStudyStage: React.FC<Props> = ({
                 </div>
               )}
 
-                {/* IN-APP LIVE MEETING STAGE & SCREEN CAST (Reused seamlessly across normal & theater mode!) */}
-                <div
-                  className={
-                    isMeetingExpanded
-                      ? "fixed inset-0 z-50 flex flex-col bg-slate-950 p-2 sm:p-4 backdrop-blur-2xl"
-                      : "relative rounded-3xl overflow-hidden border border-sky-400/30 bg-slate-950 shadow-2xl transition-all duration-300 w-full aspect-video min-h-[300px] max-h-[520px]"
-                  }
-                >
-                  {/* Floating Reaction Emojis Burst */}
-                  {floatingReactions.map((fx) => (
-                    <div
-                      key={fx.id}
-                      className="absolute bottom-12 z-30 aura-float-emoji text-3xl select-none"
-                      style={{ left: `${fx.left}%` }}
-                    >
-                      {fx.emoji}
-                    </div>
-                  ))}
+              {/* IN-APP LIVE MEETING STAGE & SCREEN CAST */}
+              <div
+                className={
+                  isMeetingExpanded
+                    ? 'fixed inset-0 z-50 flex flex-col bg-[#111827] p-2 sm:p-4'
+                    : 'relative rounded-xl overflow-hidden border border-[#E5E7EB] bg-[#111827] transition-colors duration-150 w-full aspect-video min-h-[300px] max-h-[520px] flex flex-col'
+                }
+              >
+                {/* Floating Reaction Emojis Burst */}
+                {floatingReactions.map((fx) => (
+                  <div
+                    key={fx.id}
+                    className="absolute bottom-12 z-30 aura-float-emoji text-3xl select-none"
+                    style={{ left: `${fx.left}%` }}
+                  >
+                    {fx.emoji}
+                  </div>
+                ))}
 
-                  {/* Stage Top Bar Overlay */}
-                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-b from-black/90 via-black/60 to-transparent shrink-0 z-20">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                      <span className="text-[11px] font-black tracking-wider text-emerald-400 uppercase truncate">
-                        {isMeetingExpanded ? `${liveRoom.courseCode} • ${liveRoom.roomTitle}` : 'LIVE STAGE • AUDIO & SCREEN CAST'}
-                      </span>
-                      <div className="hidden sm:flex items-end gap-0.5 h-3 shrink-0">
-                        <span className="w-1 bg-emerald-400 rounded-full aura-sound-bar" />
-                        <span className="w-1 bg-sky-400 rounded-full aura-sound-bar" />
-                        <span className="w-1 bg-violet-400 rounded-full aura-sound-bar" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {/* Cast Screen Button */}
-                      <button
-                        type="button"
-                        onClick={isCastingScreen ? stopScreenCast : startScreenCast}
-                        className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                          isCastingScreen
-                            ? 'bg-rose-500 text-white aura-cast-glow'
-                            : 'bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/40'
-                        }`}
-                        title="Broadcast your screen to all scholars via WebRTC"
-                      >
-                        <Cast className="w-3.5 h-3.5" />
-                        <span className="hidden xs:inline">{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
-                      </button>
-
-                      {/* Live Study Whiteboard Button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowWhiteboardModal(true)}
-                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-sky-300 hover:text-white border border-sky-400/30 text-xs font-bold flex items-center gap-1.5 transition"
-                        title="Open Collaborative Study Whiteboard & Jamboard"
-                      >
-                        <PenTool className="w-3.5 h-3.5 text-sky-400" />
-                        <span className="hidden sm:inline text-[11px] font-extrabold">Board</span>
-                      </button>
-
-                      {/* Green Room Diagnostics Button */}
-                      <button
-                        type="button"
-                        onClick={() => setShowDiagnosticsModal(true)}
-                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-emerald-300 hover:text-white border border-emerald-400/30 text-xs font-bold flex items-center gap-1.5 transition"
-                        title="Check Audio, Video & Network Health"
-                      >
-                        <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="hidden sm:inline text-[11px] font-extrabold">Check</span>
-                      </button>
-
-                      {/* FEATURE 1: CC Real-Time Subtitles Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const next = !isCaptionsActive;
-                          setIsCaptionsActive(next);
-                          onNotify(next ? '💬 Real-time Closed Captions enabled' : 'Closed Captions disabled');
-                        }}
-                        className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition ${
-                          isCaptionsActive
-                            ? 'bg-emerald-500/30 text-emerald-300 border-emerald-400/60 shadow-md shadow-emerald-500/20'
-                            : 'bg-black/60 text-slate-300 hover:text-white border-white/10'
-                        }`}
-                        title="Toggle Real-Time Subtitles & Transcript"
-                      >
-                        <span className="text-[11px] font-black">CC</span>
-                        <span className="hidden sm:inline text-[11px] font-extrabold">{isCaptionsActive ? 'Captions ON' : 'Captions'}</span>
-                      </button>
-
-                      {/* FEATURE 1: Notes / Live Transcript Log */}
-                      <button
-                        type="button"
-                        onClick={() => setShowTranscriptModal(true)}
-                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-slate-300 hover:text-white border border-white/10 text-xs font-bold flex items-center gap-1.5 transition"
-                        title="View Full Live Study Transcript"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="hidden sm:inline text-[11px] font-extrabold">Transcript</span>
-                      </button>
-
-                      {/* Prominent Theater Mode Button (Visible on Mobile & Desktop) */}
-                      <button
-                        type="button"
-                        onClick={() => setIsMeetingExpanded(!isMeetingExpanded)}
-                        className="px-2.5 py-1.5 rounded-xl bg-black/60 text-emerald-300 hover:text-white border border-emerald-400/30 text-xs font-bold flex items-center gap-1.5 transition"
-                        title={isMeetingExpanded ? 'Exit Immersive Theater Mode' : 'Expand Immersive Theater Mode'}
-                      >
-                        {isMeetingExpanded ? <Minimize2 className="w-3.5 h-3.5 text-emerald-400" /> : <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />}
-                        <span className="text-[11px] font-extrabold">{isMeetingExpanded ? 'Exit' : 'Theater'}</span>
-                      </button>
-
-                      {/* Audio Click-to-Activate */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const iframe = document.getElementById('jitsi_stage_iframe') as HTMLIFrameElement | null;
-                          if (iframe) iframe.focus();
-                          onNotify('🔊 Audio channel active and listening.');
-                        }}
-                        className="px-2 py-1 rounded-xl bg-black/60 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1 hover:bg-black/80"
-                        title="Click to activate audio if muted by browser autoplay"
-                      >
-                        <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="hidden sm:inline">Audio</span>
-                      </button>
-
-                      {/* External Tab Popout */}
-                      <a
-                        href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                          .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
-                          .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
-                          + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-1.5 rounded-xl bg-black/60 text-white/80 hover:text-white border border-white/15"
-                        title="Open in new window"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
+                {/* Stage Top Bar */}
+                <div className="flex items-center justify-between px-3.5 py-2 bg-[#111827] border-b border-[#374151] shrink-0 z-20">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981] shrink-0" />
+                    <span className="text-[11px] font-mono font-bold tracking-wider text-[#F9FAFB] uppercase truncate">
+                      {isMeetingExpanded ? `${liveRoom.courseCode} • ${liveRoom.roomTitle}` : 'LIVE STAGE • AUDIO & SCREEN CAST'}
+                    </span>
                   </div>
 
-                  {/* Jitsi Meeting Container: Reused seamlessly in both normal and theater modes! */}
-                  <div className="flex-1 w-full h-full min-h-0 relative rounded-2xl overflow-hidden bg-black">
-                    {/* Jitsi External API mounts directly into this div */}
-                    <div ref={jitsiContainerRef} className="w-full h-full" />
-                    
-                    {/* Fallback iframe ONLY when External API is still initializing or blocked */}
-                    {!isJitsiApiReady && (
-                      <iframe
-                        id="jitsi_stage_iframe"
-                        src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                          .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
-                          .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
-                          + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
-                        allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
-                        className="w-full h-full border-0 absolute inset-0"
-                        title={`AURA Live Stage - ${liveRoom.roomTitle}`}
-                      />
-                    )}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Cast Screen Button */}
+                    <button
+                      type="button"
+                      onClick={isCastingScreen ? stopScreenCast : startScreenCast}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
+                        isCastingScreen
+                          ? 'bg-[#DC2626] border-[#DC2626] text-[#FFFFFF]'
+                          : 'bg-[#1F2937] text-[#F9FAFB] border-[#374151] hover:border-[#6B7280]'
+                      }`}
+                      title="Broadcast your screen to all scholars via WebRTC"
+                    >
+                      <Cast className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">{isCastingScreen ? 'Stop Cast' : 'Cast Screen'}</span>
+                    </button>
 
-                    {/* FEATURE 2: Interactive Floating Pop-Quiz Poll in Stage Overlay */}
-                    {liveRoom.activePollQuestion && liveRoom.activePollOptions.length >= 2 && (
-                      <div className="absolute top-3 right-3 max-w-[280px] sm:max-w-[320px] p-3.5 rounded-2xl bg-indigo-950/90 backdrop-blur-md border border-violet-400/60 shadow-2xl z-20 space-y-2">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-[10px] font-black text-violet-300 flex items-center gap-1">
-                            <BarChart3 className="w-3.5 h-3.5 text-violet-400" />
-                            LIVE POLL • {totalVotes} VOTE(S)
-                          </span>
-                          {canControl && !isLocked && (
-                            <div className="flex items-center gap-1.5 text-[10px] font-bold">
-                              {liveRoom.activePollCorrectIndex >= 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-                                      activePollRevealed: !liveRoom.activePollRevealed,
-                                      updatedAt: serverTimestamp()
-                                    })
-                                  }
-                                  className="text-emerald-300 hover:underline"
-                                >
-                                  {liveRoom.activePollRevealed ? 'Hide' : 'Reveal'}
-                                </button>
-                              )}
+                    {/* Live Study Whiteboard Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowWhiteboardModal(true)}
+                      className="px-2.5 py-1 rounded-lg bg-[#1F2937] text-[#F9FAFB] border border-[#374151] hover:border-[#6B7280] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
+                      title="Open Collaborative Study Whiteboard"
+                    >
+                      <PenTool className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline text-[11px]">Board</span>
+                    </button>
+
+                    {/* Green Room Diagnostics Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowDiagnosticsModal(true)}
+                      className="px-2.5 py-1 rounded-lg bg-[#1F2937] text-[#F9FAFB] border border-[#374151] hover:border-[#6B7280] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
+                      title="Check Audio, Video & Network Health"
+                    >
+                      <Sliders className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline text-[11px]">Check</span>
+                    </button>
+
+                    {/* CC Real-Time Subtitles Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !isCaptionsActive;
+                        setIsCaptionsActive(next);
+                        onNotify(next ? 'Real-time Closed Captions enabled' : 'Closed Captions disabled');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150 ${
+                        isCaptionsActive
+                          ? 'bg-[#1E3A8A] text-[#FFFFFF] border-[#3B82F6]'
+                          : 'bg-[#1F2937] text-[#D1D5DB] hover:text-[#FFFFFF] border-[#374151]'
+                      }`}
+                      title="Toggle Real-Time Subtitles & Transcript"
+                    >
+                      <span className="text-[11px] font-mono font-bold">CC</span>
+                      <span className="hidden sm:inline text-[11px]">{isCaptionsActive ? 'ON' : 'Captions'}</span>
+                    </button>
+
+                    {/* Live Transcript Log */}
+                    <button
+                      type="button"
+                      onClick={() => setShowTranscriptModal(true)}
+                      className="px-2.5 py-1 rounded-lg bg-[#1F2937] text-[#F9FAFB] border border-[#374151] hover:border-[#6B7280] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
+                      title="View Full Live Study Transcript"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline text-[11px]">Transcript</span>
+                    </button>
+
+                    {/* Theater Mode Button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsMeetingExpanded(!isMeetingExpanded)}
+                      className="px-2.5 py-1 rounded-lg bg-[#1F2937] text-[#F9FAFB] border border-[#374151] hover:border-[#6B7280] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
+                      title={isMeetingExpanded ? 'Exit Theater Mode' : 'Expand Theater Mode'}
+                    >
+                      {isMeetingExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                      <span className="text-[11px]">{isMeetingExpanded ? 'Exit' : 'Theater'}</span>
+                    </button>
+
+                    {/* Audio Click-to-Activate */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const iframe = document.getElementById('jitsi_stage_iframe') as HTMLIFrameElement | null;
+                        if (iframe) iframe.focus();
+                        onNotify('Audio channel active and listening.');
+                      }}
+                      className="px-2 py-1 rounded-lg bg-[#1F2937] text-[#F9FAFB] border border-[#374151] hover:border-[#6B7280] text-[10px] font-semibold flex items-center gap-1 transition-colors duration-150"
+                      title="Click to activate audio if muted by browser autoplay"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Audio</span>
+                    </button>
+
+                    {/* External Tab Popout */}
+                    <a
+                      href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                        .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                        .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
+                        + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 rounded-lg bg-[#1F2937] text-[#D1D5DB] hover:text-[#FFFFFF] border border-[#374151]"
+                      title="Open in new window"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* Jitsi Meeting Container */}
+                <div className="flex-1 w-full h-full min-h-0 relative overflow-hidden bg-[#111827]">
+                  <div ref={jitsiContainerRef} className="w-full h-full" />
+
+                  {!isJitsiApiReady && (
+                    <iframe
+                      id="jitsi_stage_iframe"
+                      src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
+                        .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
+                        .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
+                        + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                      allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
+                      className="w-full h-full border-0 absolute inset-0"
+                      title={`AURA Live Stage - ${liveRoom.roomTitle}`}
+                    />
+                  )}
+
+                  {/* Interactive Floating Pop-Quiz Poll in Stage Overlay */}
+                  {liveRoom.activePollQuestion && liveRoom.activePollOptions.length >= 2 && (
+                    <div className="absolute top-3 right-3 max-w-[280px] sm:max-w-[320px] p-3.5 rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] z-20 space-y-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[10px] font-mono font-bold text-[#1E3A8A] flex items-center gap-1">
+                          <BarChart3 className="w-3.5 h-3.5" />
+                          LIVE POLL • {totalVotes} VOTE(S)
+                        </span>
+                        {canControl && !isLocked && (
+                          <div className="flex items-center gap-1.5 text-[10px] font-semibold">
+                            {liveRoom.activePollCorrectIndex >= 0 && (
                               <button
                                 type="button"
                                 onClick={() =>
                                   updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-                                    activePollQuestion: '',
-                                    activePollOptions: [],
-                                    activePollCorrectIndex: -1,
-                                    activePollRevealed: false,
+                                    activePollRevealed: !liveRoom.activePollRevealed,
                                     updatedAt: serverTimestamp()
                                   })
                                 }
-                                className="text-rose-300 hover:underline"
+                                className="text-[#1E3A8A] hover:underline"
                               >
-                                Close
+                                {liveRoom.activePollRevealed ? 'Hide' : 'Reveal'}
                               </button>
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs font-bold text-white leading-snug">{liveRoom.activePollQuestion}</p>
-                        <div className="space-y-1">
-                          {liveRoom.activePollOptions.map((opt, idx) => {
-                            const votes = admittedList.filter((p) => p.pollVoteIndex === idx).length;
-                            const pct = totalVotes > 0 ? Math.round((votes * 100) / totalVotes) : 0;
-                            const myVote = myP?.pollVoteIndex === idx;
-                            const isCorrect = liveRoom.activePollRevealed && liveRoom.activePollCorrectIndex === idx;
-                            return (
-                              <button
-                                key={idx}
-                                type="button"
-                                disabled={isLocked}
-                                onClick={async () => {
-                                  if (!myP) {
-                                    await upsertMyPresence(liveRoom, 'QUIZZING', false, '📊');
-                                  }
-                                  await updateDoc(doc(db, 'study_rooms', liveRoom.id, 'participants', user.uid), {
-                                    pollVoteIndex: idx,
-                                    updatedAt: serverTimestamp()
-                                  });
-                                }}
-                                className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-[11px] transition ${
-                                  isCorrect
-                                    ? 'bg-emerald-500/30 border-emerald-400 text-white font-bold'
-                                    : myVote
-                                    ? 'bg-violet-600/40 border-violet-400 text-white font-bold'
-                                    : 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
-                                }`}
-                              >
-                                <span className="truncate pr-1">
-                                  {opt} {isCorrect && '✓'} {myVote && '• My vote'}
-                                </span>
-                                <span className="text-[10px] text-violet-300 font-extrabold shrink-0">{pct}%</span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateDoc(doc(db, 'study_rooms', liveRoom.id), {
+                                  activePollQuestion: '',
+                                  activePollOptions: [],
+                                  activePollCorrectIndex: -1,
+                                  activePollRevealed: false,
+                                  updatedAt: serverTimestamp()
+                                })
+                              }
+                              className="text-[#DC2626] hover:underline"
+                            >
+                              Close
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <p className="text-xs font-bold text-[#111827] leading-snug">{liveRoom.activePollQuestion}</p>
+                      <div className="space-y-1">
+                        {liveRoom.activePollOptions.map((opt, idx) => {
+                          const votes = admittedList.filter((p) => p.pollVoteIndex === idx).length;
+                          const pct = totalVotes > 0 ? Math.round((votes * 100) / totalVotes) : 0;
+                          const myVote = myP?.pollVoteIndex === idx;
+                          const isCorrect = liveRoom.activePollRevealed && liveRoom.activePollCorrectIndex === idx;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              disabled={isLocked}
+                              onClick={async () => {
+                                if (!myP) {
+                                  await upsertMyPresence(liveRoom, 'QUIZZING', false, '📊');
+                                }
+                                await updateDoc(doc(db, 'study_rooms', liveRoom.id, 'participants', user.uid), {
+                                  pollVoteIndex: idx,
+                                  updatedAt: serverTimestamp()
+                                });
+                              }}
+                              className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-[11px] transition-colors duration-150 ${
+                                isCorrect
+                                  ? 'bg-[#ECFDF5] border-[#10B981] text-[#065F46] font-bold'
+                                  : myVote
+                                  ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A] font-bold'
+                                  : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]'
+                              }`}
+                            >
+                              <span className="truncate pr-1">
+                                {opt} {isCorrect && '✓'} {myVote && '• My vote'}
+                              </span>
+                              <span className="text-[10px] font-mono text-[#1E3A8A] font-bold shrink-0">{pct}%</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
-                    {/* FEATURE 1: Floating Real-Time Closed Captions Subtitle Pill */}
-                    {isCaptionsActive && currentSubtitle && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-2 rounded-2xl bg-black/85 backdrop-blur-md border border-emerald-400/40 text-white text-xs sm:text-sm font-semibold text-center shadow-2xl pointer-events-none z-20 flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-                        <span className="text-emerald-300 font-bold shrink-0">CC:</span>
-                        <span className="line-clamp-2">{currentSubtitle}</span>
-                      </div>
-                    )}
+                  {/* Floating Real-Time Closed Captions Subtitle Pill */}
+                  {isCaptionsActive && currentSubtitle && (
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-2 rounded-lg bg-[#111827] border border-[#374151] text-[#FFFFFF] text-xs sm:text-sm font-medium text-center pointer-events-none z-20 flex items-center gap-2">
+                      <span className="text-[#93C5FD] font-mono font-bold shrink-0">CC:</span>
+                      <span className="line-clamp-2">{currentSubtitle}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ACTIVE LIVE SCREEN BROADCAST PREVIEW TILE */}
+              {isCastingScreen && (
+                <div className="relative rounded-xl overflow-hidden border border-[#1E3A8A] bg-[#FFFFFF] p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#DC2626]" />
+                      <span className="text-xs font-mono font-bold text-[#111827] tracking-wider">
+                        LIVE SCREEN CAST ACTIVE • Broadcasting to Android & Web
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={stopScreenCast}
+                      className="px-3 py-1 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
+                    >
+                      Stop Cast
+                    </button>
+                  </div>
+                  <div className="relative rounded-lg overflow-hidden aspect-video bg-[#111827] border border-[#E5E7EB]">
+                    <video
+                      ref={screenVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                 </div>
-                {/* ACTIVE LIVE SCREEN BROADCAST PREVIEW TILE */}
-                {isCastingScreen && (
-                  <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 aura-cast-glow bg-slate-950 p-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                        <span className="text-xs font-black text-emerald-400 tracking-wider">
-                          🔴 LIVE SCREEN CAST ACTIVE • Broadcasting to Android & Web
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={stopScreenCast}
-                        className="px-3 py-1 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition"
-                      >
-                        Stop Cast
-                      </button>
-                    </div>
-                    <div className="relative rounded-xl overflow-hidden aspect-video bg-black border border-white/10">
-                      <video
-                        ref={screenVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                  </div>
-                )}
+              )}
 
-                {/* HOST MUTED BANNER */}
-                {myP?.isMutedByHost && (
-                  <div className="mb-2 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/40 flex items-center justify-between text-xs text-rose-200">
-                    <span className="flex items-center gap-2">
-                      <MicOff className="w-4 h-4 text-rose-400" />
-                      The host muted your mic on stage.
-                    </span>
+              {/* HOST MUTED BANNER */}
+              {myP?.isMutedByHost && (
+                <div className="mb-2 p-2.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-between text-xs text-[#DC2626]">
+                  <span className="flex items-center gap-2 font-medium">
+                    <MicOff className="w-4 h-4" />
+                    The host muted your mic on stage.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={toggleMyMic}
+                    className="px-2.5 py-1 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-[#FFFFFF] font-semibold text-[11px] transition-colors duration-150"
+                  >
+                    Unmute
+                  </button>
+                </div>
+              )}
+
+              {/* EDITORIAL MEETING DOCK */}
+              <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Mic Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={toggleMyMic}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
+                      isMyMicMuted
+                        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA] hover:border-[#DC2626]'
+                        : 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0] hover:border-[#059669]'
+                    }`}
+                    title={isMyMicMuted ? 'Unmute your microphone' : 'Mute your microphone'}
+                  >
+                    {isMyMicMuted ? (
+                      <>
+                        <MicOff className="w-4 h-4" />
+                        <span>Muted</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4" />
+                        <span>Mute Mic</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Camera Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={toggleMyCamera}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
+                      isMyCameraOn
+                        ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0] hover:border-[#059669]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
+                    }`}
+                    title={isMyCameraOn ? 'Turn camera off' : 'Turn camera on'}
+                  >
+                    {isMyCameraOn ? (
+                      <>
+                        <Video className="w-4 h-4" />
+                        <span>Camera On</span>
+                      </>
+                    ) : (
+                      <>
+                        <VideoOff className="w-4 h-4 text-[#6B7280]" />
+                        <span>Camera Off</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Screen Cast */}
+                  <button
+                    type="button"
+                    onClick={isCastingScreen ? stopScreenCast : startScreenCast}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
+                      isCastingScreen
+                        ? 'bg-[#DC2626] border-[#DC2626] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#111827] hover:border-[#1E3A8A]'
+                    }`}
+                  >
+                    <Cast className="w-4 h-4 text-[#1E3A8A]" />
+                    {isCastingScreen ? 'Stop Cast' : 'Cast Screen'}
+                  </button>
+
+                  {/* Raise Hand */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newHand = !myP?.handRaised;
+                      upsertMyPresence(
+                        liveRoom,
+                        (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
+                        newHand,
+                        newHand ? '✋' : myP?.reactionEmoji || '🎯'
+                      );
+                      onNotify(newHand ? 'Raised hand on stage' : 'Hand lowered');
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
+                      myP?.handRaised
+                        ? 'bg-[#FFFBEB] border-[#F59E0B] text-[#92400E]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]'
+                    }`}
+                  >
+                    <Hand className="w-4 h-4 text-[#B45309]" />
+                    {myP?.handRaised ? 'Hand Raised' : 'Raise Hand'}
+                  </button>
+
+                  {/* Live Whiteboard Canvas */}
+                  <button
+                    type="button"
+                    onClick={() => setShowWhiteboardModal(true)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] hover:border-[#1E3A8A] transition-colors duration-150"
+                    title="Collaborative Study Whiteboard"
+                  >
+                    <PenTool className="w-4 h-4 text-[#1E3A8A]" />
+                    <span>Board</span>
+                  </button>
+
+                  {/* Green Room Diagnostics */}
+                  <button
+                    type="button"
+                    onClick={() => setShowDiagnosticsModal(true)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] hover:border-[#1E3A8A] transition-colors duration-150"
+                    title="Audio/Video Diagnostics & Health Check"
+                  >
+                    <Sliders className="w-4 h-4 text-[#1E3A8A]" />
+                    <span>Check</span>
+                  </button>
+
+                  {/* Fullscreen Theater Mode Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMeetingExpanded(true)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] hover:border-[#1E3A8A] transition-colors duration-150"
+                    title="Expand Theater Stage"
+                  >
+                    <Maximize2 className="w-4 h-4 text-[#1E3A8A]" />
+                    <span>Theater</span>
+                  </button>
+
+                  {/* Host Mute All Button */}
+                  {canControl && (
                     <button
                       type="button"
-                      onClick={toggleMyMic}
-                      className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition"
+                      onClick={handleHostMuteAll}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] hover:border-[#DC2626] transition-colors duration-150"
+                      title="Mute all other students on stage"
                     >
-                      Unmute
+                      <Volume2 className="w-4 h-4" />
+                      <span>Mute All</span>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* ZOOM & GOOGLE MEET STYLE TACTILE MEETING DOCK */}
-                <div className="p-3 rounded-2xl aura-dock flex items-center justify-between gap-2 flex-wrap shadow-xl">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Mic Toggle Button */}
+                {/* Reaction Emojis Burst Bar */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
                     <button
-                      type="button"
-                      onClick={toggleMyMic}
-                      className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                        isMyMicMuted
-                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                      }`}
-                      title={isMyMicMuted ? 'Unmute your microphone' : 'Mute your microphone'}
-                    >
-                      {isMyMicMuted ? (
-                        <>
-                          <MicOff className="w-4 h-4 text-rose-400" />
-                          <span>Muted</span>
-                        </>
-                      ) : (
-                        <>
-                          <Mic className="w-4 h-4 text-emerald-400" />
-                          <span>Mute Mic</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Camera Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={toggleMyCamera}
-                      className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                        isMyCameraOn
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
-                          : 'aura-subtle-surface text-slate-300 hover:border-slate-400/50'
-                      }`}
-                      title={isMyCameraOn ? 'Turn camera off' : 'Turn camera on'}
-                    >
-                      {isMyCameraOn ? (
-                        <>
-                          <Video className="w-4 h-4 text-emerald-400" />
-                          <span>Camera On</span>
-                        </>
-                      ) : (
-                        <>
-                          <VideoOff className="w-4 h-4 text-slate-400" />
-                          <span>Camera Off</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Screen Cast */}
-                    <button
-                      type="button"
-                      onClick={isCastingScreen ? stopScreenCast : startScreenCast}
-                      className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                        isCastingScreen
-                          ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
-                          : 'aura-subtle-surface text-slate-200 hover:border-emerald-400/50'
-                      }`}
-                    >
-                      <Cast className="w-4 h-4 text-emerald-400" />
-                      {isCastingScreen ? 'Stop Cast' : 'Cast Screen'}
-                    </button>
-
-                    {/* Raise Hand */}
-                    <button
+                      key={emo}
                       type="button"
                       onClick={() => {
-                        const newHand = !myP?.handRaised;
                         upsertMyPresence(
                           liveRoom,
                           (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                          newHand,
-                          newHand ? '✋' : myP?.reactionEmoji || '🎯'
+                          Boolean(myP?.handRaised),
+                          emo
                         );
-                        onNotify(newHand ? '✋ Raised hand on stage' : 'Hand lowered');
+                        triggerFloatingReaction(emo);
+                        onNotify(`Reacted ${emo}`);
                       }}
-                      className={`px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition ${
-                        myP?.handRaised
-                          ? 'bg-amber-400 text-slate-950 font-black shadow-lg shadow-amber-400/20'
-                          : 'aura-subtle-surface text-slate-200 hover:border-amber-400/50'
-                      }`}
+                      className="px-2 py-1 rounded-lg hover:bg-[#E5E7EB] text-base transition-colors duration-150"
                     >
-                      <Hand className="w-4 h-4 text-amber-400" />
-                      {myP?.handRaised ? 'Hand Raised' : 'Raise Hand'}
+                      {emo}
                     </button>
-
-                    {/* Live Whiteboard Canvas */}
-                    <button
-                      type="button"
-                      onClick={() => setShowWhiteboardModal(true)}
-                      className="px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 aura-subtle-surface text-sky-300 hover:text-white hover:border-sky-400/50 transition"
-                      title="Collaborative Study Whiteboard"
-                    >
-                      <PenTool className="w-4 h-4 text-sky-400" />
-                      <span>Board</span>
-                    </button>
-
-                    {/* Green Room Diagnostics */}
-                    <button
-                      type="button"
-                      onClick={() => setShowDiagnosticsModal(true)}
-                      className="px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 aura-subtle-surface text-slate-200 hover:text-white hover:border-emerald-400/50 transition"
-                      title="Audio/Video Diagnostics & Health Check"
-                    >
-                      <Sliders className="w-4 h-4 text-emerald-400" />
-                      <span>Check</span>
-                    </button>
-
-                    {/* Fullscreen Theater Mode Button - Instant Access on Mobile & Desktop! */}
-                    <button
-                      type="button"
-                      onClick={() => setIsMeetingExpanded(true)}
-                      className="px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 aura-subtle-surface text-emerald-300 hover:text-white hover:border-emerald-400/50 transition"
-                      title="Expand Immersive Theater Stage"
-                    >
-                      <Maximize2 className="w-4 h-4 text-emerald-400" />
-                      <span>Theater</span>
-                    </button>
-
-                    {/* Host Mute All Button */}
-                    {canControl && (
-                      <button
-                        type="button"
-                        onClick={handleHostMuteAll}
-                        className="px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 bg-rose-500/15 border border-rose-500/40 text-rose-200 hover:bg-rose-500/25 transition"
-                        title="Mute all other students on stage"
-                      >
-                        <Volume2 className="w-4 h-4 text-rose-400" />
-                        <span>Mute All</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Reaction Emojis Burst Bar */}
-                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
-                    {['🎯', '🔥', '💡', '👏', '🚀', '💯'].map((emo) => (
-                      <button
-                        key={emo}
-                        type="button"
-                        onClick={() => {
-                          upsertMyPresence(
-                            liveRoom,
-                            (myP?.studyStatus as 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY') || 'FOCUSING',
-                            Boolean(myP?.handRaised),
-                            emo
-                          );
-                          triggerFloatingReaction(emo);
-                          onNotify(`Reacted ${emo}`);
-                        }}
-                        className="px-2 py-1 rounded-lg hover:bg-white/10 text-base transition"
-                      >
-                        {emo}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Pin Spotlight, Invite & RED END CALL BUTTON */}
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowSpotlightModal(true)}
-                      className="px-3 py-2 rounded-xl text-xs font-bold aura-subtle-surface hover:border-sky-400/50 flex items-center gap-1 text-slate-200"
-                      title="Spotlight Key Topic or Problem Set"
-                    >
-                      <Pin className="w-3.5 h-3.5 text-sky-400" /> Pin
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowQrModal(true)}
-                      className="px-3 py-2 rounded-xl text-xs font-bold aura-subtle-surface hover:border-emerald-400/50 flex items-center gap-1 text-slate-200"
-                      title="QR & Browser Invite Link"
-                    >
-                      <QrCode className="w-3.5 h-3.5 text-emerald-400" /> Invite
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
-                      className="px-3 py-2 rounded-xl text-xs font-extrabold bg-rose-600 hover:bg-rose-500 text-white flex items-center gap-1 shadow-lg shadow-rose-600/30 transition"
-                      title={canControl ? 'End Meeting or Leave' : 'Leave Call'}
-                    >
-                      <PhoneOff className="w-3.5 h-3.5" />
-                      <span>{canControl ? 'End Meeting' : 'Leave'}</span>
-                    </button>
-                  </div>
+                  ))}
                 </div>
+
+                {/* Pin Spotlight, Invite & End Call */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setShowSpotlightModal(true)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] flex items-center gap-1 text-[#111827] transition-colors duration-150"
+                    title="Spotlight Key Topic or Problem Set"
+                  >
+                    <Pin className="w-3.5 h-3.5 text-[#1E3A8A]" /> Pin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowQrModal(true)}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] flex items-center gap-1 text-[#111827] transition-colors duration-150"
+                    title="QR & Browser Invite Link"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-[#1E3A8A]" /> Invite
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => (canControl ? setShowEndMeetingModal(true) : leaveStage())}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#DC2626] hover:bg-[#B91C1C] text-[#FFFFFF] flex items-center gap-1 transition-colors duration-150"
+                    title={canControl ? 'End Meeting or Leave' : 'Leave Call'}
+                  >
+                    <PhoneOff className="w-3.5 h-3.5" />
+                    <span>{canControl ? 'End Meeting' : 'Leave'}</span>
+                  </button>
+                </div>
+              </div>
 
               {/* Live Participant Tiles */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-extrabold text-slate-300">
-                    👥 SCHOLARS IN STAGE ({Math.max(1, admittedList.length)})
+                  <span className="font-mono font-bold text-[#111827] uppercase tracking-wider">
+                    SCHOLARS IN STAGE ({Math.max(1, admittedList.length)})
                   </span>
                   {canControl && (
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-[#6B7280]">
                       Tap a classmate tile to moderate or promote Co-Host
                     </span>
                   )}
@@ -2570,31 +2574,31 @@ export const LiveStudyStage: React.FC<Props> = ({
                     const clickable = canControl && p.userId !== user.uid && !pIsHost;
                     const devTag =
                       p.devicePlatform === 'ANDROID'
-                        ? '📱 Android'
+                        ? 'Android'
                         : p.devicePlatform === 'IPHONE_WEB'
-                        ? '🍏 iPhone'
-                        : '💻 Web';
+                        ? 'iPhone'
+                        : 'Web';
                     return (
                       <div
                         key={p.userId}
                         onClick={() => clickable && setModeratingParticipant(p)}
-                        className={`p-3 rounded-2xl border transition ${
+                        className={`p-3 rounded-lg border transition-colors duration-150 ${
                           p.handRaised
-                            ? 'bg-amber-500/15 border-amber-400/60 shadow-amber-400/10'
-                            : 'aura-subtle-surface'
-                        } ${clickable ? 'cursor-pointer hover:border-sky-400/60' : ''}`}
+                            ? 'bg-[#FFFBEB] border-[#F59E0B]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB]'
+                        } ${clickable ? 'cursor-pointer hover:border-[#1E3A8A]' : ''}`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-extrabold truncate">{p.displayName}</span>
+                          <span className="text-xs font-bold text-[#111827] truncate">{p.displayName}</span>
                           <span className="text-sm shrink-0">
                             {p.handRaised ? '✋' : p.reactionEmoji || '🎯'}
                           </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate mt-0.5">
+                        <div className="text-[10px] font-mono text-[#6B7280] truncate mt-0.5">
                           {devTag} • {p.cityOrCampus || 'Remote'}
                         </div>
-                        <div className="flex items-center justify-between gap-1 text-[10px] font-extrabold mt-1">
-                          <span className="text-emerald-400 truncate">
+                        <div className="flex items-center justify-between gap-1 text-[10px] font-mono font-semibold mt-1.5">
+                          <span className="text-[#1E3A8A] truncate">
                             {pIsHost
                               ? `HOST • ${p.studyStatus}`
                               : pIsCoHost
@@ -2603,16 +2607,16 @@ export const LiveStudyStage: React.FC<Props> = ({
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {p.cameraOn && (
-                              <span className="px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[9px] flex items-center gap-0.5" title="Camera Active">
+                              <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] text-[9px] flex items-center gap-0.5" title="Camera Active">
                                 <Video className="w-2.5 h-2.5" /> Cam
                               </span>
                             )}
                             {p.isMuted ? (
-                              <span className="px-1 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold text-[9px] flex items-center gap-0.5" title="Microphone Muted">
+                              <span className="px-1.5 py-0.5 rounded bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-[9px] flex items-center gap-0.5" title="Microphone Muted">
                                 <MicOff className="w-2.5 h-2.5" /> Muted
                               </span>
                             ) : (
-                              <span className="px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[9px] flex items-center gap-0.5" title="Microphone Live">
+                              <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] text-[9px] flex items-center gap-0.5" title="Microphone Live">
                                 <Mic className="w-2.5 h-2.5" />
                               </span>
                             )}
@@ -2638,10 +2642,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                         !myP?.handRaised ? '✋' : '🎯'
                       )
                     }
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold border whitespace-nowrap inline-flex items-center gap-1 transition ${
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap inline-flex items-center gap-1 transition-colors duration-150 ${
                       myP?.handRaised
-                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md'
-                        : 'aura-subtle-surface'
+                        ? 'bg-[#FFFBEB] text-[#92400E] border-[#F59E0B]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]'
                     }`}
                   >
                     <Hand className="w-3.5 h-3.5" />
@@ -2660,10 +2664,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                           myP?.reactionEmoji || '🎯'
                         )
                       }
-                      className={`px-2.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition ${
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold whitespace-nowrap border transition-colors duration-150 ${
                         myP?.studyStatus === st
-                          ? 'bg-emerald-500/25 border-emerald-400 text-emerald-200'
-                          : 'aura-subtle-surface text-slate-400'
+                          ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                          : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF]'
                       }`}
                     >
                       {st}
@@ -2683,7 +2687,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                           emo
                         )
                       }
-                      className="px-2.5 py-1.5 rounded-full aura-subtle-surface hover:bg-white/15 text-sm"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-sm transition-colors duration-150"
                     >
                       {emo}
                     </button>
@@ -2692,22 +2696,22 @@ export const LiveStudyStage: React.FC<Props> = ({
               )}
 
               {/* Collaborative Workspace Tabs */}
-              <div className="flex gap-2">
+              <div className="flex gap-1 p-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB]">
                 {(
                   [
-                    ['BOARD', '📝 Pinboard'],
-                    ['CHAT', `💬 Live Q&A (${messages.length})`],
-                    ['CARDS', `🃏 Cards (${sharedCards.length})`]
+                    ['BOARD', 'Pinboard'],
+                    ['CHAT', `Live Q&A (${messages.length})`],
+                    ['CARDS', `Cards (${sharedCards.length})`]
                   ] as const
                 ).map(([t, label]) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => setStageTab(t)}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold border transition ${
+                    className={`flex-1 py-2 rounded-md text-xs font-semibold transition-colors duration-150 ${
                       stageTab === t
-                        ? 'bg-sky-500/25 border-sky-400 text-sky-200 shadow-sm'
-                        : 'aura-subtle-surface text-slate-400'
+                        ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                        : 'text-[#6B7280] hover:text-[#111827]'
                     }`}
                   >
                     {label}
@@ -2718,19 +2722,19 @@ export const LiveStudyStage: React.FC<Props> = ({
               {stageTab === 'BOARD' && (
                 <div className="space-y-2.5">
                   {liveRoom.whiteboardLocked && !canControl && (
-                    <p className="text-[11px] font-semibold text-amber-300">
-                      🔒 Lecture Chalkboard Mode: Only Host & Co-Hosts can edit right now.
+                    <p className="text-[11px] font-semibold text-[#B45309]">
+                      Lecture Chalkboard Mode: Only Host & Co-Hosts can edit right now.
                     </p>
                   )}
                   {/* Quick Format Insert Chips */}
                   {(!liveRoom.whiteboardLocked || canControl) && !isLocked && (
-                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                       {[
-                        { label: '☑️ Task', snip: '\n- [ ] ' },
-                        { label: '∑ Formula', snip: '\n📌 Formula: ' },
-                        { label: '💡 Concept', snip: '\n💡 Key Concept: ' },
-                        { label: '❓ Question', snip: '\n❓ Q: ' },
-                        { label: '🎯 Sprint Goal', snip: '\n🎯 Sprint Goal: ' }
+                        { label: 'Task', snip: '\n- [ ] ' },
+                        { label: 'Formula', snip: '\nFormula: ' },
+                        { label: 'Concept', snip: '\nKey Concept: ' },
+                        { label: 'Question', snip: '\nQ: ' },
+                        { label: 'Sprint Goal', snip: '\nSprint Goal: ' }
                       ].map((fmt) => (
                         <button
                           key={fmt.label}
@@ -2739,9 +2743,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                             setBoardDraft((prev) => prev + fmt.snip);
                             setBoardDirty(true);
                           }}
-                          className="px-2.5 py-1 rounded-lg aura-subtle-surface text-[10px] font-extrabold text-slate-300 hover:border-emerald-400 whitespace-nowrap"
+                          className="px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[10px] font-mono font-semibold text-[#374151] whitespace-nowrap transition-colors duration-150"
                         >
-                          {fmt.label}
+                          + {fmt.label}
                         </button>
                       ))}
                     </div>
@@ -2755,7 +2759,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                       setBoardDirty(true);
                     }}
                     placeholder="Write shared formulas, outline steps, or sprint targets..."
-                    className="w-full p-3.5 rounded-2xl aura-input text-xs leading-relaxed"
+                    className="w-full p-3.5 rounded-lg aura-input text-xs leading-relaxed"
                   />
                   {(!liveRoom.whiteboardLocked || canControl) && !isLocked && (
                     <button
@@ -2768,7 +2772,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                         setBoardDirty(false);
                         onNotify('Synced pinboard across all Android & Browser screens!');
                       }}
-                      className="w-full py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-extrabold transition shadow-md shadow-emerald-500/20"
+                      className="w-full py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
                     >
                       Sync Pinboard to Room
                     </button>
@@ -2785,27 +2789,27 @@ export const LiveStudyStage: React.FC<Props> = ({
                         key={flt}
                         type="button"
                         onClick={() => setChatFilter(flt)}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition whitespace-nowrap ${
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-colors duration-150 whitespace-nowrap ${
                           chatFilter === flt
-                            ? 'bg-sky-400/25 border border-sky-400 text-sky-200'
-                            : 'aura-subtle-surface text-slate-400 hover:text-white'
+                            ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:text-[#111827]'
                         }`}
                       >
                         {flt === 'ALL'
                           ? `All (${messages.length})`
                           : flt === 'QUESTION'
-                          ? `❓ Questions (${messages.filter((m) => m.messageType === 'QUESTION').length})`
+                          ? `Questions (${messages.filter((m) => m.messageType === 'QUESTION').length})`
                           : flt === 'INSIGHT'
-                          ? `💡 Insights (${messages.filter((m) => m.messageType === 'INSIGHT').length})`
-                          : `💬 Chat (${messages.filter((m) => m.messageType === 'CHAT').length})`}
+                          ? `Insights (${messages.filter((m) => m.messageType === 'INSIGHT').length})`
+                          : `Chat (${messages.filter((m) => m.messageType === 'CHAT').length})`}
                       </button>
                     ))}
                   </div>
 
-                  <div className="max-h-60 overflow-y-auto space-y-2 p-2.5 rounded-2xl aura-subtle-surface">
+                  <div className="max-h-60 overflow-y-auto space-y-2 p-2.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
                     {messages.length === 0 ? (
-                      <p className="text-xs text-slate-400 p-2 text-center">
-                        Ask a past-paper question or share an insight with Android & iPhone classmates!
+                      <p className="text-xs text-[#6B7280] p-2 text-center">
+                        Ask a past-paper question or share an insight with Android & iPhone classmates.
                       </p>
                     ) : (
                       (chatFilter === 'ALL'
@@ -2815,18 +2819,18 @@ export const LiveStudyStage: React.FC<Props> = ({
                         const isMsgAuthor = m.authorId === user.uid;
                         const canDeleteMsg = isMsgAuthor || canControl;
                         return (
-                          <div key={m.id} className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-xs group relative">
+                          <div key={m.id} className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs group relative">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-extrabold text-sky-300">
+                              <span className="text-[11px] font-bold text-[#1E3A8A]">
                                 {m.authorName} {isMsgAuthor && '(You)'}
                               </span>
                               <div className="flex items-center gap-1.5">
                                 {m.messageType !== 'CHAT' && (
                                   <span
-                                    className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${
+                                    className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold ${
                                       m.messageType === 'QUESTION'
-                                        ? 'bg-amber-400/20 text-amber-300'
-                                        : 'bg-emerald-400/20 text-emerald-300'
+                                        ? 'bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]'
+                                        : 'bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]'
                                     }`}
                                   >
                                     {m.messageType}
@@ -2845,15 +2849,15 @@ export const LiveStudyStage: React.FC<Props> = ({
                                         }
                                       }
                                     }}
-                                    className="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 transition"
+                                    className="p-1 rounded hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
                                     title={isMsgAuthor ? 'Unsend message' : 'Delete message as Host'}
                                   >
-                                    <Trash2 className="w-3 h-3 text-rose-300" />
+                                    <Trash2 className="w-3 h-3" />
                                   </button>
                                 )}
                               </div>
                             </div>
-                            <div className="mt-1 leading-relaxed">{m.text}</div>
+                            <div className="mt-1 text-[#111827] leading-relaxed">{m.text}</div>
                           </div>
                         );
                       })
@@ -2865,19 +2869,19 @@ export const LiveStudyStage: React.FC<Props> = ({
                       <div className="flex gap-1.5">
                         {(
                           [
-                            ['CHAT', '💬 Chat'],
-                            ['QUESTION', '❓ Question'],
-                            ['INSIGHT', '💡 Insight']
+                            ['CHAT', 'Chat'],
+                            ['QUESTION', 'Question'],
+                            ['INSIGHT', 'Insight']
                           ] as const
                         ).map(([tp, label]) => (
                           <button
                             key={tp}
                             type="button"
                             onClick={() => setChatType(tp)}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border ${
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-colors duration-150 ${
                               chatType === tp
-                                ? 'bg-sky-500/25 border-sky-400 text-sky-200'
-                                : 'aura-subtle-surface text-slate-400'
+                                ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                                : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280]'
                             }`}
                           >
                             {label}
@@ -2892,13 +2896,13 @@ export const LiveStudyStage: React.FC<Props> = ({
                             if (e.key === 'Enter') sendRoomMessage();
                           }}
                           placeholder="Message Android & iPhone classmates..."
-                          className="flex-1 px-3.5 py-2.5 rounded-xl aura-input text-xs"
+                          className="flex-1 px-3.5 py-2 rounded-lg aura-input text-xs"
                         />
                         <button
                           type="button"
                           onClick={sendRoomMessage}
                           aria-label="Send message"
-                          className="px-4 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-extrabold"
+                          className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold transition-colors duration-150"
                         >
                           <Send className="w-4 h-4" />
                         </button>
@@ -2914,24 +2918,24 @@ export const LiveStudyStage: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => setShowCardModal(true)}
-                      className="w-full py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                      className="w-full py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-150"
                     >
                       <Plus className="w-4 h-4" /> Drop Flashcard to Room
                     </button>
                   )}
 
                   {sharedCards.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-3">
-                      No flashcards dropped yet. Share a formula or definition card above!
+                    <p className="text-xs text-[#6B7280] text-center py-3">
+                      No flashcards dropped yet. Share a formula or definition card above.
                     </p>
                   ) : (
                     sharedCards.map((c) => (
                       <div
                         key={c.id}
-                        className="p-3.5 rounded-2xl aura-subtle-surface space-y-1.5"
+                        className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5"
                       >
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-sky-300 font-extrabold">
+                          <span className="font-mono text-[#1E3A8A] font-semibold">
                             {c.courseCode} • by {c.authorName}
                           </span>
                           <button
@@ -2956,13 +2960,13 @@ export const LiveStudyStage: React.FC<Props> = ({
                               }));
                               onNotify(`Saved "${c.courseCode}" card to your SM-2 Deck!`);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-extrabold hover:bg-emerald-500/30"
+                            className="px-2.5 py-1 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-semibold hover:border-[#1E3A8A] transition-colors duration-150"
                           >
                             + Save to Deck
                           </button>
                         </div>
-                        <div className="text-xs font-bold">Q: {c.question}</div>
-                        <div className="text-xs text-slate-300">A: {c.answer}</div>
+                        <div className="text-xs font-bold text-[#111827]">Q: {c.question}</div>
+                        <div className="text-xs text-[#4B5563]">A: {c.answer}</div>
                       </div>
                     ))
                   )}
@@ -3114,32 +3118,32 @@ export const LiveStudyStage: React.FC<Props> = ({
           onNotify={onNotify}
         />
 
-        {/* FEATURE 1: Interactive Live Study Whiteboard Modal */}
+        {/* Interactive Live Study Whiteboard Modal */}
         {showWhiteboardModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">
-            <div className="w-full max-w-3xl rounded-3xl aura-glass p-4 sm:p-6 space-y-4 border border-sky-400/40 shadow-2xl flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-[#111827]/45">
+            <div className="w-full max-w-3xl rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-6 space-y-4 flex flex-col max-h-[90vh]">
               {/* Whiteboard Header */}
-              <div className="flex items-center justify-between pb-2 border-b border-white/10 shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-300 flex items-center justify-center border border-sky-400/30">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB] shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#EFF6FF] text-[#1E3A8A] flex items-center justify-center border border-[#BFDBFE]">
                     <PenTool className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white">Live Study Whiteboard & Slide Canvas</h3>
-                    <p className="text-[11px] text-slate-400">Sketch formulas, circuit diagrams & problem sets live</p>
+                    <h3 className="text-sm font-bold text-[#111827]">Live Study Whiteboard & Slide Canvas</h3>
+                    <p className="text-[11px] text-[#6B7280]">Sketch formulas, circuit diagrams & problem sets live</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowWhiteboardModal(false)}
-                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold transition-colors duration-150"
                 >
                   Close
                 </button>
               </div>
 
               {/* HTML5 Canvas Drawing Area */}
-              <div className="flex-1 w-full min-h-[300px] sm:min-h-[420px] bg-slate-950 rounded-2xl border border-white/15 overflow-hidden relative">
+              <div className="flex-1 w-full min-h-[300px] sm:min-h-[420px] bg-[#FFFFFF] rounded-lg border border-[#D1D5DB] overflow-hidden relative">
                 <canvas
                   id="aura_whiteboard_canvas"
                   width={800}
@@ -3149,6 +3153,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                     const canvas = e.currentTarget;
                     const ctx = canvas.getContext('2d');
                     if (!ctx) return;
+                    if (!ctx.strokeStyle || ctx.strokeStyle === '#000000') {
+                      ctx.strokeStyle = '#111827';
+                      ctx.lineWidth = 3;
+                    }
                     const rect = canvas.getBoundingClientRect();
                     const scaleX = canvas.width / rect.width;
                     const scaleY = canvas.height / rect.height;
@@ -3180,7 +3188,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               <div className="flex items-center justify-between gap-2 flex-wrap pt-2 shrink-0">
                 <div className="flex items-center gap-2">
                   {/* Colors */}
-                  {['#10B981', '#38BDF8', '#F59E0B', '#F43F5E', '#FFFFFF'].map((color) => (
+                  {['#111827', '#1E3A8A', '#0F766E', '#B45309', '#DC2626'].map((color) => (
                     <button
                       key={color}
                       type="button"
@@ -3192,8 +3200,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                           ctx.lineWidth = 3;
                         }
                       }}
-                      className="w-6 h-6 rounded-full border border-white/20 hover:scale-110 transition"
+                      className="w-6 h-6 rounded-full border border-[#D1D5DB] hover:border-[#111827] transition-colors duration-150"
                       style={{ backgroundColor: color }}
+                      aria-label={`Select color ${color}`}
                     />
                   ))}
                   {/* Clear Button */}
@@ -3207,7 +3216,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                       }
                       onNotify('Canvas cleared');
                     }}
-                    className="px-2.5 py-1.5 rounded-xl aura-subtle-surface text-[11px] font-bold text-rose-300"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] hover:border-[#DC2626] text-[11px] font-semibold text-[#DC2626] transition-colors duration-150"
                   >
                     Clear
                   </button>
@@ -3224,9 +3233,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                       a.download = `AURA-Whiteboard-${liveRoom.courseCode}.png`;
                       a.href = canvas.toDataURL();
                       a.click();
-                      onNotify('📥 Saved diagram image to your downloads');
+                      onNotify('Saved diagram image to your downloads');
                     }}
-                    className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold flex items-center gap-1 text-slate-200"
+                    className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold flex items-center gap-1 text-[#111827] transition-colors duration-150"
                   >
                     <Download className="w-3.5 h-3.5" /> Download
                   </button>
@@ -3237,14 +3246,14 @@ export const LiveStudyStage: React.FC<Props> = ({
                     onClick={() => {
                       if (liveRoom) {
                         updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-                          spotlightCardText: `🎨 LIVE DIAGRAM: ${user?.displayName || 'Scholar'} is presenting live whiteboard notes!`,
+                          spotlightCardText: `LIVE DIAGRAM: ${user?.displayName || 'Scholar'} is presenting live whiteboard notes.`,
                           updatedAt: serverTimestamp()
                         }).catch(() => {});
-                        onNotify('📢 Announced live whiteboard presentation on stage!');
+                        onNotify('Announced live whiteboard presentation on stage.');
                         setShowWhiteboardModal(false);
                       }
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition"
+                    className="px-3.5 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs flex items-center gap-1.5 transition-colors duration-150"
                   >
                     <Cast className="w-3.5 h-3.5" /> Broadcast to Room
                   </button>
@@ -3254,49 +3263,49 @@ export const LiveStudyStage: React.FC<Props> = ({
           </div>
         )}
 
-        {/* FEATURE 2: In-Meeting Green Room: Audio, Video & Network Diagnostics Modal */}
+        {/* In-Meeting Green Room: Audio, Video & Network Diagnostics Modal */}
         {showDiagnosticsModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-3xl aura-glass p-6 space-y-4 border border-emerald-400/40 shadow-2xl">
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+            <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-6 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30">
+                  <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] text-[#1E3A8A] flex items-center justify-center border border-[#BFDBFE]">
                     <Sliders className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white">Meeting Health & Diagnostics</h3>
-                    <p className="text-[11px] text-slate-400">Audio output, microphone & network latency</p>
+                    <h3 className="text-sm font-bold text-[#111827]">Meeting Health & Diagnostics</h3>
+                    <p className="text-[11px] text-[#6B7280]">Audio output, microphone & network latency</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowDiagnosticsModal(false)}
-                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold transition-colors duration-150"
                 >
                   Done
                 </button>
               </div>
 
               {/* Network Latency Status Card */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+              <div className="p-3.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-[#111827] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981]" />
                     WebRTC Peer Network Quality
                   </span>
-                  <span className="text-[11px] font-black text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-mono font-bold text-[#065F46] bg-[#ECFDF5] border border-[#A7F3D0] px-2 py-0.5 rounded">
                     EXCELLENT HD
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  Latency: 24ms • Packet Loss: 0.0% • Audio: 48kHz Stereo Full-Duplex
+                <p className="text-[11px] font-mono text-[#6B7280]">
+                  Latency: 24ms • Packet Loss: 0.0% • Audio: 48kHz Stereo
                 </p>
               </div>
 
               {/* Sound Output Chime Tester */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <div className="text-xs font-bold text-white">Audio Output Speaker Test</div>
-                <p className="text-[11px] text-slate-400">Play a test sound to verify headphones or speakers work.</p>
+              <div className="p-3.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
+                <div className="text-xs font-bold text-[#111827]">Audio Output Speaker Test</div>
+                <p className="text-[11px] text-[#6B7280]">Play a test sound to verify headphones or speakers work.</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -3313,70 +3322,70 @@ export const LiveStudyStage: React.FC<Props> = ({
                       gain.connect(ctx.destination);
                       osc.start();
                       osc.stop(ctx.currentTime + 0.4);
-                      onNotify('🔊 Test chime played successfully through audio output!');
-                    } catch (e) {
+                      onNotify('Test chime played successfully through audio output.');
+                    } catch {
                       onNotify('Audio test played');
                     }
                   }}
-                  className="w-full py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-400/40 text-xs font-extrabold flex items-center justify-center gap-1.5 transition"
+                  className="w-full py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
                   <Volume2 className="w-4 h-4" /> Play Audio Output Test Chime
                 </button>
               </div>
 
               {/* Meeting Notes Export */}
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <div className="text-xs font-bold text-white">Session Transcript & Notes</div>
-                <p className="text-[11px] text-slate-400">Save complete study notes, room topics & chats to file.</p>
+              <div className="p-3.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
+                <div className="text-xs font-bold text-[#111827]">Session Transcript & Notes</div>
+                <p className="text-[11px] text-[#6B7280]">Save complete study notes, room topics & chats to file.</p>
                 <button
                   type="button"
                   onClick={() => {
-                    const text = `📚 AURA STUDY SESSION RECAP\nCourse: ${liveRoom.courseCode} - ${liveRoom.roomTitle}\nTopic: ${liveRoom.focusTopic || 'General Study'}\nHost: ${liveRoom.ownerName}\nScholars: ${admittedList.length}\nJoin Code: ${displayCode}\nSpotlight: ${liveRoom.spotlightCardText || 'None'}\nExported: ${new Date().toLocaleString()}`;
+                    const text = `AURA STUDY SESSION RECAP\nCourse: ${liveRoom.courseCode} - ${liveRoom.roomTitle}\nTopic: ${liveRoom.focusTopic || 'General Study'}\nHost: ${liveRoom.ownerName}\nScholars: ${admittedList.length}\nJoin Code: ${displayCode}\nSpotlight: ${liveRoom.spotlightCardText || 'None'}\nExported: ${new Date().toLocaleString()}`;
                     const blob = new Blob([text], { type: 'text/plain' });
                     const a = document.createElement('a');
                     a.download = `AURA-Study-Notes-${liveRoom.courseCode}.txt`;
                     a.href = URL.createObjectURL(blob);
                     a.click();
-                    onNotify('📋 Study notes transcript saved to downloads!');
+                    onNotify('Study notes transcript saved to downloads.');
                   }}
-                  className="w-full py-2.5 rounded-xl aura-subtle-surface text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                  className="w-full py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
-                  <Download className="w-4 h-4 text-sky-400" /> Export Session Study Notes (.txt)
+                  <Download className="w-4 h-4 text-[#1E3A8A]" /> Export Session Study Notes (.txt)
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* FEATURE 1: Live Study Session Transcript & Subtitles Modal */}
+        {/* Live Study Session Transcript & Subtitles Modal */}
         {showTranscriptModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-3xl aura-glass p-6 space-y-4 border border-emerald-400/40 shadow-2xl">
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+            <div className="w-full max-w-lg rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-6 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center border border-emerald-400/30">
+                  <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] text-[#1E3A8A] flex items-center justify-center border border-[#BFDBFE]">
                     <FileText className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white">Live Study Transcript & Captions</h3>
-                    <p className="text-[11px] text-slate-400">Real-time transcribed audio log for {liveRoom.courseCode}</p>
+                    <h3 className="text-sm font-bold text-[#111827]">Live Study Transcript & Captions</h3>
+                    <p className="text-[11px] font-mono text-[#6B7280]">Audio log for {liveRoom.courseCode}</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowTranscriptModal(false)}
-                  className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold transition-colors duration-150"
                 >
                   Done
                 </button>
               </div>
 
               {/* Subtitles status */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB]">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full ${isCaptionsActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
-                  <span className="text-xs font-bold text-white">
-                    {isCaptionsActive ? 'Speech Recognition Active (Listening)' : 'Captions Off'}
+                  <span className={`w-2 h-2 rounded-full ${isCaptionsActive ? 'bg-[#10B981]' : 'bg-[#9CA3AF]'}`} />
+                  <span className="text-xs font-semibold text-[#111827]">
+                    {isCaptionsActive ? 'Speech Recognition Active' : 'Captions Off'}
                   </span>
                 </div>
                 <button
@@ -3386,8 +3395,10 @@ export const LiveStudyStage: React.FC<Props> = ({
                     setIsCaptionsActive(next);
                     onNotify(next ? 'Captions enabled' : 'Captions disabled');
                   }}
-                  className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
-                    isCaptionsActive ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors duration-150 ${
+                    isCaptionsActive
+                      ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
+                      : 'bg-[#EFF6FF] text-[#1E3A8A] border-[#BFDBFE]'
                   }`}
                 >
                   {isCaptionsActive ? 'Stop Captions' : 'Start Captions'}
@@ -3395,34 +3406,34 @@ export const LiveStudyStage: React.FC<Props> = ({
               </div>
 
               {/* Transcript list */}
-              <div className="p-3.5 rounded-2xl bg-black/60 border border-white/10 max-h-60 overflow-y-auto space-y-2 text-xs">
+              <div className="p-3.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] max-h-60 overflow-y-auto space-y-2 text-xs">
                 {sessionTranscripts.map((entry, i) => (
-                  <div key={i} className="flex gap-2 text-slate-200">
-                    <span className="text-[10px] text-slate-400 font-mono shrink-0">[{entry.time}]</span>
-                    <span className="font-bold text-emerald-300 shrink-0">{entry.speaker}:</span>
+                  <div key={i} className="flex gap-2 text-[#111827]">
+                    <span className="text-[10px] text-[#6B7280] font-mono shrink-0">[{entry.time}]</span>
+                    <span className="font-bold text-[#1E3A8A] shrink-0">{entry.speaker}:</span>
                     <span className="break-words">{entry.text}</span>
                   </div>
                 ))}
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-between gap-2 pt-2">
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => {
                     const content = sessionTranscripts.map((t) => `[${t.time}] ${t.speaker}: ${t.text}`).join('\n');
                     navigator.clipboard.writeText(content);
-                    onNotify('📋 Full transcript copied to clipboard!');
+                    onNotify('Full transcript copied to clipboard.');
                   }}
-                  className="px-4 py-2 rounded-xl aura-subtle-surface text-slate-200 hover:text-white text-xs font-bold flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
                 >
-                  <Copy className="w-4 h-4 text-emerald-400" />
+                  <Copy className="w-4 h-4 text-[#1E3A8A]" />
                   <span>Copy All</span>
                 </button>
                 <button
                   type="button"
                   onClick={downloadTranscript}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 hover:bg-emerald-400 transition"
+                  className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs flex items-center gap-1.5 transition-colors duration-150"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download (.txt)</span>
@@ -3432,38 +3443,38 @@ export const LiveStudyStage: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Google Meet Style Leave or End Meeting for All Modal */}
+        {/* Leave or End Meeting for All Modal */}
         {showEndMeetingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-            <div className="w-full max-w-sm rounded-3xl aura-glass p-6 space-y-4 border border-rose-500/40 shadow-2xl shadow-rose-500/10">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto text-rose-300">
-                <PhoneOff className="w-6 h-6" />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+            <div className="w-full max-w-sm rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-6 space-y-4">
+              <div className="w-11 h-11 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-center mx-auto text-[#DC2626]">
+                <PhoneOff className="w-5 h-5" />
               </div>
               <div className="text-center space-y-1">
-                <h3 className="text-base font-extrabold text-white">Leave or End Meeting?</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  You are the host of <strong>{liveRoom.roomTitle}</strong>. You can end the meeting for all scholars, or just leave and let the session continue.
+                <h3 className="text-base font-bold text-[#111827]">Leave or End Meeting?</h3>
+                <p className="text-xs text-[#6B7280] leading-relaxed">
+                  You are the host of <strong className="text-[#111827]">{liveRoom.roomTitle}</strong>. You can end the meeting for all scholars, or just leave and let the session continue.
                 </p>
               </div>
               <div className="space-y-2 pt-2">
                 <button
                   type="button"
                   onClick={endMeetingForEveryone}
-                  className="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs transition shadow-lg shadow-rose-600/30 flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 rounded-lg bg-[#DC2626] hover:bg-[#B91C1C] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150 flex items-center justify-center gap-1.5"
                 >
                   <PhoneOff className="w-4 h-4" /> End Meeting for Everyone
                 </button>
                 <button
                   type="button"
                   onClick={leaveStage}
-                  className="w-full py-2.5 rounded-xl aura-subtle-surface hover:border-slate-400 text-slate-200 font-extrabold text-xs transition"
+                  className="w-full py-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] font-semibold text-xs transition-colors duration-150"
                 >
                   Just Leave Meeting
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowEndMeetingModal(false)}
-                  className="w-full py-2 rounded-xl text-slate-400 hover:text-white text-xs font-bold transition"
+                  className="w-full py-2 rounded-lg text-[#6B7280] hover:text-[#111827] text-xs font-semibold transition-colors duration-150"
                 >
                   Cancel
                 </button>
@@ -3480,22 +3491,22 @@ export const LiveStudyStage: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
-      {/* Hero Join & Host Card with Dual-Action Workflow */}
-      <div className="aura-hero-card rounded-3xl p-5 sm:p-6 space-y-4">
+      {/* Hero Join & Host Card */}
+      <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 sm:p-6 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-400/40">
-                <Sparkles className="w-3 h-3" /> UNIVERSAL ANDROID • IPHONE • CHROME STAGE
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE]">
+                ANDROID • IPHONE • CHROME STAGE
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
-                <Radio className="w-3 h-3 text-emerald-400 animate-pulse" /> Live Realtime Sync
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[10px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                <Radio className="w-3 h-3" /> Live Realtime Sync
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111827]">
               Host or Join Live Study Session
             </h2>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#6B7280] leading-relaxed">
               Launch a shared room for your class with real-time countdown clocks, synchronized past-paper chalkboard,
               instant pop-quiz polls, and knock-to-join Waiting Rooms.
             </p>
@@ -3507,7 +3518,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               type="button"
               disabled={isHostingRoom}
               onClick={handleInstantQuickHost}
-              className="px-4 py-2.5 rounded-2xl aura-shimmer-btn text-slate-950 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/25 hover:opacity-95 transition"
+              className="px-4 py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-150"
               title="Instantly host a 50m sprint for your primary course"
             >
               <Zap className="w-4 h-4" /> 1-Click 50m Sprint
@@ -3518,20 +3529,20 @@ export const LiveStudyStage: React.FC<Props> = ({
                 setHostModalError('');
                 setShowHostModal(true);
               }}
-              className="px-4 py-2.5 rounded-2xl aura-subtle-surface hover:border-sky-400/60 text-slate-200 text-xs font-extrabold inline-flex items-center justify-center gap-1.5 transition"
+              className="px-4 py-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-150"
             >
-              <Video className="w-4 h-4 text-sky-400" /> Custom Room Settings
+              <Video className="w-4 h-4 text-[#1E3A8A]" /> Custom Room Settings
             </button>
           </div>
         </div>
 
         {/* Join by Code or Link */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[#E5E7EB]">
           <input
             value={cityBadge}
             onChange={(e) => setCityBadge(e.target.value)}
             placeholder="Your Campus / Town (e.g. Accra • Legon)"
-            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="px-3.5 py-2.5 rounded-lg aura-input text-xs"
           />
           <div className="sm:col-span-2 flex gap-2">
             <input
@@ -3541,13 +3552,13 @@ export const LiveStudyStage: React.FC<Props> = ({
                 if (e.key === 'Enter') joinByCode(joinCodeInput);
               }}
               placeholder="Enter 6-Char Code (e.g. AUR7K2) or paste Link"
-              className="flex-1 px-3.5 py-2.5 rounded-xl aura-input text-xs font-mono font-bold uppercase placeholder:normal-case placeholder:font-sans placeholder:font-normal"
+              className="flex-1 px-3.5 py-2.5 rounded-lg aura-input text-xs font-mono font-bold uppercase placeholder:normal-case placeholder:font-sans placeholder:font-normal"
             />
             <button
               type="button"
               disabled={isJoiningCode || normalizeJoinCode(joinCodeInput).length < 4}
               onClick={() => joinByCode(joinCodeInput)}
-              className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 disabled:opacity-45 text-slate-950 font-extrabold text-xs whitespace-nowrap transition shadow-md shadow-emerald-500/20"
+              className="px-5 py-2.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] disabled:opacity-45 text-[#FFFFFF] font-semibold text-xs whitespace-nowrap transition-colors duration-150"
             >
               {isJoiningCode ? 'Joining...' : 'Enter Stage'}
             </button>
@@ -3555,14 +3566,14 @@ export const LiveStudyStage: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* User's Own Active Hosted Rooms (Including Private Code-Only Rooms!) */}
+      {/* User's Own Active Hosted Rooms */}
       {myHostedRooms.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5 text-emerald-400" /> Your Active Hosted Sessions ({myHostedRooms.length})
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-[#1E3A8A]" /> Your Active Hosted Sessions ({myHostedRooms.length})
             </h3>
-            <span className="text-[11px] text-slate-400">One-tap resume for your class</span>
+            <span className="text-[11px] text-[#6B7280]">One-tap resume for your class</span>
           </div>
 
           <div className="grid grid-cols-1 gap-2.5">
@@ -3571,26 +3582,26 @@ export const LiveStudyStage: React.FC<Props> = ({
               return (
                 <div
                   key={r.id}
-                  className="aura-glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 border border-emerald-400/40 shadow-lg shadow-emerald-500/5"
+                  className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] p-4 flex flex-wrap items-center justify-between gap-3 transition-colors duration-150"
                 >
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-extrabold">
+                      <span className="px-2 py-0.5 rounded font-mono bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] text-[11px] font-semibold">
                         {r.courseCode}
                       </span>
-                      <span className="font-mono text-xs font-extrabold text-sky-300">
+                      <span className="font-mono text-xs font-bold text-[#111827]">
                         CODE: {code}
                       </span>
-                      <span className="text-[11px] text-slate-400">
-                        {r.visibility === 'UNLISTED' ? '🔑 Private Code-Only' : '🌐 Campus Lobby'}
+                      <span className="text-[11px] text-[#6B7280]">
+                        {r.visibility === 'UNLISTED' ? 'Private Code-Only' : 'Campus Lobby'}
                       </span>
                       {r.waitingRoomEnabled && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold">
-                          🚪 Waiting Room Active
+                        <span className="px-2 py-0.5 rounded font-mono bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] text-[10px] font-semibold">
+                          Waiting Room Active
                         </span>
                       )}
                     </div>
-                    <div className="font-bold text-sm truncate">{r.roomTitle}</div>
+                    <div className="font-bold text-sm text-[#111827] truncate">{r.roomTitle}</div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
@@ -3599,9 +3610,9 @@ export const LiveStudyStage: React.FC<Props> = ({
                         navigator.clipboard.writeText(code);
                         onNotify(`Copied Room Code ${code}!`);
                       }}
-                      className="px-3 py-2 rounded-xl aura-subtle-surface hover:border-sky-400/50 text-xs font-bold inline-flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                     >
-                      <Copy className="w-3.5 h-3.5" /> Copy Code
+                      <Copy className="w-3.5 h-3.5 text-[#6B7280]" /> Copy Code
                     </button>
                     <button
                       type="button"
@@ -3614,13 +3625,13 @@ export const LiveStudyStage: React.FC<Props> = ({
                               timerRemainingSeconds: 0,
                               updatedAt: serverTimestamp()
                             });
-                            onNotify(`🔴 Ended meeting '${r.roomTitle}'.`);
+                            onNotify(`Ended meeting '${r.roomTitle}'.`);
                           } catch (e: any) {
                             onNotify('Error: ' + (e?.message || 'Permission denied'));
                           }
                         }
                       }}
-                      className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-400/40 text-xs font-bold inline-flex items-center gap-1 transition"
+                      className="px-3 py-1.5 rounded-lg bg-[#FEF2F2] hover:border-[#DC2626] text-[#DC2626] border border-[#FECACA] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                       title="End this meeting for everyone"
                     >
                       <PhoneOff className="w-3.5 h-3.5" /> Stop Meeting
@@ -3628,7 +3639,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => enterExistingRoom(r.id, code)}
-                      className="px-4 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-extrabold shadow-md shadow-emerald-500/20"
+                      className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
                     >
                       Open Stage
                     </button>
@@ -3643,19 +3654,19 @@ export const LiveStudyStage: React.FC<Props> = ({
       {/* Open Campus Study Lobby */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-extrabold uppercase tracking-wider text-sky-300 flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-sky-400" /> Open Campus Study Lobby ({publicOtherRooms.length})
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-[#1E3A8A]" /> Open Campus Study Lobby ({publicOtherRooms.length})
           </h3>
-          <span className="text-[11px] text-slate-400">Realtime cross-platform study rooms</span>
+          <span className="text-[11px] text-[#6B7280]">Realtime cross-platform study rooms</span>
         </div>
 
         {publicOtherRooms.length === 0 ? (
-          <div className="aura-glass rounded-3xl p-8 text-center space-y-2.5 border border-sky-400/20">
-            <Users className="w-8 h-8 text-sky-400 mx-auto opacity-80" />
-            <div className="font-bold text-sm">No Public Campus Rooms Right Now</div>
-            <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-8 text-center space-y-2">
+            <Users className="w-7 h-7 text-[#6B7280] mx-auto" />
+            <div className="font-bold text-sm text-[#111827]">No Public Campus Rooms Right Now</div>
+            <p className="text-xs text-[#6B7280] max-w-md mx-auto leading-relaxed">
               Have a private 6-character code from an Android classmate? Enter it above—or tap{' '}
-              <strong>1-Click 50m Sprint</strong> to host your own live study stage!
+              <strong className="text-[#111827]">1-Click 50m Sprint</strong> to host your own live study stage.
             </p>
           </div>
         ) : (
@@ -3664,25 +3675,25 @@ export const LiveStudyStage: React.FC<Props> = ({
             return (
               <div
                 key={r.id}
-                className="aura-glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 hover:border-sky-400/45 transition shadow-sm"
+                className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] p-4 flex flex-wrap items-center justify-between gap-3 transition-colors duration-150"
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-extrabold">
+                    <span className="px-2 py-0.5 rounded font-mono bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] text-[11px] font-semibold">
                       {r.courseCode}
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      Host: <strong>{r.ownerName}</strong> • {r.activeMinutes}m
+                    <span className="text-[11px] font-mono text-[#6B7280]">
+                      Host: <strong className="font-sans text-[#111827]">{r.ownerName}</strong> • {r.activeMinutes}m
                     </span>
                     {r.waitingRoomEnabled && (
-                      <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-extrabold">
-                        🚪 Knock to Join
+                      <span className="px-2 py-0.5 rounded font-mono bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A] text-[10px] font-semibold">
+                        Knock to Join
                       </span>
                     )}
                   </div>
-                  <div className="font-bold text-sm truncate">{r.roomTitle}</div>
+                  <div className="font-bold text-sm text-[#111827] truncate">{r.roomTitle}</div>
                   {r.focusTopic && (
-                    <div className="text-xs text-slate-400 truncate">{r.focusTopic}</div>
+                    <div className="text-xs text-[#6B7280] truncate">{r.focusTopic}</div>
                   )}
                 </div>
 
@@ -3690,7 +3701,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                   type="button"
                   disabled={isJoiningCode}
                   onClick={() => enterExistingRoom(r.id, code)}
-                  className="px-4 py-2 rounded-xl bg-sky-500/25 hover:bg-sky-500/35 border border-sky-400/50 text-sky-200 text-xs font-extrabold transition"
+                  className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
                 >
                   {r.waitingRoomEnabled ? 'Knock to Join' : 'Join Stage'}
                 </button>

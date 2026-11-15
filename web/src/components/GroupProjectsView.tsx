@@ -51,7 +51,6 @@ import {
   Settings,
   Share2,
   Smile,
-  Sparkles,
   Square,
   Trash2,
   UserCheck,
@@ -81,7 +80,7 @@ interface Props {
   onNotify: (msg: string) => void;
 }
 
-const COLOR_OPTIONS = ['#06B6D4', '#10B981', '#38BDF8', '#8B5CF6', '#F59E0B', '#F43F5E'];
+const COLOR_OPTIONS = ['#1E3A8A', '#0F766E', '#B45309', '#374151', '#1D4ED8', '#047857'];
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1975,15 +1974,15 @@ export const GroupProjectsView: React.FC<Props> = ({
     <div className="space-y-4">
       {/* 1. PENDING INVITATIONS BANNER */}
       {pendingInvitations.length > 0 && (
-        <div className="rounded-xl p-4 bg-slate-900 border border-amber-500/40 shadow-sm space-y-3">
+        <div className="rounded-xl p-4 bg-[#FFFBEB] border border-[#F59E0B] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="font-bold text-sm sm:text-base text-white">
+              <Mail className="w-4 h-4 text-[#B45309]" />
+              <h3 className="font-bold text-sm sm:text-base text-[#111827]">
                 Team Invitations ({pendingInvitations.length})
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-amber-300 px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/30 uppercase tracking-wider">
+            <span className="font-mono text-[10px] font-bold text-[#92400E] px-2 py-0.5 rounded bg-[#FFFFFF] border border-[#FDE68A] uppercase tracking-wider">
               Pending
             </span>
           </div>
@@ -1992,36 +1991,34 @@ export const GroupProjectsView: React.FC<Props> = ({
             {pendingInvitations.map((inv) => (
               <div
                 key={inv.id}
-                className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 flex flex-col justify-between gap-3"
+                className="p-3.5 rounded-lg bg-[#FFFFFF] border border-[#FDE68A] flex flex-col justify-between gap-3"
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 border border-slate-700 bg-slate-800 text-white"
-                  >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 border border-[#E5E7EB] bg-[#F3F4F6] text-[#111827]">
                     {inv.teamName.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-white text-sm">{inv.teamName}</span>
-                      <span className="px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 text-[10px] font-bold">
+                      <span className="font-bold text-[#111827] text-sm">{inv.teamName}</span>
+                      <span className="px-1.5 py-0.5 rounded font-mono bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-[10px] font-bold">
                         {inv.courseCode}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-300 line-clamp-1">{inv.projectTitle}</p>
-                    <p className="text-[11px] text-amber-300 font-medium mt-0.5">
+                    <p className="text-xs text-[#4B5563] line-clamp-1">{inv.projectTitle}</p>
+                    <p className="text-[11px] text-[#B45309] font-medium mt-0.5">
                       Target: {inv.groupTarget}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      Invited by: <span className="text-cyan-400 font-semibold">{inv.senderName}</span> ({inv.senderEmail})
+                    <p className="text-[10px] text-[#6B7280] mt-1">
+                      Invited by: <span className="text-[#111827] font-semibold">{inv.senderName}</span> ({inv.senderEmail})
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-800">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB]">
                   <button
                     type="button"
                     onClick={() => handleAcceptInvitation(inv)}
-                    className="flex-1 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150 flex items-center justify-center gap-1"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Accept &amp; Join
@@ -2029,7 +2026,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => handleDeclineInvitation(inv)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-400 text-xs font-semibold transition"
+                    className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#DC2626] text-[#4B5563] hover:text-[#DC2626] text-xs font-semibold transition-colors duration-150"
                   >
                     Decline
                   </button>
@@ -2041,51 +2038,51 @@ export const GroupProjectsView: React.FC<Props> = ({
       )}
 
       {/* Top Header Card */}
-      <div className="aura-hero-card rounded-xl p-4 sm:p-5">
+      <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-cyan-400" />
+            <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-bold text-white">
+                <h2 className="text-base sm:text-lg font-bold text-[#111827] tracking-tight">
                   Academic Team Hub
                 </h2>
-                <span className="px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                <span className="px-2 py-0.5 rounded font-mono bg-[#ECFDF5] border border-[#A7F3D0] text-[10px] font-bold text-[#065F46] uppercase tracking-wider">
                   Live Cloud
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#6B7280]">
                 Voice notes, shared slide vault, focus sprints &amp; deliverable tracking.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={handleForceSync}
-              className="px-3 py-2 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/50 text-xs font-semibold transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
               title="Force Instant Cloud Sync across Web and Mobile"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>⚡ Force Re-Sync</span>
+              <RefreshCw className={`w-3.5 h-3.5 text-[#1E3A8A] ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>Force Re-Sync</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
-              className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 hover:border-slate-500 text-xs font-semibold transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
             >
-              <KeyRound className="w-3.5 h-3.5" />
+              <KeyRound className="w-3.5 h-3.5 text-[#1E3A8A]" />
               <span>Join with Code</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               New Team
@@ -2093,48 +2090,49 @@ export const GroupProjectsView: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Prominent Teams Workspace Grid (Supports unlimited teams) */}
+        {/* Prominent Teams Workspace Grid */}
         {vault.groupProjects.length > 0 && (
-          <div className="pt-4 border-t border-slate-800 mt-4 space-y-2">
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">
+          <div className="pt-4 border-t border-[#E5E7EB] mt-4 space-y-2">
+            <div className="flex items-center justify-between text-xs text-[#6B7280]">
+              <span className="font-mono font-semibold uppercase tracking-wider text-[11px] text-[#4B5563]">
                 Your Teams ({vault.groupProjects.length})
               </span>
-              <span className="text-[10px] text-slate-500">Tap to switch active team workspace</span>
+              <span className="text-[11px]">Tap to switch active team workspace</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {vault.groupProjects.map((p) => {
                 const isActive = p.id === activeProject?.id;
                 const isOwner = p.creatorEmail?.toLowerCase() === currentEmail;
+                const accent = p.avatarColorHex || '#1E3A8A';
                 return (
                   <div
                     key={p.id}
                     onClick={() => setSelectedProjectId(p.id)}
-                    className={`cursor-pointer p-3 rounded-lg border transition-all flex items-center justify-between gap-2.5 ${
+                    className={`cursor-pointer p-3 rounded-lg border transition-colors duration-150 flex items-center justify-between gap-2.5 ${
                       isActive
-                        ? 'bg-slate-800 border-cyan-500'
-                        : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                        ? 'bg-[#EFF6FF] border-[#1E3A8A]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] hover:border-[#9CA3AF]'
                     }`}
                   >
                     <div className="min-w-0 flex items-center gap-2.5">
                       <div
-                        className="w-8 h-8 rounded-md flex items-center justify-center font-bold text-xs shrink-0 border"
+                        className="w-8 h-8 rounded-md flex items-center justify-center font-mono font-bold text-xs shrink-0 border"
                         style={{
-                          backgroundColor: `${p.avatarColorHex || '#06B6D4'}15`,
-                          borderColor: `${p.avatarColorHex || '#06B6D4'}40`,
-                          color: p.avatarColorHex || '#06B6D4'
+                          backgroundColor: `${accent}12`,
+                          borderColor: `${accent}45`,
+                          color: accent
                         }}
                       >
                         {p.courseCode.slice(0, 3)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-bold text-xs text-white truncate">{p.teamName}</span>
+                          <span className="font-bold text-xs text-[#111827] truncate">{p.teamName}</span>
                           {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#1E3A8A] shrink-0" />
                           )}
                         </div>
-                        <div className="text-[10px] text-slate-400 truncate">
+                        <div className="text-[10px] font-mono text-[#6B7280] truncate">
                           {p.courseCode} • {p.memberEmails?.length || 1} {p.memberEmails?.length === 1 ? 'member' : 'members'}
                         </div>
                       </div>
@@ -2146,7 +2144,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => handleDeleteProject(p.id)}
                           title="Delete Team Workspace"
-                          className="w-7 h-7 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800 flex items-center justify-center transition"
+                          className="w-7 h-7 rounded-md text-[#6B7280] hover:text-[#DC2626] hover:bg-[#FEF2F2] flex items-center justify-center transition-colors duration-150"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2155,7 +2153,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => handleLeaveGroup(p.id)}
                           title="Leave Team"
-                          className="w-7 h-7 rounded-md text-slate-400 hover:text-amber-400 hover:bg-slate-800 flex items-center justify-center transition"
+                          className="w-7 h-7 rounded-md text-[#6B7280] hover:text-[#B45309] hover:bg-[#FFFBEB] flex items-center justify-center transition-colors duration-150"
                         >
                           <LogOut className="w-3.5 h-3.5" />
                         </button>
@@ -2174,36 +2172,36 @@ export const GroupProjectsView: React.FC<Props> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left Column: Team Overview, Countdown & Live Sprint */}
           <div className="space-y-4">
-            <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-4">
+            <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold border shrink-0"
+                    className="w-11 h-11 rounded-lg flex items-center justify-center text-xs font-mono font-bold border shrink-0"
                     style={{
-                      backgroundColor: `${activeProject.avatarColorHex || '#06B6D4'}20`,
-                      borderColor: activeProject.avatarColorHex || '#06B6D4',
-                      color: activeProject.avatarColorHex || '#06B6D4'
+                      backgroundColor: `${activeProject.avatarColorHex || '#1E3A8A'}12`,
+                      borderColor: activeProject.avatarColorHex || '#1E3A8A',
+                      color: activeProject.avatarColorHex || '#1E3A8A'
                     }}
                   >
                     {activeProject.courseCode.slice(0, 3)}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white text-base leading-tight">
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-[#111827] text-base leading-tight truncate">
                       {activeProject.teamName}
                     </h3>
-                    <p className="text-xs text-cyan-400 font-semibold">{activeProject.courseCode}</p>
-                    <p className="text-[11px] text-slate-400 line-clamp-1">
+                    <p className="text-xs font-mono text-[#1E3A8A] font-semibold">{activeProject.courseCode}</p>
+                    <p className="text-[11px] text-[#6B7280] line-clamp-1">
                       {activeProject.projectTitle}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={() => handleCopyInviteLink(activeProject)}
                     title="Copy 1-Click Invite Link"
-                    className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-cyan-400 hover:border-cyan-400/50 transition"
+                    className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] flex items-center justify-center text-[#1E3A8A] transition-colors duration-150"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
@@ -2219,16 +2217,16 @@ export const GroupProjectsView: React.FC<Props> = ({
                       }
                     }}
                     title={voiceHuddleActive ? 'Leave Voice Huddle' : 'Start Voice Huddle'}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors duration-150 ${
                       voiceHuddleActive
-                        ? 'bg-cyan-500 text-slate-950 font-bold'
-                        : 'bg-slate-800 border border-slate-700 text-slate-300 hover:border-slate-500'
+                        ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#111827] hover:border-[#1E3A8A]'
                     }`}
                   >
                     {voiceHuddleActive ? (
                       <>
                         <PhoneCall className="w-3.5 h-3.5" />
-                        <span>Voice Live</span>
+                        <span>Live</span>
                       </>
                     ) : (
                       <>
@@ -2243,7 +2241,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => setShowSettingsModal(true)}
                       title="Group Admin Settings"
-                      className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-300 hover:border-amber-400/50 transition"
+                      className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] flex items-center justify-center text-[#4B5563] hover:text-[#111827] transition-colors duration-150"
                     >
                       <Settings className="w-4 h-4" />
                     </button>
@@ -2253,7 +2251,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => handleDeleteProject(activeProject.id)}
                       title="Permanently Delete Team"
-                      className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-rose-400 hover:border-rose-400/50 transition"
+                      className="w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#DC2626] flex items-center justify-center text-[#DC2626] transition-colors duration-150"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -2262,7 +2260,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       type="button"
                       onClick={() => handleLeaveGroup(activeProject.id)}
                       title="Leave Team"
-                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 flex items-center gap-1 text-amber-400 hover:border-amber-400/50 text-xs font-semibold transition"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#B45309] flex items-center gap-1 text-[#B45309] text-xs font-semibold transition-colors duration-150"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Leave</span>
@@ -2273,18 +2271,20 @@ export const GroupProjectsView: React.FC<Props> = ({
 
               {/* Live Voice Huddle Indicator */}
               {voiceHuddleActive && (
-                <div className="p-3 rounded-lg bg-slate-900 border border-cyan-500/40 flex items-center justify-between gap-2">
+                <div className="p-3 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0" />
-                    <span className="text-xs font-bold text-cyan-300 truncate">
+                    <span className="w-2 h-2 rounded-full bg-[#1E3A8A] shrink-0" />
+                    <span className="text-xs font-semibold text-[#1E3A8A] truncate">
                       Team Voice Active ({isWebMicMuted ? 'Muted' : 'Speaking'})
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsWebMicMuted(!isWebMicMuted)}
-                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold transition ${
-                      isWebMicMuted ? 'bg-rose-500/20 text-rose-300' : 'bg-cyan-400 text-slate-950'
+                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold border transition-colors duration-150 ${
+                      isWebMicMuted
+                        ? 'bg-[#FEF2F2] border-[#FECACA] text-[#DC2626]'
+                        : 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
                     }`}
                   >
                     {isWebMicMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -2293,37 +2293,37 @@ export const GroupProjectsView: React.FC<Props> = ({
               )}
 
               {/* Target & Submission Countdown */}
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+              <div className="p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-mono font-bold text-[#1E3A8A] uppercase tracking-wider">
                     Target Milestone
                   </span>
-                  <span className="text-[10px] font-bold text-slate-300 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-cyan-400" />
+                  <span className="text-[10px] font-mono font-semibold text-[#4B5563] flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-[#6B7280]" />
                     {daysLeft > 0 ? `${daysLeft} days left` : 'Due Soon'}
                   </span>
                 </div>
-                <div className="text-xs font-semibold text-slate-200">
+                <div className="text-xs font-semibold text-[#111827]">
                   {activeProject.groupTarget || 'Complete deliverables and report'}
                 </div>
                 {activeProject.joinCode && (
-                  <div className="text-[10px] text-slate-400 font-mono pt-1 border-t border-slate-800 flex items-center justify-between">
+                  <div className="text-[10px] text-[#6B7280] font-mono pt-1.5 border-t border-[#E5E7EB] flex items-center justify-between">
                     <span>Team Code:</span>
-                    <span className="text-cyan-300 font-bold">{activeProject.joinCode}</span>
+                    <span className="text-[#1E3A8A] font-bold">{activeProject.joinCode}</span>
                   </div>
                 )}
               </div>
 
-              {/* Synced Group Pomodoro Live Sprint Widget (Feature 2) */}
-              <div className="p-3 rounded-lg bg-slate-900 border border-cyan-500/30 space-y-2">
+              {/* Synced Group Pomodoro Live Sprint Widget */}
+              <div className="p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <Flame className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs font-bold text-white">
+                    <Flame className="w-4 h-4 text-[#1E3A8A]" />
+                    <span className="text-xs font-bold text-[#111827]">
                       Synced Team Sprint ({pomodoroMode})
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-extrabold text-cyan-400">
+                  <span className="text-sm font-mono font-bold text-[#1E3A8A] tabular-nums">
                     {Math.floor(pomodoroSeconds / 60)
                       .toString()
                       .padStart(2, '0')}
@@ -2331,11 +2331,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </span>
                 </div>
                 {syncedPomo?.initiatorName && (
-                  <div className="text-[10px] text-emerald-400 font-medium">
+                  <div className="text-[10px] font-mono text-[#065F46] font-medium">
                     {pomodoroRunning ? `Running • Started by ${syncedPomo.initiatorName}` : `Paused • Last updated by ${syncedPomo.initiatorName}`}
                   </div>
                 )}
-                <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                <div className="grid grid-cols-3 gap-1 text-[10px] font-semibold">
                   {[
                     { dur: 25, mode: 'FOCUS' as const, label: '25m Focus' },
                     { dur: 50, mode: 'FOCUS' as const, label: '50m Deep' },
@@ -2347,10 +2347,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                         key={preset.label}
                         type="button"
                         onClick={() => handlePomodoroAction('MODE', preset.dur, preset.mode)}
-                        className={`py-1 rounded-md transition ${
+                        className={`py-1 rounded border transition-colors duration-150 ${
                           selected
-                            ? 'bg-cyan-500 text-slate-950'
-                            : 'bg-slate-800 text-slate-300 hover:text-white'
+                            ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
                         }`}
                       >
                         {preset.label}
@@ -2364,10 +2364,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                     onClick={() =>
                       handlePomodoroAction(pomodoroRunning ? 'PAUSE' : 'START', pomodoroDurationMin, pomodoroMode)
                     }
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 flex items-center justify-center gap-1 border ${
                       pomodoroRunning
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
-                        : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+                        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
+                        : 'bg-[#1E3A8A] hover:bg-[#1E40AF] border-[#1E3A8A] text-[#FFFFFF]'
                     }`}
                   >
                     {pomodoroRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
@@ -2376,7 +2376,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => handlePomodoroAction('RESET', pomodoroDurationMin, pomodoroMode)}
-                    className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#4B5563] text-xs font-semibold transition-colors duration-150"
                   >
                     Reset
                   </button>
@@ -2386,28 +2386,28 @@ export const GroupProjectsView: React.FC<Props> = ({
               {/* Progress Bar */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 font-medium">Deliverables Complete</span>
-                  <span className="font-bold text-cyan-400">
+                  <span className="text-[#4B5563] font-medium">Deliverables Complete</span>
+                  <span className="font-mono font-bold text-[#1E3A8A] tabular-nums">
                     {doneTasks}/{tasks.length} ({taskProgressPct}%)
                   </span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-[#E5E7EB] overflow-hidden">
                   <div
-                    className="h-full bg-cyan-500 transition-all duration-300"
+                    className="h-full bg-[#1E3A8A] transition-all duration-150"
                     style={{ width: `${taskProgressPct}%` }}
                   />
                 </div>
               </div>
 
               {/* Navigation Sub-Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 p-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 p-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab('CHAT')}
-                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 ${
                     activeTab === 'CHAT'
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                      : 'text-[#6B7280] hover:text-[#111827]'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
@@ -2416,10 +2416,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('DELIVERABLES')}
-                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 ${
                     activeTab === 'DELIVERABLES'
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                      : 'text-[#6B7280] hover:text-[#111827]'
                   }`}
                 >
                   <FolderKanban className="w-3.5 h-3.5" />
@@ -2428,22 +2428,22 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('SPRINT')}
-                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 ${
                     activeTab === 'SPRINT'
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                      : 'text-[#6B7280] hover:text-[#111827]'
                   }`}
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
-                  <span>📌 Sprint</span>
+                  <span>Sprint</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab('RESOURCES')}
-                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 ${
                     activeTab === 'RESOURCES'
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                      : 'text-[#6B7280] hover:text-[#111827]'
                   }`}
                 >
                   <BookOpen className="w-3.5 h-3.5" />
@@ -2452,10 +2452,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setActiveTab('MEMBERS')}
-                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                  className={`py-1.5 px-2 rounded-md font-semibold transition-colors duration-150 flex items-center justify-center gap-1.5 ${
                     activeTab === 'MEMBERS'
-                      ? 'bg-cyan-500 text-slate-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                      : 'text-[#6B7280] hover:text-[#111827]'
                   }`}
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -2464,21 +2464,21 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
 
               {/* Quick Actions */}
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+              <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={handleExportChat}
-                  className="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 hover:border-slate-500 transition"
+                  className="flex-1 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
-                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                  <Copy className="w-3.5 h-3.5 text-[#1E3A8A]" />
                   Export Chat
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddMemberModal(true)}
-                  className="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 hover:border-slate-500 transition"
+                  className="flex-1 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
-                  <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
+                  <UserPlus className="w-3.5 h-3.5 text-[#1E3A8A]" />
                   Add Member
                 </button>
               </div>
@@ -2488,12 +2488,12 @@ export const GroupProjectsView: React.FC<Props> = ({
           {/* Right Column: Tab Content Stage */}
           <div className="lg:col-span-2">
             {activeTab === 'CHAT' && (
-              <div className="aura-glass rounded-xl p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px] border border-slate-800 shadow-sm">
+              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px]">
                 {/* Pinned Messages Bar */}
                 {pinnedMessages.length > 0 && (
-                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 mb-3 shrink-0">
-                    <Pin className="w-4 h-4 text-amber-300 shrink-0" />
-                    <div className="text-xs text-amber-200 font-semibold truncate flex-1">
+                  <div className="p-2.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex items-center gap-2 mb-3 shrink-0">
+                    <Pin className="w-4 h-4 text-[#B45309] shrink-0" />
+                    <div className="text-xs text-[#92400E] font-semibold truncate flex-1">
                       {pinnedMessages[pinnedMessages.length - 1].messageText}
                     </div>
                   </div>
@@ -2502,10 +2502,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                 {/* Messages Stream */}
                 <div className="flex-1 overflow-y-auto space-y-3 pr-1.5 no-scrollbar">
                   {projectMessages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                      <MessageSquare className="w-10 h-10 text-slate-600 mb-2" />
-                      <p className="font-bold text-sm text-white">No messages yet</p>
-                      <p className="text-xs mt-1">
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#6B7280]">
+                      <MessageSquare className="w-9 h-9 text-[#9CA3AF] mb-2" />
+                      <p className="font-bold text-sm text-[#111827]">No messages yet</p>
+                      <p className="text-xs mt-1 max-w-xs">
                         Send messages, record voice notes, and coordinate deliverables in real time.
                       </p>
                     </div>
@@ -2520,7 +2520,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       if (isNotice) {
                         return (
                           <div key={msg.id} className="flex justify-center my-1.5">
-                            <span className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-medium text-slate-300">
+                            <span className="px-3 py-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[11px] font-medium text-[#4B5563]">
                               {msg.messageText}
                             </span>
                           </div>
@@ -2533,22 +2533,22 @@ export const GroupProjectsView: React.FC<Props> = ({
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-lg p-3 space-y-2 relative group ${
+                            className={`max-w-[85%] rounded-xl p-3 space-y-2 relative group ${
                               isMe
-                                ? 'bg-cyan-500 text-slate-950 font-medium'
-                                : 'bg-slate-900 border border-slate-800 text-slate-100'
+                                ? 'bg-[#1E3A8A] text-[#FFFFFF]'
+                                : 'bg-[#F9FAFB] border border-[#E5E7EB] text-[#111827]'
                             }`}
                           >
-                            <div className="flex items-center justify-between gap-3 text-[11px] opacity-80">
+                            <div className="flex items-center justify-between gap-3 text-[11px] opacity-85">
                               <span className="font-bold flex items-center gap-1">
                                 {isMe ? 'You' : msg.senderName}
                                 {isAdmin && (
                                   <span title="Admin">
-                                    <Crown className="w-3 h-3 text-amber-300 inline" />
+                                    <Crown className={`w-3 h-3 inline ${isMe ? 'text-[#FDE68A]' : 'text-[#B45309]'}`} />
                                   </span>
                                 )}
                               </span>
-                              <span>
+                              <span className="font-mono text-[10px]">
                                 {new Date(msg.timestamp).toLocaleTimeString([], {
                                   hour: '2-digit',
                                   minute: '2-digit'
@@ -2574,11 +2574,11 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Image Attachment */}
                             {msg.messageType === 'IMAGE_SHARE' && msg.imageUrl && (
-                              <div className="rounded-lg overflow-hidden border border-slate-700 mt-1 cursor-pointer">
+                              <div className="rounded-lg overflow-hidden border border-[#E5E7EB] mt-1 cursor-pointer bg-[#FFFFFF]">
                                 <img
                                   src={msg.imageUrl}
                                   alt="Attached Diagram or Photo"
-                                  className="w-full max-h-60 object-cover hover:scale-105 transition duration-200"
+                                  className="w-full max-h-60 object-cover"
                                   onClick={() => setPreviewImageUrl(msg.imageUrl!)}
                                 />
                               </div>
@@ -2586,8 +2586,8 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Poll Card */}
                             {msg.pollData && (
-                              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-xs space-y-2 mt-2">
-                                <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+                              <div className="p-3 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] text-xs space-y-2 mt-2">
+                                <div className="font-bold text-[#111827] flex items-center gap-1.5">
                                   <span>{msg.pollData.question}</span>
                                 </div>
                                 <div className="space-y-1.5">
@@ -2607,21 +2607,21 @@ export const GroupProjectsView: React.FC<Props> = ({
                                         key={opt.text}
                                         type="button"
                                         onClick={() => handleVotePoll(msg, opt.text)}
-                                        className={`w-full text-left p-2 rounded-md border transition ${
+                                        className={`w-full text-left p-2 rounded-md border transition-colors duration-150 ${
                                           hasVoted
-                                            ? 'bg-cyan-500/15 border-cyan-400 text-white font-bold'
-                                            : 'bg-slate-900 border-slate-800 hover:bg-slate-800 text-slate-200'
+                                            ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A] font-semibold'
+                                            : 'bg-[#F9FAFB] border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827]'
                                         }`}
                                       >
                                         <div className="flex justify-between text-[11px] mb-1">
                                           <span>{hasVoted ? '✓ ' : ''}{opt.text}</span>
-                                          <span className="opacity-80">
+                                          <span className="font-mono text-[#4B5563]">
                                             {voteCount} ({pct}%)
                                           </span>
                                         </div>
-                                        <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                                        <div className="w-full h-1.5 rounded-full bg-[#E5E7EB] overflow-hidden">
                                           <div
-                                            className="h-full bg-cyan-400 transition-all duration-300"
+                                            className="h-full bg-[#1E3A8A] transition-all duration-150"
                                             style={{ width: `${pct}%` }}
                                           />
                                         </div>
@@ -2634,15 +2634,15 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Shared Doc Card */}
                             {msg.docData && (
-                              <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-xs flex items-center justify-between gap-2 mt-2">
+                              <div className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] text-xs flex items-center justify-between gap-2 mt-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <FileText className="w-4 h-4 text-cyan-400 shrink-0" />
+                                  <FileText className="w-4 h-4 text-[#1E3A8A] shrink-0" />
                                   <div className="min-w-0">
-                                    <div className="font-bold text-white truncate">
+                                    <div className="font-bold text-[#111827] truncate">
                                       {msg.docData.title}
                                     </div>
                                     {msg.docData.linkOrFileName && (
-                                      <div className="text-[10px] text-slate-400 truncate font-mono">
+                                      <div className="text-[10px] text-[#6B7280] truncate font-mono">
                                         {msg.docData.linkOrFileName}
                                       </div>
                                     )}
@@ -2657,7 +2657,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                                     }
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-[10px] shrink-0"
+                                    className="px-2 py-1 rounded bg-[#EFF6FF] border border-[#BFDBFE] hover:border-[#1E3A8A] text-[#1E3A8A] font-semibold text-[10px] shrink-0 transition-colors duration-150"
                                   >
                                     Open
                                   </a>
@@ -2667,23 +2667,27 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                             {/* Tagged Deliverable Box */}
                             {msg.taggedDeliverableTitle && (
-                              <div className="p-2 rounded-md bg-slate-950 border border-slate-800 text-xs flex items-center justify-between gap-2 mt-2">
-                                <span className="font-semibold truncate text-white">
+                              <div className="p-2 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] text-xs flex items-center justify-between gap-2 mt-2">
+                                <span className="font-semibold truncate">
                                   Task: {msg.taggedDeliverableTitle}
                                 </span>
                               </div>
                             )}
 
-                            {/* Unsend / Delete Message Action (Author or Admin) */}
+                            {/* Unsend / Delete Message Action */}
                             {(isMe || isCurrentUserAdmin || !activeProject.creatorUid || activeProject.creatorUid === user?.uid || !activeProject.adminEmails?.length) && (
-                              <div className="flex items-center justify-end gap-1.5 pt-1.5 mt-1 border-t border-black/10">
+                              <div className={`flex items-center justify-end gap-1.5 pt-1.5 mt-1 border-t ${isMe ? 'border-white/20' : 'border-[#E5E7EB]'}`}>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteMessage(msg)}
-                                  className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-[10px] font-semibold text-rose-300 flex items-center gap-1 transition"
+                                  className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors duration-150 ${
+                                    isMe
+                                      ? 'bg-white/15 hover:bg-white/25 text-[#FFFFFF]'
+                                      : 'bg-[#FEF2F2] hover:border-[#DC2626] border border-[#FECACA] text-[#DC2626]'
+                                  }`}
                                   title={isMe ? 'Unsend this message for everyone' : 'Delete message as Group Admin'}
                                 >
-                                  <Trash2 className="w-3 h-3 text-rose-300" />
+                                  <Trash2 className="w-3 h-3" />
                                   <span>{isMe ? 'Unsend' : 'Delete'}</span>
                                 </button>
                               </div>
@@ -2697,13 +2701,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                 </div>
 
                 {/* Composer Dock */}
-                <div className="pt-3 border-t border-slate-800 space-y-2 shrink-0">
+                <div className="pt-3 border-t border-[#E5E7EB] space-y-2 shrink-0">
                   {selectedDeliverableTag && (
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-xs font-semibold text-cyan-300 flex items-center gap-1.5">
+                      <span className="px-2.5 py-1 rounded-md bg-[#EFF6FF] border border-[#BFDBFE] text-xs font-semibold text-[#1E3A8A] flex items-center gap-1.5">
                         <span>Task: {selectedDeliverableTag}</span>
                         <X
-                          className="w-3 h-3 cursor-pointer hover:text-white"
+                          className="w-3 h-3 cursor-pointer"
                           onClick={() => setSelectedDeliverableTag('')}
                         />
                       </span>
@@ -2712,10 +2716,10 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                   {/* Dynamic Recording Dock vs Standard Text Dock */}
                   {isRecordingVoice ? (
-                    <div className="p-2.5 rounded-lg bg-slate-900 border border-rose-500/50 flex items-center justify-between gap-3">
+                    <div className="p-2.5 rounded-lg bg-[#FEF2F2] border border-[#FECACA] flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                        <span className="text-xs font-bold text-rose-300">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
+                        <span className="text-xs font-mono font-bold text-[#DC2626]">
                           Recording Voice Note ({Math.floor(recordingSeconds / 60)
                             .toString()
                             .padStart(2, '0')}
@@ -2727,7 +2731,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={handleCancelVoiceRecording}
-                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-[#4B5563] text-xs font-semibold transition-colors duration-150 flex items-center gap-1"
                         >
                           <X className="w-3.5 h-3.5" />
                           Cancel
@@ -2735,7 +2739,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={handleSendVoiceRecording}
-                          className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition"
+                          className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150"
                         >
                           <Send className="w-3.5 h-3.5" />
                           Send
@@ -2750,7 +2754,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={handleStartVoiceRecording}
                           title="Record Voice Note"
-                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-rose-300 flex items-center justify-center shrink-0 transition"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#DC2626] border border-[#E5E7EB] text-[#DC2626] flex items-center justify-center shrink-0 transition-colors duration-150"
                         >
                           <Mic className="w-4 h-4" />
                         </button>
@@ -2760,7 +2764,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           title="Share Photo / Diagram"
-                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-300 flex items-center justify-center shrink-0 transition"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#1E3A8A] flex items-center justify-center shrink-0 transition-colors duration-150"
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>
@@ -2777,7 +2781,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowPollModal(true)}
                           title="Create Team Poll"
-                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
                         >
                           Poll
                         </button>
@@ -2787,7 +2791,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowDocModal(true)}
                           title="Share Resource Link"
-                          className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 transition text-xs font-bold"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
                         >
                           Link
                         </button>
@@ -2799,7 +2803,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                         placeholder="Message your team..."
-                        className="aura-input flex-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm min-w-[140px]"
+                        className="aura-input flex-1 px-4 py-2 rounded-lg text-xs sm:text-sm min-w-[140px]"
                       />
 
                       {tasks.length > 0 && (
@@ -2807,7 +2811,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           aria-label="Tag deliverable to message"
                           value={selectedDeliverableTag}
                           onChange={(e) => setSelectedDeliverableTag(e.target.value)}
-                          className="aura-input px-3 py-2.5 rounded-lg text-xs bg-slate-900 border-slate-800 max-w-[120px] truncate"
+                          className="aura-input px-3 py-2 rounded-lg text-xs max-w-[120px] truncate"
                         >
                           <option value="">Tag Task</option>
                           {tasks.map((t) => (
@@ -2821,7 +2825,8 @@ export const GroupProjectsView: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={handleSendMessage}
-                        className="w-10 h-10 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center font-bold shadow-sm transition shrink-0"
+                        aria-label="Send message"
+                        className="w-10 h-10 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] flex items-center justify-center font-semibold transition-colors duration-150 shrink-0"
                       >
                         <Send className="w-4 h-4" />
                       </button>
@@ -2832,34 +2837,36 @@ export const GroupProjectsView: React.FC<Props> = ({
             )}
 
             {activeTab === 'DELIVERABLES' && (
-              <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div>
-                    <h4 className="font-extrabold text-white text-sm sm:text-base">
+                    <h4 className="font-bold text-[#111827] text-sm sm:text-base">
                       Group Deliverables &amp; Section Splits
                     </h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[#6B7280]">
                       Split milestones, assign tasks to members &amp; track progress.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowAddTaskModal(true)}
-                    className="aura-pill-btn px-3 py-1.5 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-xs hover:bg-emerald-400/30"
+                    className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    <Plus className="w-3.5 h-3.5" />
                     Assign Deliverable
                   </button>
                 </div>
 
-                {/* Filter and Search Bar (New Feature) */}
+                {/* Filter and Search Bar */}
                 <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10 text-xs font-bold">
+                  <div className="flex gap-1 p-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] text-xs font-semibold">
                     <button
                       type="button"
                       onClick={() => setTaskFilter('ALL')}
-                      className={`px-2.5 py-1 rounded-lg transition ${
-                        taskFilter === 'ALL' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      className={`px-2.5 py-1 rounded-md transition-colors duration-150 ${
+                        taskFilter === 'ALL'
+                          ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                          : 'text-[#6B7280] hover:text-[#111827]'
                       }`}
                     >
                       All ({tasks.length})
@@ -2867,8 +2874,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => setTaskFilter('PENDING')}
-                      className={`px-2.5 py-1 rounded-lg transition ${
-                        taskFilter === 'PENDING' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      className={`px-2.5 py-1 rounded-md transition-colors duration-150 ${
+                        taskFilter === 'PENDING'
+                          ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                          : 'text-[#6B7280] hover:text-[#111827]'
                       }`}
                     >
                       Pending ({tasks.length - doneTasks})
@@ -2876,8 +2885,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                     <button
                       type="button"
                       onClick={() => setTaskFilter('DONE')}
-                      className={`px-2.5 py-1 rounded-lg transition ${
-                        taskFilter === 'DONE' ? 'bg-emerald-400 text-slate-950' : 'text-slate-300'
+                      className={`px-2.5 py-1 rounded-md transition-colors duration-150 ${
+                        taskFilter === 'DONE'
+                          ? 'bg-[#FFFFFF] border border-[#E5E7EB] text-[#1E3A8A]'
+                          : 'text-[#6B7280] hover:text-[#111827]'
                       }`}
                     >
                       Done ({doneTasks})
@@ -2885,49 +2896,49 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </div>
 
                   <div className="relative flex-1 min-w-[140px]">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#6B7280]" />
                     <input
                       type="text"
                       value={taskSearch}
                       onChange={(e) => setTaskSearch(e.target.value)}
                       placeholder="Search deliverables..."
-                      className="aura-input w-full pl-8 pr-3 py-1.5 rounded-xl text-xs"
+                      className="aura-input w-full pl-8 pr-3 py-1.5 rounded-lg text-xs"
                     />
                   </div>
                 </div>
 
                 {filteredTasks.length === 0 ? (
-                  <div className="text-center py-10 text-slate-400 text-xs">
+                  <div className="text-center py-10 text-[#6B7280] text-xs">
                     No deliverables found matching your filter.
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="divide-y divide-[#E5E7EB] border border-[#E5E7EB] rounded-xl overflow-hidden">
                     {filteredTasks.map((task) => (
                       <div
                         key={task.id}
-                        className="p-3 rounded-2xl aura-subtle-surface flex items-center justify-between gap-3"
+                        className="p-3 bg-[#FFFFFF] flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <button
                             type="button"
                             onClick={() => handleToggleTask(task)}
-                            className={`w-6 h-6 rounded-lg flex items-center justify-center border transition ${
+                            className={`w-5 h-5 rounded flex items-center justify-center border transition-colors duration-150 ${
                               task.isCompleted
-                                ? 'bg-emerald-400 border-emerald-400 text-slate-950'
-                                : 'border-white/30 hover:border-white'
+                                ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                                : 'border-[#D1D5DB] hover:border-[#1E3A8A] bg-[#FFFFFF]'
                             }`}
                           >
-                            {task.isCompleted && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                            {task.isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
                           </button>
                           <div className="min-w-0">
                             <p
-                              className={`text-xs sm:text-sm font-bold truncate ${
-                                task.isCompleted ? 'line-through text-slate-400' : 'text-white'
+                              className={`text-xs sm:text-sm font-semibold truncate ${
+                                task.isCompleted ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'
                               }`}
                             >
                               {task.taskTitle}
                             </p>
-                            <p className="text-[11px] text-sky-400 font-semibold truncate">
+                            <p className="text-[11px] font-mono text-[#6B7280] truncate">
                               Assigned to: {task.memberName} {task.memberContact && `(${task.memberContact})`}
                             </p>
                           </div>
@@ -2936,11 +2947,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setChatInput(`📌 Working on deliverable: '${task.taskTitle}'!`);
+                            setChatInput(`Working on deliverable: '${task.taskTitle}'`);
                             setSelectedDeliverableTag(task.taskTitle);
                             setActiveTab('CHAT');
                           }}
-                          className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-slate-300 hover:text-white hover:border-white/30 transition shrink-0"
+                          className="px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[11px] font-semibold text-[#111827] transition-colors duration-150 shrink-0"
                         >
                           Share in Chat
                         </button>
@@ -2951,33 +2962,33 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
             )}
 
-            {/* SPRINT KANBAN ROADMAP TAB (Feature 1) */}
+            {/* SPRINT KANBAN ROADMAP TAB */}
             {activeTab === 'SPRINT' && (
-              <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
                 {/* Sprint Header & Velocity Card */}
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-sky-950/40 border border-cyan-500/30 flex items-center justify-between gap-4 flex-wrap">
+                <div className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-4 flex-wrap">
                   <div>
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-cyan-400" />
-                      <h4 className="font-extrabold text-white text-base">
+                      <BarChart3 className="w-5 h-5 text-[#1E3A8A]" />
+                      <h4 className="font-bold text-[#111827] text-base">
                         Live Team Sprint Milestone &amp; Kanban
                       </h4>
                     </div>
-                    <p className="text-xs text-amber-300 mt-1">
+                    <p className="text-xs text-[#6B7280] mt-1">
                       Target Goal: {activeProject.groupTarget || 'Complete all deliverables on schedule'}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-xs text-slate-400">Sprint Velocity</div>
-                      <div className="text-sm font-bold text-cyan-400">
+                      <div className="text-[11px] font-mono uppercase text-[#6B7280]">Sprint Velocity</div>
+                      <div className="text-sm font-mono font-bold text-[#1E3A8A]">
                         {doneTasks} / {tasks.length} cleared ({taskProgressPct}%)
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShowAddTaskModal(true)}
-                      className="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5"
+                      className="px-3.5 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>New Task</span>
@@ -2985,27 +2996,27 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </div>
                 </div>
 
-                {/* Team Readiness & Workload Leaderboard + 1-Tap Standup Pulse (Feature 3) */}
-                <div className="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
+                {/* Team Readiness & Workload Leaderboard + 1-Tap Standup Pulse */}
+                <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
-                      <h5 className="text-xs sm:text-sm font-extrabold text-white">
-                        📊 Team Readiness &amp; Workload Leaderboard
+                      <h5 className="text-xs sm:text-sm font-bold text-[#111827]">
+                        Team Readiness &amp; Workload Leaderboard
                       </h5>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-[#6B7280]">
                         Per-member deliverable completion &amp; instant standup check-in synced with Android
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-extrabold">
+                      <span className="px-2.5 py-1 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-mono text-xs font-bold">
                         {taskProgressPct}% Ready
                       </span>
                       <button
                         type="button"
                         onClick={handleSendStandupPulse}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+                        className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
                       >
-                        ⚡ Send Standup Pulse
+                        Send Standup Pulse
                       </button>
                     </div>
                   </div>
@@ -3022,14 +3033,14 @@ export const GroupProjectsView: React.FC<Props> = ({
                       const mPct = mTasks.length > 0 ? Math.round((mDone / mTasks.length) * 100) : 0;
                       return (
                         <div key={mEmail} className="flex items-center gap-3 text-xs">
-                          <span className="w-28 truncate text-slate-300 font-semibold">{prefix || mEmail}</span>
-                          <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                          <span className="w-28 truncate text-[#111827] font-semibold">{prefix || mEmail}</span>
+                          <div className="flex-1 h-2 rounded-full bg-[#E5E7EB] overflow-hidden">
                             <div
-                              className="h-full bg-emerald-400 transition-all duration-300"
+                              className="h-full bg-[#1E3A8A] transition-all duration-150"
                               style={{ width: `${mPct}%` }}
                             />
                           </div>
-                          <span className="w-14 text-right font-mono text-cyan-300 font-bold">
+                          <span className="w-14 text-right font-mono text-[#1E3A8A] font-bold">
                             {mDone}/{mTasks.length}
                           </span>
                         </div>
@@ -3041,13 +3052,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                 {/* 3-Column Kanban Board */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Column 1: Backlog / To-Do */}
-                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-300">
+                  <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-[#111827]">
                       <span className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-slate-400" />
-                        🎯 Backlog &amp; To-Do
+                        <span className="w-2 h-2 rounded-full bg-[#6B7280]" />
+                        Backlog &amp; To-Do
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono">
+                      <span className="px-1.5 py-0.5 rounded bg-[#FFFFFF] border border-[#E5E7EB] text-[10px] text-[#4B5563] font-mono">
                         {tasks.filter((t) => !t.isCompleted).length}
                       </span>
                     </div>
@@ -3056,31 +3067,31 @@ export const GroupProjectsView: React.FC<Props> = ({
                       {tasks.filter((t) => !t.isCompleted).map((task) => (
                         <div
                           key={task.id}
-                          className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/40 transition space-y-1.5"
+                          className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] transition-colors duration-150 space-y-1.5"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-semibold text-white leading-snug">
+                            <span className="text-xs font-semibold text-[#111827] leading-snug">
                               {task.taskTitle}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleToggleTask(task)}
                               title="Mark as Done"
-                              className="w-5 h-5 rounded-md border border-slate-600 hover:border-emerald-400 flex items-center justify-center shrink-0 transition"
+                              className="w-5 h-5 rounded border border-[#D1D5DB] hover:border-[#1E3A8A] flex items-center justify-center shrink-0 transition-colors duration-150"
                             >
-                              <Check className="w-3 h-3 text-slate-400 hover:text-emerald-400" />
+                              <Check className="w-3 h-3 text-[#6B7280] hover:text-[#1E3A8A]" />
                             </button>
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700/40">
-                            <span>👤 {task.memberName}</span>
+                          <div className="flex items-center justify-between text-[10px] text-[#6B7280] pt-1 border-t border-[#E5E7EB]">
+                            <span>{task.memberName}</span>
                             <button
                               type="button"
                               onClick={() => {
-                                setChatInput(`📌 Working on sprint task: '${task.taskTitle}'!`);
+                                setChatInput(`Working on sprint task: '${task.taskTitle}'`);
                                 setSelectedDeliverableTag(task.taskTitle);
                                 setActiveTab('CHAT');
                               }}
-                              className="text-cyan-400 hover:underline"
+                              className="text-[#1E3A8A] font-semibold hover:underline"
                             >
                               Share
                             </button>
@@ -3088,21 +3099,21 @@ export const GroupProjectsView: React.FC<Props> = ({
                         </div>
                       ))}
                       {tasks.filter((t) => !t.isCompleted).length === 0 && (
-                        <div className="text-center py-8 text-xs text-slate-500">
-                          All tasks cleared! 🎉
+                        <div className="text-center py-8 text-xs text-[#6B7280]">
+                          All tasks cleared!
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* Column 2: In Active Sprint */}
-                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between px-1 text-xs font-bold text-amber-300">
+                  <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-[#92400E]">
                       <span className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                        ⚡ Active Sprint
+                        <span className="w-2 h-2 rounded-full bg-[#B45309]" />
+                        Active Sprint
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-[10px] text-amber-300 font-mono">
+                      <span className="px-1.5 py-0.5 rounded bg-[#FFFBEB] border border-[#FDE68A] text-[10px] text-[#B45309] font-mono">
                         {tasks.filter((t) => !t.isCompleted).length}
                       </span>
                     </div>
@@ -3111,29 +3122,29 @@ export const GroupProjectsView: React.FC<Props> = ({
                       {tasks.filter((t) => !t.isCompleted).map((task) => (
                         <div
                           key={task.id}
-                          className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-500/30 hover:border-amber-400/60 transition space-y-1.5"
+                          className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#FDE68A] hover:border-[#B45309] transition-colors duration-150 space-y-1.5"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-semibold text-amber-100 leading-snug">
+                            <span className="text-xs font-semibold text-[#111827] leading-snug">
                               {task.taskTitle}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleToggleTask(task)}
                               title="Mark as Completed"
-                              className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold hover:bg-emerald-500/30 transition shrink-0"
+                              className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-[10px] font-semibold hover:border-[#1E3A8A] transition-colors duration-150 shrink-0"
                             >
                               Complete
                             </button>
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-amber-500/20">
+                          <div className="flex items-center justify-between text-[10px] text-[#6B7280] pt-1 border-t border-[#E5E7EB]">
                             <span>Assignee: {task.memberName}</span>
-                            <span className="text-amber-400">In Progress</span>
+                            <span className="font-mono text-[#B45309]">In Progress</span>
                           </div>
                         </div>
                       ))}
                       {tasks.filter((t) => !t.isCompleted).length === 0 && (
-                        <div className="text-center py-8 text-xs text-slate-500">
+                        <div className="text-center py-8 text-xs text-[#6B7280]">
                           No active sprint items
                         </div>
                       )}
@@ -3141,13 +3152,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </div>
 
                   {/* Column 3: Completed & Verified */}
-                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
-                    <div className="flex items-center justify-between px-1 text-xs font-bold text-emerald-400">
+                  <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-[#065F46]">
                       <span className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        ✅ Completed &amp; Verified
+                        <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                        Completed &amp; Verified
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[10px] text-emerald-400 font-mono">
+                      <span className="px-1.5 py-0.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[10px] text-[#065F46] font-mono">
                         {doneTasks}
                       </span>
                     </div>
@@ -3156,29 +3167,29 @@ export const GroupProjectsView: React.FC<Props> = ({
                       {tasks.filter((t) => t.isCompleted).map((task) => (
                         <div
                           key={task.id}
-                          className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1.5"
+                          className="p-2.5 rounded-lg bg-[#FFFFFF] border border-[#A7F3D0] space-y-1.5"
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-300 line-through leading-snug">
+                            <span className="text-xs font-semibold text-[#6B7280] line-through leading-snug">
                               {task.taskTitle}
                             </span>
                             <button
                               type="button"
                               onClick={() => handleToggleTask(task)}
                               title="Re-open Task"
-                              className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0"
+                              className="w-5 h-5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] flex items-center justify-center shrink-0"
                             >
                               <Check className="w-3 h-3" />
                             </button>
                           </div>
-                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-emerald-500/20">
+                          <div className="flex items-center justify-between text-[10px] text-[#6B7280] pt-1 border-t border-[#E5E7EB]">
                             <span>Completed by {task.memberName}</span>
-                            <span className="text-emerald-400 font-semibold">Done ✓</span>
+                            <span className="font-mono text-[#065F46] font-semibold">Done ✓</span>
                           </div>
                         </div>
                       ))}
                       {doneTasks === 0 && (
-                        <div className="text-center py-8 text-xs text-slate-500">
+                        <div className="text-center py-8 text-xs text-[#6B7280]">
                           No completed tasks yet
                         </div>
                       )}
@@ -3189,37 +3200,37 @@ export const GroupProjectsView: React.FC<Props> = ({
             )}
 
             {activeTab === 'MEMBERS' && (
-              <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-extrabold text-white text-sm sm:text-base">
+                    <h4 className="font-bold text-[#111827] text-sm sm:text-base">
                       Teammates &amp; Live Study Status
                     </h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[#6B7280]">
                       Set your live check-in status &amp; manage teammates across Web and Android.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowAddMemberModal(true)}
-                    className="aura-pill-btn px-3 py-1.5 bg-emerald-400/20 border border-emerald-400/40 text-emerald-300 text-xs hover:bg-emerald-400/30"
+                    className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
                   >
-                    <UserPlus className="w-3.5 h-3.5 mr-1" />
+                    <UserPlus className="w-3.5 h-3.5" />
                     Add Member
                   </button>
                 </div>
 
-                {/* Live Study Check-In Bar (Feature 3) */}
-                <div className="p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2">
-                  <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                {/* Live Study Check-In Bar */}
+                <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2">
+                  <div className="text-[11px] font-mono font-bold text-[#4B5563] uppercase tracking-wider">
                     My Live Study Check-In Status
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { code: 'FOCUSING', label: '🔥 Focusing' },
-                      { code: 'IN_LIBRARY', label: '📚 In Library' },
-                      { code: 'ON_BREAK', label: '☕ On Break' },
-                      { code: 'READY', label: '✅ Ready to Review' }
+                      { code: 'FOCUSING', label: 'Focusing' },
+                      { code: 'IN_LIBRARY', label: 'In Library' },
+                      { code: 'ON_BREAK', label: 'On Break' },
+                      { code: 'READY', label: 'Ready to Review' }
                     ].map((st) => {
                       const active = (activeProject.memberStatuses?.[currentEmail]?.status || 'FOCUSING') === st.code;
                       return (
@@ -3227,10 +3238,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                           key={st.code}
                           type="button"
                           onClick={() => handleUpdateMyStatus(st.code)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors duration-150 ${
                             active
-                              ? 'bg-cyan-500 text-slate-950'
-                              : 'aura-subtle-surface text-slate-300 hover:text-white'
+                              ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                              : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
                           }`}
                         >
                           {st.label}
@@ -3240,7 +3251,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="divide-y divide-[#E5E7EB] border border-[#E5E7EB] rounded-xl overflow-hidden">
                   {activeProject.memberEmails.map((email) => {
                     const isAdmin = (activeProject.adminEmails || [])
                       .map((e) => e.toLowerCase())
@@ -3252,64 +3263,64 @@ export const GroupProjectsView: React.FC<Props> = ({
                     const rawStatus = activeProject.memberStatuses?.[email.toLowerCase()]?.status;
                     const statusBadge =
                       rawStatus === 'FOCUSING'
-                        ? '🔥 Focusing'
+                        ? 'Focusing'
                         : rawStatus === 'IN_LIBRARY'
-                        ? '📚 In Library'
+                        ? 'In Library'
                         : rawStatus === 'ON_BREAK'
-                        ? '☕ Break'
+                        ? 'Break'
                         : rawStatus === 'READY'
-                        ? '✅ Ready'
+                        ? 'Ready'
                         : null;
 
                     return (
                       <div
                         key={email}
-                        className="p-3 rounded-2xl aura-subtle-surface flex items-center justify-between gap-3"
+                        className="p-3 bg-[#FFFFFF] flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-emerald-400/20 text-emerald-300 flex items-center justify-center font-extrabold text-xs shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] flex items-center justify-center font-bold text-xs shrink-0">
                             {email.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-xs sm:text-sm font-bold text-white truncate">
+                              <span className="text-xs sm:text-sm font-semibold text-[#111827] truncate">
                                 {email}
                               </span>
                               {isMe && (
-                                <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-extrabold">
+                                <span className="px-1.5 py-0.5 rounded font-mono bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-[10px] font-bold">
                                   You
                                 </span>
                               )}
                               {statusBadge && (
-                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                                <span className="px-1.5 py-0.5 rounded font-mono bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-[10px] font-semibold">
                                   {statusBadge}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 text-[11px]">
+                            <div className="flex items-center gap-1.5 text-[11px] font-mono">
                               {isCreator && (
-                                <span className="text-emerald-400 font-extrabold">Creator</span>
+                                <span className="text-[#1E3A8A] font-bold">Creator</span>
                               )}
                               {isAdmin && (
-                                <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                                <span className="text-[#B45309] font-semibold flex items-center gap-0.5">
                                   <Crown className="w-3 h-3 inline" /> Admin
                                 </span>
                               )}
                               {!isAdmin && !isCreator && (
-                                <span className="text-slate-400">Member</span>
+                                <span className="text-[#6B7280]">Member</span>
                               )}
                             </div>
                           </div>
                         </div>
 
                         {isCurrentUserAdmin && !isMe && (
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             {isAdmin ? (
                               <button
                                 type="button"
                                 onClick={() => handleDemoteAdmin(email)}
                                 title="Demote to Member"
-                                className="px-2.5 py-1 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold text-amber-300 hover:bg-white/10"
+                                className="px-2.5 py-1 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-[11px] font-semibold text-[#4B5563] hover:border-[#9CA3AF] transition-colors duration-150"
                               >
                                 Demote
                               </button>
@@ -3318,7 +3329,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                                 type="button"
                                 onClick={() => handlePromoteToAdmin(email)}
                                 title="Promote to Admin"
-                                className="px-2.5 py-1 rounded-xl bg-amber-400/20 border border-amber-400/40 text-[11px] font-bold text-amber-300 hover:bg-amber-400/30"
+                                className="px-2.5 py-1 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] text-[11px] font-semibold text-[#B45309] hover:border-[#B45309] transition-colors duration-150"
                               >
                                 Make Admin
                               </button>
@@ -3327,7 +3338,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                               type="button"
                               onClick={() => handleRemoveMember(email)}
                               title="Remove member"
-                              className="w-7 h-7 rounded-lg aura-subtle-surface flex items-center justify-center text-rose-400 hover:border-rose-400/50"
+                              className="w-7 h-7 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] flex items-center justify-center text-[#DC2626] hover:border-[#DC2626] transition-colors duration-150"
                             >
                               <UserMinus className="w-3.5 h-3.5" />
                             </button>
@@ -3340,17 +3351,17 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
             )}
 
-            {/* Sub-Tab 4: Shared Team Resource Vault (Feature 2) */}
+            {/* Sub-Tab 4: Shared Team Resource Vault */}
             {activeTab === 'RESOURCES' && (
-              <div className="aura-glass rounded-2xl p-4 sm:p-5 space-y-4">
+              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-emerald-400" />
+                    <BookOpen className="w-5 h-5 text-[#1E3A8A]" />
                     <div>
-                      <h4 className="font-bold text-white text-sm sm:text-base">
+                      <h4 className="font-bold text-[#111827] text-sm sm:text-base">
                         Shared Team Vault &amp; Resources
                       </h4>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-[#6B7280]">
                         Lecture slides, past papers, shared Google Docs &amp; research links for {activeProject.teamName}
                       </p>
                     </div>
@@ -3359,7 +3370,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => setShowDocModal(true)}
-                    className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+                    className="px-3 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs flex items-center gap-1.5 transition-colors duration-150"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Add Resource
@@ -3373,10 +3384,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                       key={cat}
                       type="button"
                       onClick={() => setResourceFilter(cat)}
-                      className={`px-3 py-1 rounded-lg font-semibold transition shrink-0 ${
+                      className={`px-3 py-1 rounded-lg font-semibold border transition-colors duration-150 shrink-0 ${
                         resourceFilter === cat
-                          ? 'bg-slate-700 text-white border border-slate-600'
-                          : 'aura-subtle-surface text-slate-400 hover:text-white'
+                          ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                          : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF]'
                       }`}
                     >
                       {cat === 'ALL' ? 'All Resources' : cat.replace('_', ' ')}
@@ -3393,16 +3404,16 @@ export const GroupProjectsView: React.FC<Props> = ({
 
                   if (filtered.length === 0) {
                     return (
-                      <div className="p-8 rounded-2xl bg-white/5 border border-white/5 text-center space-y-2">
-                        <FileText className="w-8 h-8 text-slate-500 mx-auto" />
-                        <div className="text-xs font-bold text-slate-300">No resources found in this category</div>
-                        <p className="text-[11px] text-slate-500">
+                      <div className="p-8 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] text-center space-y-2">
+                        <FileText className="w-8 h-8 text-[#9CA3AF] mx-auto" />
+                        <div className="text-xs font-bold text-[#111827]">No resources found in this category</div>
+                        <p className="text-[11px] text-[#6B7280]">
                           Upload or link slides, PDFs, GitHub repositories, or Google Drive notes for your teammates.
                         </p>
                         <button
                           type="button"
                           onClick={() => setShowDocModal(true)}
-                          className="mt-2 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold inline-flex items-center gap-1"
+                          className="mt-2 px-3 py-1.5 rounded-lg bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] text-xs font-semibold inline-flex items-center gap-1 hover:border-[#1E3A8A] transition-colors duration-150"
                         >
                           <Plus className="w-3.5 h-3.5" /> Add First Resource
                         </button>
@@ -3418,11 +3429,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                         return (
                           <div
                             key={r.id}
-                            className="p-3.5 rounded-xl aura-subtle-surface border hover:border-slate-600 transition space-y-2.5 flex flex-col justify-between"
+                            className="p-3.5 rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] transition-colors duration-150 space-y-2.5 flex flex-col justify-between"
                           >
                             <div className="space-y-1">
                               <div className="flex items-start justify-between gap-2">
-                                <span className="px-2 py-0.5 rounded-md bg-white/10 text-[10px] font-bold text-slate-300 uppercase">
+                                <span className="px-2 py-0.5 rounded font-mono bg-[#F3F4F6] border border-[#E5E7EB] text-[10px] font-semibold text-[#4B5563] uppercase">
                                   {r.category.replace('_', ' ')}
                                 </span>
                                 {canDelete && (
@@ -3430,19 +3441,19 @@ export const GroupProjectsView: React.FC<Props> = ({
                                     type="button"
                                     onClick={() => handleDeleteResource(r.id)}
                                     title="Delete resource"
-                                    className="text-slate-500 hover:text-rose-400 transition"
+                                    className="text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
                                   </button>
                                 )}
                               </div>
-                              <h5 className="font-bold text-xs text-white line-clamp-1">{r.title}</h5>
-                              <p className="text-[10px] text-slate-400 line-clamp-1 break-all font-mono">
+                              <h5 className="font-bold text-xs text-[#111827] line-clamp-1">{r.title}</h5>
+                              <p className="text-[10px] text-[#6B7280] line-clamp-1 break-all font-mono">
                                 {r.linkOrFileName}
                               </p>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] text-slate-400">
+                            <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB] text-[10px] text-[#6B7280]">
                               <span>Added by {r.addedByEmail.split('@')[0]}</span>
                               <div className="flex items-center gap-2">
                                 <button
@@ -3451,7 +3462,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                                     navigator.clipboard.writeText(r.linkOrFileName);
                                     onNotify('Copied resource link!');
                                   }}
-                                  className="text-slate-400 hover:text-white transition flex items-center gap-1"
+                                  className="text-[#4B5563] hover:text-[#111827] transition-colors duration-150 flex items-center gap-1"
                                 >
                                   <Copy className="w-3 h-3" /> Copy
                                 </button>
@@ -3459,7 +3470,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                                   href={r.linkOrFileName.startsWith('http') ? r.linkOrFileName : `https://${r.linkOrFileName}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+                                  className="text-[#1E3A8A] hover:underline flex items-center gap-1 font-semibold"
                                 >
                                   <ExternalLink className="w-3 h-3" /> Open
                                 </a>
@@ -3476,24 +3487,24 @@ export const GroupProjectsView: React.FC<Props> = ({
           </div>
         </div>
       ) : (
-        <div className="aura-glass rounded-3xl p-10 text-center space-y-3">
-          <Users className="w-12 h-12 text-slate-500 mx-auto" />
-          <h3 className="text-base font-extrabold text-white">No Group Projects Yet</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Create your first group project team above or join an existing team with a 4-digit code to start collaborating!
+        <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-10 text-center space-y-3">
+          <Users className="w-10 h-10 text-[#9CA3AF] mx-auto" />
+          <h3 className="text-base font-bold text-[#111827]">No Group Projects Yet</h3>
+          <p className="text-xs text-[#6B7280] max-w-sm mx-auto">
+            Create your first group project team above or join an existing team with a 4-digit code to start collaborating.
           </p>
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
-              className="aura-pill-btn px-4 py-2 aura-subtle-surface text-sky-300 text-xs font-bold"
+              className="px-4 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150"
             >
               Join with Code
             </button>
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="aura-pill-btn px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+              className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
             >
               Create Team Project
             </button>
@@ -3504,19 +3515,19 @@ export const GroupProjectsView: React.FC<Props> = ({
       {/* Image Fullscreen Preview Modal */}
       {previewImageUrl && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/75"
           onClick={() => setPreviewImageUrl(null)}
         >
           <div className="relative max-w-3xl max-h-[90vh]">
             <img
               src={previewImageUrl}
               alt="Enlarged preview"
-              className="rounded-2xl max-h-[85vh] object-contain shadow-2xl"
+              className="rounded-xl max-h-[85vh] object-contain border border-[#E5E7EB] bg-[#FFFFFF]"
             />
             <button
               type="button"
               onClick={() => setPreviewImageUrl(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+              className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-[#111827] flex items-center justify-center hover:border-[#1E3A8A]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -3604,24 +3615,24 @@ export const GroupProjectsView: React.FC<Props> = ({
 
       {/* MODAL: Join Team with Code */}
       {showJoinByCodeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-sky-400/40">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-sky-400" />
-                <h4 className="font-extrabold text-white text-base">Join Team with Code</h4>
+                <KeyRound className="w-5 h-5 text-[#1E3A8A]" />
+                <h4 className="font-bold text-[#111827] text-base">Join Team with Code</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowJoinByCodeModal(false)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
-              Enter the 4-digit Team Code (e.g. <span className="font-mono text-sky-300">GRP-7K9M</span>) or paste the Project ID shared by your team leader:
+            <p className="text-xs text-[#6B7280]">
+              Enter the 4-digit Team Code (e.g. <span className="font-mono text-[#1E3A8A] font-semibold">GRP-7K9M</span>) or paste the Project ID shared by your team leader:
             </p>
 
             <input
@@ -3630,21 +3641,21 @@ export const GroupProjectsView: React.FC<Props> = ({
               onChange={(e) => setJoinCodeInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleJoinByCode()}
               placeholder="e.g. GRP-7K9M or gp_179350000"
-              className="aura-input w-full px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-mono uppercase tracking-wider"
+              className="aura-input w-full px-4 py-2.5 rounded-lg text-xs sm:text-sm font-mono uppercase tracking-wider"
             />
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setShowJoinByCodeModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleJoinByCode}
-                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+                className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
               >
                 Join Team
               </button>
@@ -3685,37 +3696,37 @@ export const GroupProjectsView: React.FC<Props> = ({
 
       {/* MODAL: Add Member by Email */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-emerald-400/40">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h4 className="font-extrabold text-white text-base">Invite Teammate by Email</h4>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+              <h4 className="font-bold text-[#111827] text-base">Invite Teammate by Email</h4>
               <button
                 type="button"
                 onClick={() => setShowAddMemberModal(false)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-xs text-slate-400">
-              Enter your classmate&apos;s email (e.g. <span className="text-emerald-300 font-mono">cbawa83@gmail.com</span>). An invitation record will be written to the Cloud, and you can immediately trigger an email invitation:
+            <p className="text-xs text-[#6B7280]">
+              Enter your classmate&apos;s email (e.g. <span className="text-[#1E3A8A] font-mono">cbawa83@gmail.com</span>). An invitation record will be written to the Cloud, and you can trigger an email invitation immediately.
             </p>
             <input
               type="email"
               id="new_teammate_email_input"
               placeholder="cbawa83@gmail.com"
-              className="aura-input w-full px-4 py-2.5 rounded-2xl text-xs sm:text-sm"
+              className="aura-input w-full px-4 py-2.5 rounded-lg text-xs sm:text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleAddMemberByEmail((e.target as HTMLInputElement).value);
                 }
               }}
             />
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setShowAddMemberModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
               >
                 Cancel
               </button>
@@ -3725,7 +3736,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   const input = document.getElementById('new_teammate_email_input') as HTMLInputElement | null;
                   if (input) handleAddMemberByEmail(input.value);
                 }}
-                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-md transition"
+                className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
               >
                 Invite Teammate
               </button>
@@ -3736,37 +3747,35 @@ export const GroupProjectsView: React.FC<Props> = ({
 
       {/* MODAL: INVITATION SENT CONFIRMATION & EMAIL DISPATCH */}
       {inviteSuccessData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="w-full max-w-lg rounded-3xl aura-glass p-5 sm:p-6 space-y-4 border border-emerald-400/50 shadow-2xl">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-lg rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                <h4 className="font-extrabold text-white text-base sm:text-lg">
-                  Invitation Created &amp; Synced!
+                <CheckCircle2 className="w-5 h-5 text-[#065F46]" />
+                <h4 className="font-bold text-[#111827] text-base sm:text-lg">
+                  Invitation Created &amp; Synced
                 </h4>
               </div>
               <button
                 type="button"
                 onClick={() => setInviteSuccessData(null)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-400/30 text-xs text-slate-200 space-y-1.5">
-              <div className="font-extrabold text-emerald-300 flex items-center gap-1.5">
-                <span>Saved to Firestore Cloud</span>
-              </div>
+            <div className="p-3.5 rounded-lg bg-[#ECFDF5] border border-[#A7F3D0] text-xs text-[#065F46] space-y-1">
+              <div className="font-bold">Saved to Firestore Cloud</div>
               <p className="leading-relaxed">
-                <strong className="text-white">{inviteSuccessData.inviteeEmail}</strong> has been added to{' '}
-                <strong className="text-white">{inviteSuccessData.teamName}</strong>. As soon as they log into AURA with their email, a prominent invitation banner will greet them to join the group!
+                <strong>{inviteSuccessData.inviteeEmail}</strong> has been added to{' '}
+                <strong>{inviteSuccessData.teamName}</strong>. As soon as they log into AURA with their email, an invitation banner will greet them to join the group.
               </p>
             </div>
 
             <div className="space-y-2 text-xs">
-              <p className="font-bold text-slate-300">
-                To guarantee they receive the invitation right now in their inbox or messages, choose an action:
+              <p className="font-semibold text-[#374151]">
+                Share the invitation directly via email or link:
               </p>
 
               {(() => {
@@ -3788,10 +3797,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                     href={mailtoHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full py-2.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition"
+                    className="w-full py-2.5 px-4 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors duration-150"
                   >
                     <Mail className="w-4 h-4" />
-                    <span>Send Email to {inviteSuccessData.inviteeEmail} (Open Mail App)</span>
+                    <span>Send Email to {inviteSuccessData.inviteeEmail}</span>
                   </a>
                 );
               })()}
@@ -3808,9 +3817,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                     navigator.clipboard.writeText(link);
                     onNotify('Copied 1-Click Join Link to clipboard!');
                   }}
-                  className="py-2 px-3 rounded-xl aura-subtle-surface text-slate-200 hover:border-sky-400 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                  className="py-2 px-3 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
-                  <Copy className="w-3.5 h-3.5 text-sky-400" />
+                  <Copy className="w-3.5 h-3.5 text-[#1E3A8A]" />
                   Copy 1-Click Link
                 </button>
 
@@ -3820,19 +3829,19 @@ export const GroupProjectsView: React.FC<Props> = ({
                     navigator.clipboard.writeText(inviteSuccessData.joinCode);
                     onNotify(`Copied Team Code ${inviteSuccessData.joinCode}!`);
                   }}
-                  className="py-2 px-3 rounded-xl aura-subtle-surface text-slate-200 hover:border-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                  className="py-2 px-3 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
                 >
-                  <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
-                  Copy Team Code ({inviteSuccessData.joinCode})
+                  <KeyRound className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                  Copy Code ({inviteSuccessData.joinCode})
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-white/10">
+            <div className="flex justify-end pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setInviteSuccessData(null)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition"
+                className="px-4 py-2 rounded-lg bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#111827] text-xs font-semibold transition-colors duration-150"
               >
                 Close &amp; Continue
               </button>
@@ -3843,33 +3852,33 @@ export const GroupProjectsView: React.FC<Props> = ({
 
       {/* MODAL: Assign Task / Deliverable */}
       {showAddTaskModal && activeProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-emerald-400/30">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <h4 className="font-extrabold text-white text-base">Assign Team Deliverable</h4>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+              <h4 className="font-bold text-[#111827] text-base">Assign Team Deliverable</h4>
               <button
                 type="button"
                 onClick={() => setShowAddTaskModal(false)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-bold text-slate-300 uppercase">Deliverable Name</label>
+                <label className="text-[11px] font-semibold text-[#374151] uppercase">Deliverable Name</label>
                 <input
                   type="text"
                   id="task_name_input"
                   placeholder="e.g. System Architecture Diagram &amp; Benchmarks"
-                  className="aura-input w-full px-4 py-2 rounded-xl text-xs mt-1"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg text-xs mt-1"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-slate-300 uppercase">Assignee Member</label>
+                <label className="text-[11px] font-semibold text-[#374151] uppercase">Assignee Member</label>
                 <select
                   id="task_assignee_input"
-                  className="aura-input w-full px-4 py-2 rounded-xl text-xs mt-1 bg-slate-900 border-white/15"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg text-xs mt-1"
                 >
                   {activeProject.memberEmails.map((email) => (
                     <option key={email} value={email}>
@@ -3879,11 +3888,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                 </select>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setShowAddTaskModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
               >
                 Cancel
               </button>
@@ -3925,7 +3934,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     onNotify(`Added deliverable '${newTask.taskTitle}'!`);
                   }
                 }}
-                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+                className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
               >
                 Create Task
               </button>
@@ -3936,17 +3945,17 @@ export const GroupProjectsView: React.FC<Props> = ({
 
       {/* Modal: Create Team Poll */}
       {showPollModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl aura-glass p-5 space-y-4 border border-sky-400/40">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-sky-400" />
-                <h4 className="font-extrabold text-white text-base">Create Team Meeting Poll</h4>
+                <BarChart3 className="w-5 h-5 text-[#1E3A8A]" />
+                <h4 className="font-bold text-[#111827] text-base">Create Team Meeting Poll</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPollModal(false)}
-                className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -3954,59 +3963,59 @@ export const GroupProjectsView: React.FC<Props> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-slate-300 uppercase">Poll Question</label>
+                <label className="font-semibold text-[#374151] uppercase text-[11px]">Poll Question</label>
                 <input
                   type="text"
                   value={pollQuestionInput}
                   onChange={(e) => setPollQuestionInput(e.target.value)}
                   placeholder="e.g. When should we hold our rehearsal sprint?"
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 uppercase">Option 1</label>
+                <label className="font-semibold text-[#374151] uppercase text-[11px]">Option 1</label>
                 <input
                   type="text"
                   value={pollOpt1}
                   onChange={(e) => setPollOpt1(e.target.value)}
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 uppercase">Option 2</label>
+                <label className="font-semibold text-[#374151] uppercase text-[11px]">Option 2</label>
                 <input
                   type="text"
                   value={pollOpt2}
                   onChange={(e) => setPollOpt2(e.target.value)}
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-slate-300 uppercase">Option 3 (Optional)</label>
+                <label className="font-semibold text-[#374151] uppercase text-[11px]">Option 3 (Optional)</label>
                 <input
                   type="text"
                   value={pollOpt3}
                   onChange={(e) => setPollOpt3(e.target.value)}
-                  className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setShowPollModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-bold text-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSendPoll}
-                className="aura-pill-btn px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+                className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
               >
                 Post Poll to Chat
               </button>
@@ -4015,20 +4024,19 @@ export const GroupProjectsView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Modal: Share Resource / Slide Link */}
-      {/* Modal: Add Resource to Team Vault (Feature 2) */}
+      {/* Modal: Add Resource to Team Vault */}
       {showDocModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl aura-glass p-5 space-y-4 border border-slate-700">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+          <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-emerald-400" />
-                <h4 className="font-bold text-white text-sm">Add to Team Resource Vault</h4>
+                <BookOpen className="w-4 h-4 text-[#1E3A8A]" />
+                <h4 className="font-bold text-[#111827] text-sm">Add to Team Resource Vault</h4>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDocModal(false)}
-                className="w-7 h-7 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+                className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -4036,7 +4044,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
                   Resource Title
                 </label>
                 <input
@@ -4044,12 +4052,12 @@ export const GroupProjectsView: React.FC<Props> = ({
                   value={newResourceTitle}
                   onChange={(e) => setNewResourceTitle(e.target.value)}
                   placeholder="e.g. Lecture 4 Slides - Dynamic Programming"
-                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs"
                 />
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
                   Resource Category
                 </label>
                 <select
@@ -4059,7 +4067,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       e.target.value as 'SLIDES' | 'DOCUMENT' | 'RESEARCH_LINK' | 'PAST_PAPER'
                     )
                   }
-                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs font-semibold bg-slate-900"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs font-semibold"
                 >
                   <option value="SLIDES">Lecture Slides</option>
                   <option value="DOCUMENT">Document / Notes / Summary</option>
@@ -4069,7 +4077,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
 
               <div>
-                <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+                <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
                   Link (Google Drive, GitHub, PDF, Notion)
                 </label>
                 <input
@@ -4077,16 +4085,16 @@ export const GroupProjectsView: React.FC<Props> = ({
                   value={newResourceUrl}
                   onChange={(e) => setNewResourceUrl(e.target.value)}
                   placeholder="https://drive.google.com/... or https://github.com/..."
-                  className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs font-mono"
+                  className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs font-mono"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setShowDocModal(false)}
-                className="px-3 py-1.5 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
               >
                 Cancel
               </button>
@@ -4094,7 +4102,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                 type="button"
                 onClick={handleAddResource}
                 disabled={!newResourceTitle.trim() || !newResourceUrl.trim()}
-                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-xs font-bold transition"
+                className="px-4 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] disabled:opacity-50 text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
               >
                 Save to Vault
               </button>
@@ -4144,12 +4152,10 @@ const VoiceNotePlayer: React.FC<{
     }
   };
 
-  const progress = durationSec > 0 ? Math.min(100, (currentTime / durationSec) * 100) : 0;
-
   return (
     <div
-      className={`p-2.5 rounded-2xl flex items-center gap-3 mt-1 min-w-[200px] sm:min-w-[240px] ${
-        isMe ? 'bg-black/25 border border-white/20' : 'bg-black/30 border border-white/10'
+      className={`p-2.5 rounded-lg flex items-center gap-3 mt-1 min-w-[200px] sm:min-w-[240px] border ${
+        isMe ? 'bg-white/10 border-white/20' : 'bg-[#FFFFFF] border-[#E5E7EB]'
       }`}
     >
       <audio ref={audioRef} src={audioUrl} preload="metadata" />
@@ -4157,7 +4163,11 @@ const VoiceNotePlayer: React.FC<{
       <button
         type="button"
         onClick={togglePlay}
-        className="w-8 h-8 rounded-full bg-emerald-400 text-slate-950 flex items-center justify-center shrink-0 hover:scale-105 active:scale-95 transition shadow-md"
+        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors duration-150 ${
+          isMe
+            ? 'bg-[#FFFFFF] text-[#1E3A8A]'
+            : 'bg-[#1E3A8A] text-[#FFFFFF]'
+        }`}
       >
         {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
       </button>
@@ -4167,18 +4177,21 @@ const VoiceNotePlayer: React.FC<{
           {[4, 10, 16, 8, 14, 6, 12, 16, 8, 14, 10, 4].map((h, i) => (
             <span
               key={i}
-              className={`w-1 rounded-full transition-all duration-200 ${
-                isPlaying ? 'bg-emerald-300 aura-sound-bar' : 'bg-white/40'
+              className={`w-1 rounded-full transition-colors duration-150 ${
+                isMe
+                  ? isPlaying
+                    ? 'bg-[#FFFFFF]'
+                    : 'bg-white/50'
+                  : isPlaying
+                  ? 'bg-[#1E3A8A]'
+                  : 'bg-[#D1D5DB]'
               }`}
-              style={{
-                height: `${h}px`,
-                animationDelay: `${(i % 4) * 0.15}s`
-              }}
+              style={{ height: `${h}px` }}
             />
           ))}
         </div>
 
-        <div className="flex items-center justify-between text-[10px] text-slate-300 font-mono">
+        <div className={`flex items-center justify-between text-[10px] font-mono ${isMe ? 'text-white/80' : 'text-[#6B7280]'}`}>
           <span>
             {Math.floor(currentTime / 60)}:
             {Math.floor(currentTime % 60)
@@ -4208,20 +4221,19 @@ const CreateTeamModal: React.FC<{
   const [teamName, setTeamName] = useState('Team Alpha');
   const [title, setTitle] = useState('');
   const [target, setTarget] = useState('Grade A / 95% on Demo & Report');
-  const [emoji, setEmoji] = useState('🚀');
-  const [colorHex, setColorHex] = useState('#10B981');
+  const [colorHex, setColorHex] = useState('#1E3A8A');
   const [memberEmailsInput, setMemberEmailsInput] = useState('');
   const [daysDue, setDaysDue] = useState('14');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-3xl aura-glass p-5 space-y-4 border border-emerald-400/30 max-h-[90vh] overflow-y-auto no-scrollbar">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10">
-          <h4 className="font-extrabold text-white text-base">Create Group Project Team</h4>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+      <div className="w-full max-w-lg rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4 max-h-[90vh] overflow-y-auto no-scrollbar">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+          <h4 className="font-bold text-[#111827] text-base">Create Group Project Team</h4>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+            className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -4229,72 +4241,72 @@ const CreateTeamModal: React.FC<{
 
         <div className="space-y-3 text-xs">
           <div>
-            <label className="font-bold text-slate-300 uppercase">Course Code</label>
+            <label className="font-semibold text-[#374151] uppercase text-[11px]">Course Code</label>
             <input
               type="text"
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value)}
               placeholder="e.g. CS301"
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 font-mono"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Team / Group Name</label>
+            <label className="font-semibold text-[#374151] uppercase text-[11px]">Team / Group Name</label>
             <input
               type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
               placeholder="e.g. Team AURA Distributed"
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Assignment / Project Title</label>
+            <label className="font-semibold text-[#374151] uppercase text-[11px]">Assignment / Project Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Distributed Consensus Engine"
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-300 uppercase">Group Target Goal</label>
+            <label className="font-semibold text-[#374151] uppercase text-[11px]">Group Target Goal</label>
             <input
               type="text"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               placeholder="e.g. Achieve 95%+ / Grade A / Finalist"
-              className="aura-input w-full px-4 py-2 rounded-xl mt-1"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1"
             />
           </div>
 
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Team Monogram Badge
             </label>
             <div className="flex items-center gap-2 mt-1.5">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm border"
+                className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-sm border"
                 style={{
-                  backgroundColor: `${colorHex}15`,
-                  borderColor: `${colorHex}40`,
+                  backgroundColor: `${colorHex}12`,
+                  borderColor: `${colorHex}45`,
                   color: colorHex
                 }}
               >
                 {courseCode.slice(0, 3).toUpperCase() || 'GRP'}
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-[#6B7280]">
                 Monogram auto-generated from Course Code
               </span>
             </div>
           </div>
 
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Theme Accent Color
             </label>
             <div className="flex items-center gap-2 mt-1.5">
@@ -4303,8 +4315,8 @@ const CreateTeamModal: React.FC<{
                   key={hex}
                   type="button"
                   onClick={() => setColorHex(hex)}
-                  className={`w-7 h-7 rounded-full border transition ${
-                    colorHex === hex ? 'scale-125 border-white shadow-sm' : 'border-white/20'
+                  className={`w-7 h-7 rounded-full border-2 transition-colors duration-150 ${
+                    colorHex === hex ? 'border-[#111827]' : 'border-transparent'
                   }`}
                   style={{ backgroundColor: hex }}
                 />
@@ -4313,7 +4325,7 @@ const CreateTeamModal: React.FC<{
           </div>
 
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Invite Members by Email (comma-separated)
             </label>
             <input
@@ -4321,12 +4333,12 @@ const CreateTeamModal: React.FC<{
               value={memberEmailsInput}
               onChange={(e) => setMemberEmailsInput(e.target.value)}
               placeholder="cbawa83@gmail.com, alex@university.edu"
-              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs"
             />
           </div>
 
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Days Until Submission
             </label>
             <input
@@ -4334,16 +4346,16 @@ const CreateTeamModal: React.FC<{
               min="1"
               value={daysDue}
               onChange={(e) => setDaysDue(e.target.value)}
-              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs font-mono"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <div className="flex justify-end gap-2 pt-3 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-2 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
+            className="px-3.5 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
           >
             Cancel
           </button>
@@ -4375,7 +4387,7 @@ const CreateTeamModal: React.FC<{
               };
               onCreate(newProj);
             }}
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-sm"
+            className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
           >
             Create Team Workspace
           </button>
@@ -4394,17 +4406,17 @@ const GroupSettingsModal: React.FC<{
   const [teamName, setTeamName] = useState(project.teamName);
   const [title, setTitle] = useState(project.projectTitle);
   const [target, setTarget] = useState(project.groupTarget);
-  const [colorHex, setColorHex] = useState(project.avatarColorHex);
+  const [colorHex, setColorHex] = useState(project.avatarColorHex || '#1E3A8A');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-2xl aura-glass p-5 space-y-4 border border-slate-700">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10">
-          <h4 className="font-bold text-white text-base">Group Admin Settings</h4>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
+      <div className="w-full max-w-md rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-5 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+          <h4 className="font-bold text-[#111827] text-base">Group Admin Settings</h4>
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg aura-subtle-surface flex items-center justify-center text-slate-400 hover:text-white"
+            className="w-7 h-7 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-center text-[#6B7280] hover:text-[#111827]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -4412,40 +4424,40 @@ const GroupSettingsModal: React.FC<{
 
         <div className="space-y-3 text-xs">
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Team Name
             </label>
             <input
               type="text"
               value={teamName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTeamName(e.target.value)}
-              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Project Title
             </label>
             <input
               type="text"
               value={title}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
-              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Target Goal
             </label>
             <input
               type="text"
               value={target}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTarget(e.target.value)}
-              className="aura-input w-full px-3.5 py-2 rounded-xl mt-1 text-xs"
+              className="aura-input w-full px-3.5 py-2 rounded-lg mt-1 text-xs"
             />
           </div>
           <div>
-            <label className="font-semibold text-slate-300 uppercase tracking-wider text-[11px]">
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Theme Accent Color
             </label>
             <div className="flex items-center gap-2 mt-1.5">
@@ -4454,8 +4466,8 @@ const GroupSettingsModal: React.FC<{
                   key={hex}
                   type="button"
                   onClick={() => setColorHex(hex)}
-                  className={`w-7 h-7 rounded-full border transition ${
-                    colorHex === hex ? 'scale-125 border-white shadow-sm' : 'border-white/20'
+                  className={`w-7 h-7 rounded-full border-2 transition-colors duration-150 ${
+                    colorHex === hex ? 'border-[#111827]' : 'border-transparent'
                   }`}
                   style={{ backgroundColor: hex }}
                 />
@@ -4464,11 +4476,11 @@ const GroupSettingsModal: React.FC<{
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+        <div className="flex justify-end gap-2 pt-3 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-2 rounded-xl aura-subtle-surface text-xs font-semibold text-slate-300"
+            className="px-3.5 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] text-xs font-semibold text-[#4B5563]"
           >
             Cancel
           </button>
@@ -4483,7 +4495,7 @@ const GroupSettingsModal: React.FC<{
                 avatarColorHex: colorHex
               });
             }}
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-sm"
+            className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
           >
             Save Changes
           </button>

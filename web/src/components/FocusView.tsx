@@ -5,10 +5,10 @@ import {
   Play,
   RotateCcw,
   Sliders,
-  Sparkles,
   Volume2,
   VolumeX,
-  Plus
+  Plus,
+  Flame
 } from 'lucide-react';
 import type { AuraLocalVault } from '../types';
 import { uidGen } from '../storage';
@@ -27,23 +27,20 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(vault.courses[0]?.code || 'CS301');
 
-  // Custom H : M : S modal
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [customHours, setCustomHours] = useState('0');
   const [customMinutes, setCustomMinutes] = useState('45');
   const [customSecs, setCustomSecs] = useState('0');
 
-  // Distraction scratchpad
   const [distractionInput, setDistractionInput] = useState('');
 
-  // Web Audio Synthesizer
   const [soundMode, setSoundMode] = useState<SoundMode>('OFF');
   const audioCtxRef = useRef<AudioContext | null>(null);
   const cleanupSoundRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!isRunning) {
-      document.title = 'AURA • Academic Companion & Live Study Stage';
+      document.title = 'AURA • Academic Workspace';
       return;
     }
     const timer = window.setInterval(() => {
@@ -91,7 +88,9 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     setSoundMode(mode);
     if (mode === 'OFF') return;
 
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return;
     if (!audioCtxRef.current) {
       audioCtxRef.current = new Ctx();
@@ -108,7 +107,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       const gain = ctx.createGain();
       gain.gain.value = 0.04;
       left.frequency.value = 200;
-      right.frequency.value = 240; // 40Hz Binaural Gamma Focus beat
+      right.frequency.value = 240;
       left.connect(merger, 0, 0);
       right.connect(merger, 0, 1);
       merger.connect(gain);
@@ -127,7 +126,6 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       return;
     }
 
-    // Synthesized Brown Noise or Soft Rain using buffered noise + lowpass filter
     const bufferSize = ctx.sampleRate * 2;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = buffer.getChannelData(0);
@@ -207,10 +205,10 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   }, [vault.focusSessions]);
 
   const scholarRank = useMemo(() => {
-    if (totalLoggedMins >= 900) return { title: "👑 Aura Dean's Scholar", color: "text-purple-400 bg-purple-500/15 border-purple-500/30" };
-    if (totalLoggedMins >= 300) return { title: "🏆 Master Scholar", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" };
-    if (totalLoggedMins >= 60) return { title: "⚡ Focused Scholar", color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" };
-    return { title: "🌱 Novice Scholar", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
+    if (totalLoggedMins >= 900) return "Dean's Fellow";
+    if (totalLoggedMins >= 300) return 'Senior Scholar';
+    if (totalLoggedMins >= 60) return 'Focused Scholar';
+    return 'Initiated Scholar';
   }, [totalLoggedMins]);
 
   const addDistraction = () => {
@@ -244,19 +242,19 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   return (
     <div className="space-y-4">
-      <div className="aura-glass rounded-xl p-6 text-center space-y-5 border border-slate-800">
+      <div className="aura-glass rounded-lg p-5 text-center space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 inline-flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> DEEP FOCUS SANCTUARY
+          <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] inline-flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5" /> Deep Focus Timer
           </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-flex items-center gap-1">
-              🔥 {scholarStreakDays}d Streak
+          <div className="flex items-center gap-2 flex-wrap font-mono text-[11px]">
+            <span className="px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-semibold">
+              {scholarStreakDays}d Streak
             </span>
-            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border inline-flex items-center gap-1 ${scholarRank.color}`}>
-              {scholarRank.title}
+            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-semibold">
+              {scholarRank}
             </span>
-            <span className="text-xs text-emerald-400 font-mono font-bold">
+            <span className="px-2 py-0.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-bold">
               {(totalLoggedMins / 60).toFixed(1)}h Logged
             </span>
           </div>
@@ -267,11 +265,11 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-3.5 py-1.5 rounded-lg aura-input text-xs font-bold"
+            className="px-3 py-1.5 rounded-md aura-input text-xs font-semibold"
           >
             {vault.courses.map((c) => (
               <option key={c.id} value={c.code}>
-                {c.code} • {c.name}
+                {c.code} · {c.name}
               </option>
             ))}
             <option value="GENERAL">GENERAL STUDY</option>
@@ -279,39 +277,39 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
           <button
             onClick={() => setShowCustomModal(true)}
-            className="px-3 py-1.5 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-400 text-xs font-semibold inline-flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
           >
-            <Sliders className="w-3.5 h-3.5" /> Any Custom Time (10s – 12h)
+            <Sliders className="w-3.5 h-3.5 text-[#1E3A8A]" /> Custom Duration (10s – 12h)
           </button>
         </div>
 
         {/* Circular Progress Dial */}
-        <div className="relative w-60 h-60 mx-auto flex items-center justify-center">
+        <div className="relative w-56 h-56 mx-auto flex items-center justify-center">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 240 240">
             <circle
               cx="120"
               cy="120"
               r="104"
               fill="none"
-              stroke="#1E293B"
-              strokeWidth="12"
+              stroke="#E5E7EB"
+              strokeWidth="10"
             />
             <circle
               cx="120"
               cy="120"
               r="104"
               fill="none"
-              stroke="#06B6D4"
-              strokeWidth="12"
-              strokeLinecap="round"
+              stroke="#1E3A8A"
+              strokeWidth="10"
+              strokeLinecap="butt"
               strokeDasharray={circumference}
               strokeDashoffset={circumference * (1 - progress)}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-4xl font-mono font-bold tracking-tight">{formatted}</div>
-            <div className="text-[11px] uppercase tracking-widest text-slate-400 mt-1">
-              {isRunning ? 'Locked In' : 'Ready to Sprint'}
+            <div className="text-4xl font-mono font-bold tracking-tight text-[#111827]">{formatted}</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-[#6B7280] mt-1">
+              {isRunning ? 'Session Active' : 'Ready'}
             </div>
           </div>
         </div>
@@ -328,10 +326,10 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={label}
               onClick={() => setPresetSeconds(sec as number)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+              className={`px-3.5 py-1.5 rounded-md font-mono text-xs font-semibold border transition-colors duration-150 ${
                 totalSeconds === sec
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                  : 'aura-subtle-surface text-slate-300 hover:border-slate-600'
+                  ? 'bg-[#1E3A8A] text-[#FFFFFF] border-[#1E3A8A]'
+                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF] hover:text-[#111827]'
               }`}
             >
               {label}
@@ -340,20 +338,20 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
         </div>
 
         {/* Play / Pause / Reset */}
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-2.5">
           <button
             onClick={() => setIsRunning((r) => !r)}
-            className="px-7 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm inline-flex items-center gap-2 transition"
+            className="px-6 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors duration-150"
           >
             {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {isRunning ? 'Pause Focus' : 'Start Focus'}
+            {isRunning ? 'Pause Session' : 'Start Focus'}
           </button>
           <button
             onClick={() => {
               setIsRunning(false);
               setRemainingSeconds(totalSeconds);
             }}
-            className="p-2.5 rounded-lg aura-subtle-surface hover:border-slate-600 text-slate-200 transition"
+            className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#4B5563] hover:text-[#111827] transition-colors duration-150"
             title="Reset Timer"
           >
             <RotateCcw className="w-4 h-4" />
@@ -361,16 +359,16 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
         </div>
       </div>
 
-      {/* Zero-Cost Synthesized Focus Soundscapes */}
-      <div className="aura-glass rounded-xl p-4 space-y-3">
+      {/* Acoustic Focus Soundscapes */}
+      <div className="aura-glass rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
-            <Headphones className="w-4 h-4" /> ACOUSTIC FOCUS SOUNDSCAPES (OFFLINE SYNTH)
+          <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
+            <Headphones className="w-4 h-4 text-[#1E3A8A]" /> Acoustic Focus Synthesis
           </div>
           {soundMode !== 'OFF' ? (
-            <Volume2 className="w-4 h-4 text-emerald-400" />
+            <Volume2 className="w-4 h-4 text-[#1E3A8A]" />
           ) : (
-            <VolumeX className="w-4 h-4 text-slate-500" />
+            <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -385,10 +383,10 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={mode}
               onClick={() => applySoundscape(mode)}
-              className={`py-2 px-3 rounded-lg text-xs font-semibold border transition ${
+              className={`py-2 px-3 rounded-md text-xs font-semibold border transition-colors duration-150 ${
                 soundMode === mode
-                  ? 'bg-cyan-500/15 border-cyan-500 text-cyan-300'
-                  : 'aura-subtle-surface text-slate-400 hover:text-slate-200'
+                  ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
+                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
               }`}
             >
               {label}
@@ -398,38 +396,38 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       </div>
 
       {/* Distraction Parking Pad */}
-      <div className="aura-glass rounded-xl p-4 space-y-3">
-        <div className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-          Distraction Parking Pad (Capture Thoughts &amp; Keep Studying)
+      <div className="aura-glass rounded-lg p-4 space-y-3">
+        <div className="font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider">
+          Distraction Scratchpad
         </div>
         <div className="flex gap-2">
           <input
             value={distractionInput}
             onChange={(e) => setDistractionInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
-            placeholder="Park an intrusive thought or to-do here..."
-            className="flex-1 px-3.5 py-2.5 rounded-lg aura-input text-xs"
+            placeholder="Capture a thought without breaking focus..."
+            className="flex-1 px-3 py-2 rounded-md aura-input text-xs"
           />
           <button
             onClick={addDistraction}
-            className="px-3.5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold inline-flex items-center gap-1 transition"
+            className="px-3.5 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
           >
-            <Plus className="w-3.5 h-3.5" /> Park
+            <Plus className="w-3.5 h-3.5" /> Capture
           </button>
         </div>
         {vault.distractions.length > 0 && (
-          <div className="space-y-1.5">
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-md divide-y divide-[#E5E7EB]">
             {vault.distractions.map((item, idx) => (
               <div
                 key={`${item}_${idx}`}
-                className="p-2.5 rounded-lg aura-subtle-surface flex items-center justify-between gap-2 text-xs"
+                className="px-3 py-2 flex items-center justify-between gap-2 text-xs text-[#111827]"
               >
                 <span className="truncate">{item}</span>
                 <button
                   onClick={() => promoteDistractionToNote(item, idx)}
-                  className="text-[11px] font-semibold text-cyan-400 shrink-0 hover:underline"
+                  className="text-[11px] font-semibold text-[#1E3A8A] shrink-0 hover:underline"
                 >
-                  Save to Notes
+                  Move to Notes
                 </button>
               </div>
             ))}
@@ -441,44 +439,44 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       <AuraModal
         open={showCustomModal}
         onClose={() => setShowCustomModal(false)}
-        badge="CUSTOM SPRINT CLOCK"
-        title="Set Any Custom Focus Time"
-        subtitle="Choose any duration from 10 seconds up to 12 hours."
+        badge="Timer Configuration"
+        title="Set Custom Focus Duration"
+        subtitle="Specify any interval from 10 seconds to 12 hours."
         accentColor="sky"
         maxWidthClass="max-w-sm"
       >
         <div className="grid grid-cols-3 gap-2">
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Hours (0–12)</label>
+            <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Hours (0–12)</label>
             <input
               type="number"
               min={0}
               max={12}
               value={customHours}
               onChange={(e) => setCustomHours(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2 rounded-md aura-input text-center font-mono font-bold text-xs"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Mins (0–59)</label>
+            <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Mins (0–59)</label>
             <input
               type="number"
               min={0}
               max={59}
               value={customMinutes}
               onChange={(e) => setCustomMinutes(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2 rounded-md aura-input text-center font-mono font-bold text-xs"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-400">Secs (0–59)</label>
+            <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Secs (0–59)</label>
             <input
               type="number"
               min={0}
               max={59}
               value={customSecs}
               onChange={(e) => setCustomSecs(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-lg aura-input text-center font-mono font-bold"
+              className="w-full px-3 py-2 rounded-md aura-input text-center font-mono font-bold text-xs"
             />
           </div>
         </div>
@@ -486,16 +484,16 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           <button
             type="button"
             onClick={() => setShowCustomModal(false)}
-            className="flex-1 py-2.5 rounded-lg aura-subtle-surface text-xs font-semibold"
+            className="flex-1 py-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] text-xs font-semibold text-[#4B5563]"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={applyCustomDuration}
-            className="flex-1 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold"
+            className="flex-1 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold"
           >
-            Apply Time
+            Apply Duration
           </button>
         </div>
       </AuraModal>

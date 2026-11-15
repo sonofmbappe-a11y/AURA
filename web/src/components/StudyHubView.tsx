@@ -24,33 +24,28 @@ type SubTab = 'NOTES' | 'FLASHCARDS' | 'QUIZ_SIM' | 'EXAMS' | 'SLIDE_PARSER';
 export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   const [subTab, setSubTab] = useState<SubTab>('NOTES');
 
-  // Notes state
   const [noteCourse, setNoteCourse] = useState(vault.courses[0]?.code || 'CS301');
   const [noteTitle, setNoteTitle] = useState('');
   const [noteCategory, setNoteCategory] = useState('Lecture');
   const [noteContent, setNoteContent] = useState('');
 
-  // Flashcards state
   const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [newCardCourse, setNewCardCourse] = useState(vault.courses[0]?.code || 'CS301');
   const [newCardQ, setNewCardQ] = useState('');
   const [newCardA, setNewCardA] = useState('');
 
-  // Exam Simulator state
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizStep, setQuizStep] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
 
-  // Assessments / Exams state
   const [examTitle, setExamTitle] = useState('');
   const [examCourse, setExamCourse] = useState(vault.courses[0]?.code || 'CS301');
   const [examType, setExamType] = useState<'EXAM' | 'ASSIGNMENT' | 'QUIZ'>('EXAM');
   const [examDate, setExamDate] = useState('');
   const [examVenue, setExamVenue] = useState('');
 
-  // $0 Client-Side Slide / Text Extractor state
   const [rawSlideText, setRawSlideText] = useState('');
   const [slideCourse, setSlideCourse] = useState(vault.courses[0]?.code || 'CS301');
   const [extractSummaryMsg, setExtractSummaryMsg] = useState('');
@@ -99,7 +94,6 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     setNewCardA('');
   };
 
-  // Genuine SuperMemo-2 (SM-2) review calculation ($0 offline algorithm)
   const rateCurrentCard = (quality: 1 | 3 | 4 | 5) => {
     const activeCard = vault.flashcards[cardIndex];
     if (!activeCard) return;
@@ -162,11 +156,6 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     setRawSlideText(text.slice(0, 25000));
   };
 
-  /**
-   * 100% Client-Side Heuristic Extractor ($0 API Cost — never calls Gemini or any external server).
-   * Parses "Term: Definition" / "Term - Definition" / "Q: ... A: ..." into SM-2 Flashcards
-   * and compiles key bullet points & formulas into a structured Study Note!
-   */
   const extractNotesAndCardsLocally = () => {
     const lines = rawSlideText
       .split(/\r?\n/)
@@ -219,7 +208,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     }));
 
     setExtractSummaryMsg(
-      `Extracted 1 structured Study Note + ${extractedCards.length} SM-2 Flashcards locally on your browser ($0 API cost)!`
+      `Extracted 1 Study Note and ${extractedCards.length} SM-2 Flashcards locally.`
     );
     setRawSlideText('');
   };
@@ -260,16 +249,16 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   const scholarRank = useMemo(() => {
     const totalMins = vault.focusSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
-    if (totalMins >= 900) return { title: "👑 Aura Dean's Scholar", color: "text-purple-400 bg-purple-500/15 border-purple-500/30" };
-    if (totalMins >= 300) return { title: "🏆 Master Scholar", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" };
-    if (totalMins >= 60) return { title: "⚡ Focused Scholar", color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" };
-    return { title: "🌱 Novice Scholar", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
+    if (totalMins >= 900) return "Dean's Fellow";
+    if (totalMins >= 300) return 'Senior Scholar';
+    if (totalMins >= 60) return 'Focused Scholar';
+    return 'Initiated Scholar';
   }, [vault.focusSessions]);
 
   return (
     <div className="space-y-4">
-      {/* Sub-navigation & Scholar Status Badges */}
-      <div className="flex items-center justify-between flex-wrap gap-2 pb-1">
+      {/* Sub-navigation & Scholar Telemetry */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
           {(
             [
@@ -283,43 +272,43 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={id}
               onClick={() => setSubTab(id)}
-              className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition ${
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap border transition-colors duration-150 ${
                 subTab === id
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                  : 'aura-glass border-slate-800 text-slate-300 hover:text-white'
+                  ? 'bg-[#1E3A8A] text-[#FFFFFF] border-[#1E3A8A]'
+                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
               }`}
             >
               {label}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-flex items-center gap-1">
-            🔥 {scholarStreakDays}d Streak
+        <div className="flex items-center gap-1.5 font-mono text-[11px]">
+          <span className="px-2 py-1 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-semibold">
+            {scholarStreakDays}d Streak
           </span>
-          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border inline-flex items-center gap-1 ${scholarRank.color}`}>
-            {scholarRank.title}
+          <span className="px-2 py-1 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-semibold">
+            {scholarRank}
           </span>
         </div>
       </div>
 
       {subTab === 'NOTES' && (
-        <div className="space-y-4">
-          <div className="aura-glass rounded-xl p-4 space-y-3 border border-slate-800">
-            <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-              <FileText className="w-4 h-4" /> ADD STUDY NOTE OR FORMULA SHEET
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-5 aura-glass rounded-lg p-4 space-y-3 h-fit">
+            <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+              <FileText className="w-4 h-4" /> New Study Note
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
                 value={noteCourse}
                 onChange={(e) => setNoteCourse(e.target.value)}
-                placeholder="Course (e.g. CS301)"
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
+                placeholder="Course (CS301)"
+                className="px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase"
               />
               <select
                 value={noteCategory}
                 onChange={(e) => setNoteCategory(e.target.value)}
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
+                className="px-3 py-2 rounded-md aura-input text-xs font-semibold"
               >
                 <option value="Lecture">Lecture</option>
                 <option value="Formula">Formula</option>
@@ -331,34 +320,34 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={noteTitle}
               onChange={(e) => setNoteTitle(e.target.value)}
               placeholder="Note Title (e.g. Laplace Transform Identities)"
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs"
             />
             <textarea
-              rows={4}
+              rows={5}
               value={noteContent}
               onChange={(e) => setNoteContent(e.target.value)}
               placeholder="Write lecture takeaways, proofs, or formulas..."
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs"
             />
             <button
               onClick={addNote}
-              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+              className="w-full py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
             >
-              <Plus className="w-4 h-4" /> Save to Study Vault
+              <Plus className="w-4 h-4" /> Save Note
             </button>
           </div>
 
-          <div className="space-y-3">
+          <div className="lg:col-span-7 space-y-2.5">
             {[...vault.notes]
               .sort((a, b) => Number(b.isPinned) - Number(a.isPinned))
               .map((note) => (
-                <div key={note.id} className="aura-glass rounded-2xl p-4 space-y-2">
+                <div key={note.id} className="aura-glass rounded-lg p-3.5 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 text-[11px] font-bold">
+                      <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-mono text-[10px] font-bold">
                         {note.courseCode}
                       </span>
-                      <span className="text-[11px] text-slate-400">{note.category}</span>
+                      <span className="font-mono text-[11px] text-[#6B7280]">{note.category}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
@@ -381,9 +370,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                             ]
                           }))
                         }
-                        className="text-[11px] text-emerald-300 font-bold px-2 py-1 rounded-lg bg-emerald-500/10"
+                        className="text-[11px] text-[#1E3A8A] font-semibold px-2 py-1 rounded border border-[#E5E7EB] bg-[#F9FAFB] hover:border-[#1E3A8A] transition-colors duration-150"
                       >
-                        + Make Card
+                        + Card
                       </button>
                       <button
                         onClick={() =>
@@ -394,8 +383,10 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                             )
                           }))
                         }
-                        className={`p-1.5 rounded-lg ${
-                          note.isPinned ? 'text-amber-300 bg-amber-400/20' : 'text-slate-400 bg-white/5'
+                        className={`p-1.5 rounded border transition-colors duration-150 ${
+                          note.isPinned
+                            ? 'text-[#B45309] bg-[#FFFBEB] border-[#FDE68A]'
+                            : 'text-[#6B7280] bg-[#FFFFFF] border-[#E5E7EB] hover:border-[#9CA3AF]'
                         }`}
                       >
                         <Pin className="w-3.5 h-3.5" />
@@ -407,14 +398,14 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                             notes: prev.notes.filter((n) => n.id !== note.id)
                           }))
                         }
-                        className="p-1.5 rounded-lg text-rose-400 bg-rose-500/10"
+                        className="p-1.5 rounded border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                  <h4 className="font-bold text-sm">{note.title}</h4>
-                  <pre className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
+                  <h4 className="font-bold text-sm text-[#111827]">{note.title}</h4>
+                  <pre className="text-xs text-[#374151] whitespace-pre-wrap font-sans leading-relaxed">
                     {note.content}
                   </pre>
                 </div>
@@ -424,136 +415,137 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       )}
 
       {subTab === 'FLASHCARDS' && (
-        <div className="space-y-4">
-          {activeCard ? (
-            <div className="aura-glass rounded-xl p-6 text-center space-y-4 border border-slate-800">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 font-bold">
-                  {activeCard.courseCode}
-                </span>
-                <span>
-                  Card {(cardIndex % vault.flashcards.length) + 1} of {vault.flashcards.length} • Interval:{' '}
-                  {activeCard.intervalDays}d
-                </span>
-                <button
-                  onClick={() => {
-                    onUpdateVault((prev) => ({
-                      ...prev,
-                      flashcards: prev.flashcards.filter((c) => c.id !== activeCard.id)
-                    }));
-                    setCardIndex(0);
-                  }}
-                  className="text-rose-400 hover:text-rose-300"
-                  title="Delete card"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div
-                onClick={() => setFlipped((f) => !f)}
-                className="min-h-[170px] rounded-xl aura-subtle-surface p-6 flex flex-col items-center justify-center cursor-pointer select-none"
-              >
-                <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold mb-2">
-                  {flipped ? 'VERIFIED ANSWER' : 'QUESTION PROMPT (TAP TO FLIP)'}
-                </span>
-                <p className="text-base font-bold leading-relaxed">
-                  {flipped ? activeCard.answer : activeCard.question}
-                </p>
-              </div>
-
-              {flipped ? (
-                <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-7">
+            {activeCard ? (
+              <div className="aura-glass rounded-lg p-5 text-center space-y-4">
+                <div className="flex items-center justify-between text-xs text-[#6B7280]">
+                  <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-mono font-bold">
+                    {activeCard.courseCode}
+                  </span>
+                  <span className="font-mono text-[11px]">
+                    Card {(cardIndex % vault.flashcards.length) + 1}/{vault.flashcards.length} · Interval: {activeCard.intervalDays}d
+                  </span>
                   <button
-                    onClick={() => rateCurrentCard(1)}
-                    className="py-2.5 rounded-lg bg-rose-500/15 border border-rose-500/35 text-rose-300 text-xs font-semibold"
+                    onClick={() => {
+                      onUpdateVault((prev) => ({
+                        ...prev,
+                        flashcards: prev.flashcards.filter((c) => c.id !== activeCard.id)
+                      }));
+                      setCardIndex(0);
+                    }}
+                    className="text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
+                    title="Delete card"
                   >
-                    Again (1d)
-                  </button>
-                  <button
-                    onClick={() => rateCurrentCard(3)}
-                    className="py-2.5 rounded-lg bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold"
-                  >
-                    Hard
-                  </button>
-                  <button
-                    onClick={() => rateCurrentCard(4)}
-                    className="py-2.5 rounded-lg bg-cyan-500/15 border border-cyan-500/35 text-cyan-300 text-xs font-semibold"
-                  >
-                    Good
-                  </button>
-                  <button
-                    onClick={() => rateCurrentCard(5)}
-                    className="py-2.5 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold"
-                  >
-                    Easy
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ) : (
-                <button
-                  onClick={() => setFlipped(true)}
-                  className="w-full py-2.5 rounded-lg bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
-                >
-                  <RotateCw className="w-3.5 h-3.5" /> Reveal Answer
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="aura-glass rounded-xl p-6 text-center text-xs text-slate-400">
-              No flashcards yet. Create one below or extract cards from slides!
-            </div>
-          )}
 
-          <div className="aura-glass rounded-xl p-4 space-y-2.5">
-            <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-              <Layers className="w-4 h-4" /> ADD SM-2 FLASHCARD
+                <div
+                  onClick={() => setFlipped((f) => !f)}
+                  className="min-h-[170px] rounded-md bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#9CA3AF] p-6 flex flex-col items-center justify-center cursor-pointer select-none transition-colors duration-150"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[#1E3A8A] font-bold mb-2">
+                    {flipped ? 'Answer' : 'Prompt (Click to Flip)'}
+                  </span>
+                  <p className="text-base font-semibold text-[#111827] leading-relaxed">
+                    {flipped ? activeCard.answer : activeCard.question}
+                  </p>
+                </div>
+
+                {flipped ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      onClick={() => rateCurrentCard(1)}
+                      className="py-2 rounded-md bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] text-xs font-semibold"
+                    >
+                      Again (1d)
+                    </button>
+                    <button
+                      onClick={() => rateCurrentCard(3)}
+                      className="py-2 rounded-md bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-xs font-semibold"
+                    >
+                      Hard
+                    </button>
+                    <button
+                      onClick={() => rateCurrentCard(4)}
+                      className="py-2 rounded-md bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-xs font-semibold"
+                    >
+                      Good
+                    </button>
+                    <button
+                      onClick={() => rateCurrentCard(5)}
+                      className="py-2 rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] text-xs font-semibold"
+                    >
+                      Easy
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setFlipped(true)}
+                    className="w-full py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors duration-150"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" /> Reveal Answer
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="aura-glass rounded-lg p-8 text-center text-xs text-[#6B7280]">
+                No flashcards yet. Create one on the right or extract cards from lecture slides.
+              </div>
+            )}
+          </div>
+
+          <div className="lg:col-span-5 aura-glass rounded-lg p-4 space-y-2.5 h-fit">
+            <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+              <Layers className="w-4 h-4" /> Add SM-2 Flashcard
             </div>
             <input
               value={newCardCourse}
               onChange={(e) => setNewCardCourse(e.target.value)}
-              placeholder="Course Code (e.g. CS301)"
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
+              placeholder="Course Code (CS301)"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase"
             />
             <input
               value={newCardQ}
               onChange={(e) => setNewCardQ(e.target.value)}
               placeholder="Question / Front of Card"
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs"
             />
             <textarea
-              rows={2}
+              rows={3}
               value={newCardA}
               onChange={(e) => setNewCardA(e.target.value)}
               placeholder="Verified Answer / Back of Card"
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs"
             />
             <button
               onClick={addCard}
-              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
+              className="w-full py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
             >
-              + Add Card to Deck
+              Add Card to Deck
             </button>
           </div>
         </div>
       )}
 
       {subTab === 'QUIZ_SIM' && (
-        <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-              <Award className="w-4 h-4" /> EXAM HALL MOCK SIMULATOR
+        <div className="aura-glass rounded-lg p-5 space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[#E5E7EB]">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+              <Award className="w-4 h-4" /> Exam Hall Mock Simulator
             </span>
-            <span className="text-[11px] text-slate-400">Built from your Flashcard Vault</span>
+            <span className="font-mono text-[11px] text-[#6B7280]">Generated from SM-2 Deck</span>
           </div>
 
           {quizQuestions.length === 0 ? (
-            <p className="text-xs text-slate-400">
-              Add at least 2 flashcards in the SM-2 Cards tab to unlock instant Exam Hall Mock Quizzes!
+            <p className="text-xs text-[#6B7280]">
+              Add at least 2 flashcards in the SM-2 Cards tab to unlock rapid mock drills.
             </p>
           ) : !quizStarted ? (
-            <div className="text-center py-4 space-y-3">
-              <div className="text-base font-bold">
-                Ready for a {quizQuestions.length}-Question Rapid Exam Drill?
+            <div className="text-center py-6 space-y-3">
+              <div className="text-base font-bold text-[#111827]">
+                {quizQuestions.length}-Question Mock Exam Drill
               </div>
               <button
                 onClick={() => {
@@ -562,32 +554,32 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                   setQuizStep(0);
                   setQuizScore(0);
                 }}
-                className="px-6 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs transition"
+                className="px-6 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150"
               >
-                Start Mock Exam
+                Start Mock Drill
               </button>
             </div>
           ) : quizFinished ? (
-            <div className="text-center py-4 space-y-3">
-              <div className="text-3xl font-bold text-cyan-400 font-mono">
+            <div className="text-center py-6 space-y-3">
+              <div className="text-3xl font-bold text-[#1E3A8A] font-mono">
                 {quizScore} / {quizQuestions.length}
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="font-mono text-xs text-[#4B5563]">
                 Accuracy: {Math.round((quizScore / quizQuestions.length) * 100)}%
               </p>
               <button
                 onClick={() => setQuizStarted(false)}
-                className="px-5 py-2 rounded-lg aura-subtle-surface text-xs font-semibold"
+                className="px-5 py-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] text-xs font-semibold text-[#111827]"
               >
-                Done
+                Finish Review
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="text-xs text-cyan-400 font-bold">
-                Question {quizStep + 1} of {quizQuestions.length} • {quizQuestions[quizStep].courseCode}
+              <div className="font-mono text-xs text-[#1E3A8A] font-bold">
+                Question {quizStep + 1}/{quizQuestions.length} · {quizQuestions[quizStep].courseCode}
               </div>
-              <div className="font-bold text-sm">{quizQuestions[quizStep].question}</div>
+              <div className="font-semibold text-sm text-[#111827]">{quizQuestions[quizStep].question}</div>
               <div className="space-y-2">
                 {quizQuestions[quizStep].options.map((opt, idx) => (
                   <button
@@ -602,9 +594,9 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                         setQuizStep((s) => s + 1);
                       }
                     }}
-                    className="w-full text-left p-3 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-xs transition"
+                    className="w-full text-left p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs text-[#111827] transition-colors duration-150"
                   >
-                    <strong className="text-cyan-400 mr-2">
+                    <strong className="font-mono text-[#1E3A8A] mr-2">
                       {['A', 'B', 'C', 'D'][idx]}.
                     </strong>
                     {opt}
@@ -617,22 +609,22 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       )}
 
       {subTab === 'EXAMS' && (
-        <div className="space-y-4">
-          <div className="aura-glass rounded-xl p-4 space-y-2.5">
-            <div className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-              <BookMarked className="w-4 h-4" /> TRACK EXAM, QUIZ OR ASSIGNMENT
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-5 aura-glass rounded-lg p-4 space-y-2.5 h-fit">
+            <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+              <BookMarked className="w-4 h-4" /> Log Exam, Quiz or Task
             </div>
             <div className="grid grid-cols-2 gap-2">
               <input
                 value={examCourse}
                 onChange={(e) => setExamCourse(e.target.value)}
                 placeholder="Course Code"
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
+                className="px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase"
               />
               <select
                 value={examType}
                 onChange={(e) => setExamType(e.target.value as 'EXAM' | 'ASSIGNMENT' | 'QUIZ')}
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs font-semibold"
+                className="px-3 py-2 rounded-md aura-input text-xs font-semibold"
               >
                 <option value="EXAM">EXAM</option>
                 <option value="QUIZ">QUIZ</option>
@@ -643,106 +635,110 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
               placeholder="Title (e.g. Final Paper 1 / Lab Report)"
-              className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+              className="w-full px-3 py-2 rounded-md aura-input text-xs"
             />
             <div className="grid grid-cols-2 gap-2">
               <input
                 type="date"
                 value={examDate}
                 onChange={(e) => setExamDate(e.target.value)}
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs"
+                className="px-3 py-2 rounded-md aura-input text-xs font-mono"
               />
               <input
                 value={examVenue}
                 onChange={(e) => setExamVenue(e.target.value)}
                 placeholder="Exam Hall / Venue"
-                className="px-3.5 py-2.5 rounded-lg aura-input text-xs"
+                className="px-3 py-2 rounded-md aura-input text-xs"
               />
             </div>
             <button
               onClick={addAssessment}
-              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
+              className="w-full py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
             >
-              + Add Assessment
+              Add Assessment
             </button>
           </div>
 
-          <div className="space-y-2.5">
-            {vault.assessments.map((a) => {
-              const daysLeft = Math.ceil((a.dueEpochMillis - Date.now()) / 86_400_000);
-              return (
-                <div
-                  key={a.id}
-                  className="aura-glass rounded-xl p-3.5 flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 text-[10px] font-bold">
-                        {a.courseCode} • {a.type}
-                      </span>
-                      <span className="text-[11px] text-cyan-400 font-mono">
-                        {daysLeft >= 0 ? `In ${daysLeft}d` : 'Past'}
-                      </span>
+          <div className="lg:col-span-7 bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg divide-y divide-[#E5E7EB]">
+            {vault.assessments.length === 0 ? (
+              <div className="p-8 text-center text-xs text-[#6B7280]">No assessments logged.</div>
+            ) : (
+              vault.assessments.map((a) => {
+                const daysLeft = Math.ceil((a.dueEpochMillis - Date.now()) / 86_400_000);
+                return (
+                  <div
+                    key={a.id}
+                    className="p-3.5 flex items-center justify-between gap-3 hover:bg-[#F9FAFB] transition-colors duration-150"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[10px] font-bold text-[#111827]">
+                          {a.courseCode} · {a.type}
+                        </span>
+                        <span className="font-mono text-[11px] font-semibold text-[#1E3A8A]">
+                          {daysLeft >= 0 ? `T-${daysLeft}d` : 'Past'}
+                        </span>
+                      </div>
+                      <div
+                        className={`font-semibold text-sm mt-1 ${
+                          a.status === 'COMPLETED' ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'
+                        }`}
+                      >
+                        {a.title}
+                      </div>
+                      {a.examVenue && <div className="text-xs text-[#6B7280]">{a.examVenue}</div>}
                     </div>
-                    <div
-                      className={`font-semibold text-sm mt-1 ${
-                        a.status === 'COMPLETED' ? 'line-through text-slate-500' : ''
-                      }`}
-                    >
-                      {a.title}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() =>
+                          onUpdateVault((prev) => ({
+                            ...prev,
+                            assessments: prev.assessments.map((item) =>
+                              item.id === a.id
+                                ? {
+                                    ...item,
+                                    status: item.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED'
+                                  }
+                                : item
+                            )
+                          }))
+                        }
+                        className={`p-2 rounded-md border transition-colors duration-150 ${
+                          a.status === 'COMPLETED'
+                            ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#059669]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF]'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          onUpdateVault((prev) => ({
+                            ...prev,
+                            assessments: prev.assessments.filter((item) => item.id !== a.id)
+                          }))
+                        }
+                        className="p-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    {a.examVenue && <div className="text-xs text-slate-400">{a.examVenue}</div>}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() =>
-                        onUpdateVault((prev) => ({
-                          ...prev,
-                          assessments: prev.assessments.map((item) =>
-                            item.id === a.id
-                              ? {
-                                  ...item,
-                                  status: item.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED'
-                                }
-                              : item
-                          )
-                        }))
-                      }
-                      className={`p-2 rounded-lg ${
-                        a.status === 'COMPLETED'
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'aura-subtle-surface text-slate-400'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() =>
-                        onUpdateVault((prev) => ({
-                          ...prev,
-                          assessments: prev.assessments.filter((item) => item.id !== a.id)
-                        }))
-                      }
-                      className="p-2 rounded-lg bg-rose-500/10 text-rose-400"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
 
       {subTab === 'SLIDE_PARSER' && (
-        <div className="aura-glass rounded-xl p-5 space-y-3 border border-slate-800">
-          <div className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
-            Local Slide &amp; Lecture Note Extractor (100% Browser-Side)
+        <div className="aura-glass rounded-lg p-4 space-y-3">
+          <div className="font-mono text-[11px] font-bold text-[#1E3A8A] uppercase tracking-wider">
+            Local Slide &amp; Outline Parser
           </div>
-          <p className="text-xs text-slate-400">
-            Paste lecture slide text or upload a <code>.txt</code> / <code>.md</code> outline. Definitions like{' '}
-            <code>Concept: Explanation</code> automatically become SM-2 Flashcards and key points save to your Notes!
+          <p className="text-xs text-[#6B7280]">
+            Paste lecture outline text or upload a <code>.txt</code> / <code>.md</code> file. Lines formatted as{' '}
+            <code>Term: Definition</code> convert into SM-2 Flashcards and key points save to your Notes.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -750,10 +746,10 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               value={slideCourse}
               onChange={(e) => setSlideCourse(e.target.value)}
               placeholder="Course Code"
-              className="px-3.5 py-2 rounded-lg aura-input text-xs font-bold uppercase w-36"
+              className="px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase w-36"
             />
-            <label className="px-3.5 py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition">
-              <Upload className="w-3.5 h-3.5" /> Load .txt / .md File
+            <label className="px-3 py-2 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#1E3A8A] text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-colors duration-150">
+              <Upload className="w-3.5 h-3.5" /> Load .txt / .md
               <input type="file" accept=".txt,.md,.csv" onChange={handleFileUpload} className="hidden" />
             </label>
           </div>
@@ -763,20 +759,20 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             value={rawSlideText}
             onChange={(e) => setRawSlideText(e.target.value)}
             placeholder={
-              'Paste lecture text here...\nExample:\nDeadlock: A state where processes wait indefinitely for resources held by each other.\nMutex - Mutual exclusion lock ensuring single-thread critical section access.'
+              'Paste lecture text here...\nExample:\nDeadlock: A state where processes wait indefinitely for resources held by each other.'
             }
-            className="w-full px-3.5 py-2.5 rounded-lg aura-input text-xs"
+            className="w-full px-3 py-2.5 rounded-md aura-input text-xs"
           />
 
           <button
             onClick={extractNotesAndCardsLocally}
-            className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition"
+            className="w-full py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
           >
-            Extract Summary Note &amp; SM-2 Flashcards
+            Extract Note &amp; SM-2 Flashcards
           </button>
 
           {extractSummaryMsg && (
-            <div className="p-3 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-xs text-emerald-300">
+            <div className="p-3 rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-xs font-medium text-[#065F46]">
               {extractSummaryMsg}
             </div>
           )}

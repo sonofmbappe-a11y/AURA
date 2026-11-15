@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
   Award,
+  BarChart3,
   Calculator,
   CloudDownload,
   CloudUpload,
@@ -11,8 +12,6 @@ import {
   Plus,
   Shield,
   Smartphone,
-  Sparkles,
-  Sun,
   Target,
   Trash2,
   UserCircle
@@ -59,25 +58,23 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
 
-  // REM Sleep Calculator
   const [wakeTime, setWakeTime] = useState('06:30');
 
-  // GPA Calculator & Honors Simulator
   const [gCode, setGCode] = useState('');
   const [gCredits, setGCredits] = useState('3');
   const [gLetter, setGLetter] = useState('A');
   const [targetHonorsGpa, setTargetHonorsGpa] = useState<number>(3.80);
   const [remainingCredits, setRemainingCredits] = useState<number>(45);
 
-  // Feature 1: Course Final Exam Grade & Target Cutoff Simulator
   const [courseworkScore, setCourseworkScore] = useState<number>(76);
   const [courseworkWeight, setCourseworkWeight] = useState<number>(40);
-  const [targetFinalGrade, setTargetFinalGrade] = useState<number>(85); // 85% for Grade A
+  const [targetFinalGrade, setTargetFinalGrade] = useState<number>(85);
 
-  // Attendance Safety Shield
   const [totalClasses, setTotalClasses] = useState<number>(36);
   const [attendedClasses, setAttendedClasses] = useState<number>(33);
-  const [policyThreshold, setPolicyThreshold] = useState<number>(vault.profile.attendanceTargetPercent || 75);
+  const [policyThreshold, setPolicyThreshold] = useState<number>(
+    vault.profile.attendanceTargetPercent || 75
+  );
 
   const examForecaster = useMemo(() => {
     const examWeight = Math.max(1, 100 - courseworkWeight);
@@ -88,15 +85,15 @@ export const ToolsAndProfileView: React.FC<Props> = ({
     let status = 'Achievable with Focus';
     let isPossible = true;
     if (requiredExamScore <= 0) {
-      status = 'Grade Already Secured!';
+      status = 'Target Secured';
     } else if (requiredExamScore <= 60) {
       status = 'Comfortably Achievable';
     } else if (requiredExamScore <= 85) {
-      status = 'Target Achievable with Steady Prep';
+      status = 'Achievable with Prep';
     } else if (requiredExamScore <= 100) {
-      status = 'High Effort Sprint Required';
+      status = 'High Effort Required';
     } else {
-      status = 'Mathematically Out of Reach';
+      status = 'Out of Reach';
       isPossible = false;
     }
 
@@ -113,7 +110,6 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   const bedtimes = useMemo(() => {
     const [h, m] = wakeTime.split(':').map(Number);
     const wakeTotalMins = (h || 6) * 60 + (m || 30);
-    // 90-minute REM sleep cycles + 15 min fall-asleep buffer (6, 5, 4 cycles)
     return [6, 5, 4].map((cycles) => {
       const sleepMins = cycles * 90 + 15;
       let target = (wakeTotalMins - sleepMins) % 1440;
@@ -150,7 +146,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
         neededGpaInRem > 4.0
           ? '> 4.00 (Unattainable)'
           : neededGpaInRem < 0
-          ? '0.00 (Secured!)'
+          ? '0.00 (Secured)'
           : neededGpaInRem.toFixed(2),
       isPossible: neededGpaInRem <= 4.0,
       totalCredits: totalFinalCredits
@@ -182,9 +178,10 @@ export const ToolsAndProfileView: React.FC<Props> = ({
     if (!user) return;
     setBusySync(true);
     try {
-      await saveCloudBackupFromWeb(user.uid, user.email || '', vault);
+      const savedAtMs = await saveCloudBackupFromWeb(user.uid, user.email || '', vault);
+      onUpdateVault((prev) => ({ ...prev, lastBackupUpdatedAtMs: savedAtMs }));
       onNotify(
-        'Backed up Profile, Timetable, Flashcards, Notes & GPA to Cloud! Open your Android app to auto-import.'
+        'Backed up Profile, Timetable, Flashcards, Notes & GPA to Cloud Vault.'
       );
     } catch (e: unknown) {
       onNotify((e as Error)?.message || 'Cloud backup failed.');
@@ -197,12 +194,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
     if (!user) return;
     setBusySync(true);
     try {
-      const res = await fetchAndMergeCloudBackupToWeb(user.uid, vault);
+      const res = await fetchAndMergeCloudBackupToWeb(user.uid, vault, user.email || '');
       if (!res) {
-        onNotify('No Cloud Snapshot found on this Google account yet.');
+        onNotify('No Cloud Snapshot found on this account yet.');
       } else {
         onUpdateVault(() => res.updatedVault);
-        onNotify(`Imported Cloud Backup: ${res.summary}`);
+        onNotify(`Restored Cloud Backup: ${res.summary}`);
       }
     } catch (e: unknown) {
       onNotify((e as Error)?.message || 'Cloud import failed.');
@@ -215,23 +212,35 @@ export const ToolsAndProfileView: React.FC<Props> = ({
     vault.focusSessions.reduce((s, f) => s + f.durationMinutes, 0) / 60
   ).toFixed(1);
 
+  const lastSyncedLabel = vault.lastBackupUpdatedAtMs
+    ? new Date(vault.lastBackupUpdatedAtMs).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : 'Not yet synced';
+
   return (
     <div className="space-y-4">
       {/* Cross-Platform Cloud Backup & Restore Card */}
-      <div className="aura-glass rounded-xl p-5 space-y-3.5 border border-slate-800">
-        <div className="flex items-center justify-between gap-2">
+      <div className="aura-glass rounded-lg p-4 space-y-3.5">
+        <div className="flex items-start justify-between gap-2">
           <div>
-            <span className="px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 text-[11px] font-bold">
-              ANDROID / IPHONE / WEB CLOUD VAULT
+            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider">
+              Cross-Platform Cloud Vault
             </span>
-            <h3 className="font-bold text-base mt-1">
-              {user ? user.displayName || user.email : 'Sign In to Sync Your Timetable & Profile'}
+            <h3 className="font-bold text-base text-[#111827] mt-1.5">
+              {user ? user.displayName || user.email : 'Sign In to Sync Timetable & Profile'}
             </h3>
+            {user && (
+              <div className="font-mono text-[11px] text-[#6B7280] mt-0.5">
+                {user.email} · Last Sync: {lastSyncedLabel}
+              </div>
+            )}
           </div>
           {user && (
             <button
               onClick={() => signOutBrowser()}
-              className="p-2 rounded-lg bg-rose-500/15 text-rose-300"
+              className="p-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -239,8 +248,8 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           )}
         </div>
 
-        <p className="text-xs text-slate-400">
-          Routine edits save locally on your browser for instant offline speed &amp; zero database cost. Tap below whenever you want to push or pull your snapshot with the Android app.
+        <p className="text-xs text-[#6B7280] leading-relaxed">
+          Edits save locally for offline speed and automatically synchronize with your Android AURA account whenever signed in.
         </p>
 
         {!user ? (
@@ -253,20 +262,20 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   onNotify((e as Error)?.message || 'Sign-in cancelled or domain not yet authorized.');
                 }
               }}
-              className="w-full py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs inline-flex items-center justify-center gap-2 transition"
+              className="w-full py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs inline-flex items-center justify-center gap-2 transition-colors duration-150"
             >
               <LogIn className="w-4 h-4" /> Sign in with Google
             </button>
 
-            <div className="p-3 rounded-lg aura-subtle-surface space-y-2.5">
+            <div className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-300">
+                <span className="text-xs font-semibold text-[#111827]">
                   {isRegister ? 'Create Scholar Account (Email)' : 'Sign In with Email & Password'}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsRegister(!isRegister)}
-                  className="text-[10px] font-bold text-cyan-400 hover:underline"
+                  className="text-[11px] font-semibold text-[#1E3A8A] hover:underline"
                 >
                   {isRegister ? 'Switch to Sign In' : 'Create Account'}
                 </button>
@@ -278,7 +287,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Full Name"
-                  className="w-full px-3 py-2 rounded-lg aura-input text-xs"
+                  className="w-full px-3 py-2 rounded-md aura-input text-xs"
                 />
               )}
 
@@ -287,7 +296,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="scholar@university.edu"
-                className="w-full px-3 py-2 rounded-lg aura-input text-xs"
+                className="w-full px-3 py-2 rounded-md aura-input text-xs"
               />
 
               <input
@@ -295,7 +304,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••• (min 6 characters)"
-                className="w-full px-3 py-2 rounded-lg aura-input text-xs"
+                className="w-full px-3 py-2 rounded-md aura-input text-xs"
               />
 
               <button
@@ -308,81 +317,51 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   try {
                     if (isRegister) {
                       await signUpWithEmailBrowser(email, password, fullName.trim() || 'Scholar');
-                      onNotify('Account created successfully!');
+                      onNotify('Account created successfully.');
                     } else {
                       await signInWithEmailBrowser(email, password);
-                      onNotify('Signed in successfully!');
+                      onNotify('Signed in successfully.');
                     }
                   } catch (err: unknown) {
                     onNotify((err as Error)?.message || 'Authentication failed.');
                   }
                 }}
-                className="w-full py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 font-semibold text-xs transition"
+                className="w-full py-2 rounded-md bg-[#FFFFFF] border border-[#D1D5DB] hover:border-[#1E3A8A] text-[#111827] font-semibold text-xs transition-colors duration-150"
               >
                 {isRegister ? 'Create Account' : 'Sign In'}
               </button>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               disabled={busySync}
               onClick={handleBackupToCloud}
-              className="py-2.5 px-3 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition"
+              className="py-2.5 px-3 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors duration-150"
             >
-              <CloudUpload className="w-4 h-4" /> Backup to Cloud
+              <CloudUpload className="w-4 h-4" /> Push Backup to Cloud
             </button>
             <button
               disabled={busySync}
               onClick={handleImportFromCloud}
-              className="py-2.5 px-3 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-cyan-300 font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition"
+              className="py-2.5 px-3 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#1E3A8A] font-semibold text-xs inline-flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors duration-150"
             >
-              <CloudDownload className="w-4 h-4" /> Import Android Backup
+              <CloudDownload className="w-4 h-4" /> Restore from Cloud
             </button>
           </div>
         )}
       </div>
 
-      {/* iPhone Safari Add-to-Home-Screen Guide */}
-      <div className="aura-glass rounded-xl p-4 flex items-start gap-3 border border-slate-800">
-        <Smartphone className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-        <div className="space-y-1 text-xs">
-          <div className="font-bold text-cyan-400">Install on iPhone or iPad Home Screen</div>
-          <p className="text-slate-400 leading-relaxed">
-            On iPhone Safari, tap the <strong>Share</strong> icon at the bottom of Safari and choose{' '}
-            <strong>"Add to Home Screen"</strong> for a full-screen native app icon with offline timetable access.
-          </p>
-        </div>
-      </div>
-
-      {/* Student Profile & Theme */}
-      <div className="aura-glass rounded-xl p-5 space-y-3">
+      {/* Student Profile */}
+      <div className="aura-glass rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-sky-300 flex items-center gap-1.5">
-            <UserCircle className="w-4 h-4" /> STUDENT PROFILE & THEME
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+            <UserCircle className="w-4 h-4" /> Scholar Profile
           </span>
-          <button
-            onClick={() =>
-              onUpdateVault((prev) => ({
-                ...prev,
-                profile: { ...prev.profile, isDarkTheme: !prev.profile.isDarkTheme }
-              }))
-            }
-            className="px-3 py-1.5 rounded-xl bg-white/10 text-xs font-bold inline-flex items-center gap-1.5"
-          >
-            {vault.profile.isDarkTheme ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-amber-300" /> Switch to Light Frost
-              </>
-            ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-sky-500" /> Switch to Dark Obsidian
-              </>
-            )}
-          </button>
+          <span className="font-mono text-[11px] text-[#6B7280]">{vault.profile.academicLevel}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <input
             value={vault.profile.name}
             onChange={(e) =>
@@ -392,7 +371,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Your Name"
-            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="px-3 py-2 rounded-md aura-input text-xs"
           />
           <input
             value={vault.profile.institution}
@@ -403,7 +382,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="University / Campus"
-            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="px-3 py-2 rounded-md aura-input text-xs"
           />
           <input
             value={vault.profile.programme}
@@ -414,7 +393,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Programme / Department"
-            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="px-3 py-2 rounded-md aura-input text-xs"
           />
           <input
             value={vault.profile.semester}
@@ -425,379 +404,379 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }))
             }
             placeholder="Semester"
-            className="px-3.5 py-2.5 rounded-xl aura-input text-xs"
+            className="px-3 py-2 rounded-md aura-input text-xs"
           />
         </div>
       </div>
 
-      {/* 90-Minute REM Sleep Cycle Planner */}
-      <div className="aura-glass rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-violet-300 flex items-center gap-1.5">
-            <Moon className="w-4 h-4" /> 90-MIN REM SLEEP CYCLE WAKE-UP PLANNER
-          </span>
-          <input
-            type="time"
-            value={wakeTime}
-            onChange={(e) => setWakeTime(e.target.value)}
-            className="px-3 py-1 rounded-lg aura-input text-xs font-mono"
-          />
-        </div>
-        <p className="text-xs text-slate-400">
-          Ideal bedtimes to wake up refreshed at <strong>{wakeTime}</strong> between REM cycles:
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {bedtimes.map((b) => (
-            <div
-              key={b.cycles}
-              className="p-3 rounded-lg aura-subtle-surface text-center"
+      {/* Cumulative GPA Calculator + Honors Simulator Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="aura-glass rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Calculator className="w-4 h-4 text-[#1E3A8A]" /> GPA &amp; Grade Ledger
+            </span>
+            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] font-mono text-xs font-bold text-[#1E3A8A]">
+              {gpaStats.gpa} GPA · {gpaStats.totalCredits} Cr
+            </span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2">
+            <input
+              value={gCode}
+              onChange={(e) => setGCode(e.target.value)}
+              placeholder="CS301"
+              className="col-span-2 px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase"
+            />
+            <input
+              type="number"
+              value={gCredits}
+              onChange={(e) => setGCredits(e.target.value)}
+              placeholder="Cr"
+              className="px-2 py-2 rounded-md aura-input text-xs font-mono text-center"
+            />
+            <select
+              value={gLetter}
+              onChange={(e) => setGLetter(e.target.value)}
+              className="px-2 py-2 rounded-md aura-input text-xs font-mono font-bold"
             >
-              <div className="text-base font-mono font-bold text-violet-300">{b.time}</div>
-              <div className="text-[10px] text-slate-400">
-                {b.cycles} Cycles ({b.hours}h)
+              {Object.keys(GRADE_SCALE).map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={() => {
+              if (!gCode.trim()) return;
+              onUpdateVault((prev) => ({
+                ...prev,
+                grades: [
+                  ...prev.grades,
+                  {
+                    id: uidGen('g'),
+                    courseCode: gCode.trim().toUpperCase(),
+                    courseName: gCode.trim().toUpperCase(),
+                    creditHours: Math.max(1, Number(gCredits) || 3),
+                    letterGrade: gLetter,
+                    gradePoint: GRADE_SCALE[gLetter] ?? 4.0,
+                    semester: prev.profile.semester
+                  }
+                ]
+              }));
+              setGCode('');
+            }}
+            className="w-full py-2 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] inline-flex items-center justify-center gap-1 transition-colors duration-150"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#1E3A8A]" /> Record Grade
+          </button>
+
+          {vault.grades.length > 0 && (
+            <div className="border border-[#E5E7EB] rounded-md divide-y divide-[#E5E7EB]">
+              {vault.grades.map((g) => (
+                <div key={g.id} className="px-3 py-2 flex items-center justify-between text-xs">
+                  <span className="font-mono text-[#111827]">
+                    <strong>{g.courseCode}</strong> · {g.creditHours} Cr · {g.letterGrade} ({g.gradePoint.toFixed(1)})
+                  </span>
+                  <button
+                    onClick={() =>
+                      onUpdateVault((prev) => ({
+                        ...prev,
+                        grades: prev.grades.filter((x) => x.id !== g.id)
+                      }))
+                    }
+                    className="text-[#9CA3AF] hover:text-[#DC2626] transition-colors duration-150"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Honors & CGPA Target Simulator */}
+        <div className="aura-glass rounded-lg p-4 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-[#1E3A8A]" /> Honors Target Simulator
+            </span>
+            <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-bold">
+              Target: {targetHonorsGpa.toFixed(2)}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+                Target Cumulative GPA
+              </label>
+              <div className="grid grid-cols-4 gap-1.5 mt-1">
+                {[3.60, 3.75, 3.85, 3.95].map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setTargetHonorsGpa(g)}
+                    className={`py-1.5 rounded-md font-mono text-xs font-semibold transition-colors duration-150 border ${
+                      targetHonorsGpa === g
+                        ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
+                    }`}
+                  >
+                    {g.toFixed(2)}
+                  </button>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Cumulative GPA Calculator */}
-      <div className="aura-glass rounded-xl p-5 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-            <Calculator className="w-4 h-4" /> GPA &amp; GRADE TRACKER
-          </span>
-          <span className="text-sm font-mono font-bold text-cyan-400">
-            GPA: {gpaStats.gpa} ({gpaStats.totalCredits} Cr)
-          </span>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          <input
-            value={gCode}
-            onChange={(e) => setGCode(e.target.value)}
-            placeholder="Course"
-            className="col-span-2 px-3.5 py-2.5 rounded-lg aura-input text-xs font-bold uppercase"
-          />
-          <input
-            type="number"
-            value={gCredits}
-            onChange={(e) => setGCredits(e.target.value)}
-            placeholder="Cr"
-            className="px-2 py-2.5 rounded-lg aura-input text-xs font-mono text-center"
-          />
-          <select
-            value={gLetter}
-            onChange={(e) => setGLetter(e.target.value)}
-            className="px-2 py-2.5 rounded-lg aura-input text-xs font-bold"
-          >
-            {Object.keys(GRADE_SCALE).map((k) => (
-              <option key={k} value={k}>
-                {k}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={() => {
-            if (!gCode.trim()) return;
-            onUpdateVault((prev) => ({
-              ...prev,
-              grades: [
-                ...prev.grades,
-                {
-                  id: uidGen('g'),
-                  courseCode: gCode.trim().toUpperCase(),
-                  courseName: gCode.trim().toUpperCase(),
-                  creditHours: Math.max(1, Number(gCredits) || 3),
-                  letterGrade: gLetter,
-                  gradePoint: GRADE_SCALE[gLetter] ?? 4.0,
-                  semester: prev.profile.semester
-                }
-              ]
-            }));
-            setGCode('');
-          }}
-          className="w-full py-2 rounded-lg aura-subtle-surface hover:border-cyan-500/50 text-xs font-semibold inline-flex items-center justify-center gap-1 transition"
-        >
-          <Plus className="w-3.5 h-3.5" /> Add Course Grade
-        </button>
-        {vault.grades.map((g) => (
-          <div key={g.id} className="p-2.5 rounded-lg aura-subtle-surface flex items-center justify-between text-xs">
-            <span>
-              <strong>{g.courseCode}</strong> • {g.creditHours} Cr • Grade <strong>{g.letterGrade}</strong> ({g.gradePoint.toFixed(1)})
-            </span>
-            <button
-              onClick={() =>
-                onUpdateVault((prev) => ({
-                  ...prev,
-                  grades: prev.grades.filter((x) => x.id !== g.id)
-                }))
-              }
-              className="text-rose-400"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Feature: Target Honors & CGPA Predictor Simulator */}
-      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-            <Award className="w-4 h-4" /> HONORS &amp; CGPA TARGET SIMULATOR
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-300 font-bold">
-            Target: {targetHonorsGpa.toFixed(2)}
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-400">
-          Simulate what GPA average you need across remaining credits to graduate with your target honors.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="text-[11px] font-bold text-slate-300 uppercase">Target Cumulative GPA</label>
-            <div className="flex items-center gap-2 mt-1">
-              {[3.60, 3.75, 3.85, 3.95].map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => setTargetHonorsGpa(g)}
-                  className={`flex-1 py-1 rounded-lg text-xs font-bold transition border ${
-                    targetHonorsGpa === g
-                      ? 'bg-amber-500/15 border-amber-500 text-amber-300'
-                      : 'aura-subtle-surface text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {g.toFixed(2)}
-                </button>
-              ))}
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+                <span>Remaining Credits</span>
+                <span className="text-[#111827]">{remainingCredits} Cr</span>
+              </div>
+              <input
+                type="range"
+                min="6"
+                max="120"
+                step="3"
+                value={remainingCredits}
+                onChange={(e) => setRemainingCredits(Number(e.target.value))}
+                className="w-full mt-1.5 accent-[#1E3A8A]"
+              />
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 uppercase">
-              <span>Remaining Credits</span>
-              <span className="text-amber-300">{remainingCredits} Cr</span>
+          <div className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] text-[#6B7280]">Required Future Average</div>
+              <div className="text-base font-mono font-bold text-[#111827]">
+                {simulationStats.neededGpa} GPA
+              </div>
             </div>
-            <input
-              type="range"
-              min="6"
-              max="120"
-              step="3"
-              value={remainingCredits}
-              onChange={(e) => setRemainingCredits(Number(e.target.value))}
-              className="w-full mt-2 accent-amber-400"
-            />
-          </div>
-        </div>
-
-        <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] text-slate-400">Required Future Average</div>
-            <div className="text-lg font-mono font-bold">
-              {simulationStats.neededGpa} GPA
-            </div>
-          </div>
-          <div className="text-right">
             <span
-              className={`px-3 py-1 rounded-lg text-xs font-bold ${
+              className={`px-2.5 py-1 rounded text-[11px] font-mono font-semibold border ${
                 simulationStats.isPossible
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                  ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
+                  : 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]'
               }`}
             >
-              {simulationStats.isPossible ? 'Honors Achievable' : 'Target Adjustment Needed'}
+              {simulationStats.isPossible ? 'Achievable' : 'Adjust Target'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Feature 1: Course Final Exam Grade & Target Forecaster */}
-      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold flex items-center gap-1.5">
-            <Target className="w-4 h-4 text-cyan-400" /> FINAL EXAM GRADE TARGET FORECASTER
-          </span>
-          <span className="text-xs px-2.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-400 font-bold border border-cyan-500/25">
-            Target: {targetFinalGrade}%
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-400">
-          Calculate the exact exam score required to secure your target course grade based on your current coursework score.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
-              <span>Coursework Score</span>
-              <span className="text-cyan-400 font-mono font-bold">{courseworkScore}%</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={courseworkScore}
-              onChange={(e) => setCourseworkScore(Number(e.target.value))}
-              className="w-full mt-2 accent-cyan-400"
-            />
+      {/* Final Exam Forecaster & Attendance Shield */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="aura-glass rounded-lg p-4 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-[#1E3A8A]" /> Final Exam Forecaster
+            </span>
+            <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-bold">
+              Target: {targetFinalGrade}%
+            </span>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
-              <span>Coursework Weight</span>
-              <span className="text-sky-400 font-mono font-bold">{courseworkWeight}%</span>
+          <div className="space-y-2.5">
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+                <span>Coursework Score</span>
+                <span className="text-[#1E3A8A] font-bold">{courseworkScore}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={courseworkScore}
+                onChange={(e) => setCourseworkScore(Number(e.target.value))}
+                className="w-full mt-1 accent-[#1E3A8A]"
+              />
             </div>
-            <input
-              type="range"
-              min="10"
-              max="90"
-              step="5"
-              value={courseworkWeight}
-              onChange={(e) => setCourseworkWeight(Number(e.target.value))}
-              className="w-full mt-2 accent-sky-400"
-            />
+
+            <div>
+              <div className="flex items-center justify-between font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+                <span>Coursework Weight</span>
+                <span className="text-[#111827] font-bold">{courseworkWeight}%</span>
+              </div>
+              <input
+                type="range"
+                min="10"
+                max="90"
+                step="5"
+                value={courseworkWeight}
+                onChange={(e) => setCourseworkWeight(Number(e.target.value))}
+                className="w-full mt-1 accent-[#1E3A8A]"
+              />
+            </div>
+
+            <div>
+              <div className="grid grid-cols-4 gap-1.5 pt-1">
+                {[75, 80, 85, 90].map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTargetFinalGrade(t)}
+                    className={`py-1 rounded-md font-mono text-xs font-semibold transition-colors duration-150 border ${
+                      targetFinalGrade === t
+                        ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
+                    }`}
+                  >
+                    {t}%
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 uppercase">
-              <span>Target Final Mark</span>
-              <span className="text-amber-400 font-mono font-bold">{targetFinalGrade}%</span>
+          <div className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-3">
+            <div>
+              <div className="font-mono text-[10px] text-[#6B7280]">
+                Exam Weight: {examForecaster.examWeight}% · Secured: {examForecaster.currentPoints} pts
+              </div>
+              <div className="text-base font-mono font-bold text-[#111827] mt-0.5">
+                {examForecaster.isPossible ? `${examForecaster.requiredExamScore}% on Final` : 'Out of Reach'}
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 mt-1.5">
-              {[75, 80, 85, 90].map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTargetFinalGrade(t)}
-                  className={`flex-1 py-1 rounded-lg text-xs font-bold transition border ${
-                    targetFinalGrade === t
-                      ? 'bg-amber-500/15 border-amber-500 text-amber-300'
-                      : 'aura-subtle-surface text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {t}%
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] text-slate-400">
-              Exam Weight: {examForecaster.examWeight}% • Current Points: {examForecaster.currentPoints} pts
-            </div>
-            <div className="text-xl font-mono font-bold mt-0.5">
-              {examForecaster.isPossible ? `${examForecaster.requiredExamScore}% on Final` : 'Out of Reach'}
-            </div>
-          </div>
-          <div className="text-right">
             <span
-              className={`px-3 py-1 rounded-lg text-xs font-bold ${
+              className={`px-2.5 py-1 rounded font-mono text-[11px] font-semibold border ${
                 examForecaster.isPossible
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                  ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
+                  : 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]'
               }`}
             >
               {examForecaster.status}
             </span>
           </div>
         </div>
-      </div>
 
-      {/* Feature: Attendance Risk Shield */}
-      <div className="aura-glass rounded-xl p-5 space-y-4 border border-slate-800">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
-            <Shield className="w-4 h-4" /> ATTENDANCE SAFETY SHIELD
-          </span>
-          <span
-            className={`text-xs px-2.5 py-0.5 rounded-md font-bold ${
-              attendanceShield.isAtRisk
-                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
-            }`}
-          >
-            {attendanceShield.pct}% Attendance
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-400">
-          Ensure you meet your university’s mandatory exam qualification threshold ({policyThreshold}% policy).
-        </p>
-
-        <div className="grid grid-cols-3 gap-2.5">
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Attended</label>
-            <input
-              type="number"
-              min="0"
-              value={attendedClasses}
-              onChange={(e) => setAttendedClasses(Number(e.target.value) || 0)}
-              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
-            />
+        {/* Attendance Safety Shield */}
+        <div className="aura-glass rounded-lg p-4 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-[#1E3A8A]" /> Attendance Safety Margin
+            </span>
+            <span
+              className={`font-mono text-xs px-2 py-0.5 rounded font-bold border ${
+                attendanceShield.isAtRisk
+                  ? 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]'
+                  : 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
+              }`}
+            >
+              {attendanceShield.pct}%
+            </span>
           </div>
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Total Held</label>
-            <input
-              type="number"
-              min="1"
-              value={totalClasses}
-              onChange={(e) => setTotalClasses(Math.max(1, Number(e.target.value) || 1))}
-              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Policy Min %</label>
-            <input
-              type="number"
-              min="50"
-              max="100"
-              value={policyThreshold}
-              onChange={(e) => setPolicyThreshold(Math.max(50, Math.min(100, Number(e.target.value) || 75)))}
-              className="aura-input w-full px-3 py-2 rounded-lg text-xs font-mono text-center mt-1"
-            />
-          </div>
-        </div>
 
-        <div className="p-3.5 rounded-lg bg-[#0B1220] border border-slate-800 flex items-center justify-between gap-3">
-          <div>
-            <div className="text-[11px] text-slate-400">Absence Safety Buffer</div>
-            <div className="text-sm font-bold">
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Attended</label>
+              <input
+                type="number"
+                min="0"
+                value={attendedClasses}
+                onChange={(e) => setAttendedClasses(Number(e.target.value) || 0)}
+                className="aura-input w-full px-2.5 py-2 rounded-md text-xs font-mono text-center mt-1"
+              />
+            </div>
+            <div>
+              <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Total Held</label>
+              <input
+                type="number"
+                min="1"
+                value={totalClasses}
+                onChange={(e) => setTotalClasses(Math.max(1, Number(e.target.value) || 1))}
+                className="aura-input w-full px-2.5 py-2 rounded-md text-xs font-mono text-center mt-1"
+              />
+            </div>
+            <div>
+              <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">Policy %</label>
+              <input
+                type="number"
+                min="50"
+                max="100"
+                value={policyThreshold}
+                onChange={(e) =>
+                  setPolicyThreshold(Math.max(50, Math.min(100, Number(e.target.value) || 75)))
+                }
+                className="aura-input w-full px-2.5 py-2 rounded-md text-xs font-mono text-center mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB]">
+            <div className="font-mono text-[10px] text-[#6B7280] uppercase">Exam Qualification Buffer</div>
+            <div className="text-xs font-semibold text-[#111827] mt-0.5">
               {attendanceShield.isAtRisk
-                ? `Debarment Warning: Attend next ${attendanceShield.neededClassesToRecover} classes`
-                : `Safe Margin: Up to ${attendanceShield.safeCutsLeft} classes available`}
+                ? `Debarment Risk: Attend next ${attendanceShield.neededClassesToRecover} classes consecutively.`
+                : `Safe Margin: Up to ${attendanceShield.safeCutsLeft} permitted absences remaining.`}
             </div>
           </div>
         </div>
       </div>
 
-      {/* AURA Semester Academic Summary */}
-      <div className="aura-glass rounded-xl p-5 border border-slate-800 space-y-3">
-        <div className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
-          <Sparkles className="w-4 h-4" /> Academic Progress Metrics
+      {/* 90-Minute REM Sleep Cycle Planner & Academic Telemetry */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="aura-glass rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+              <Moon className="w-4 h-4 text-[#1E3A8A]" /> 90-Min REM Sleep Planner
+            </span>
+            <input
+              type="time"
+              value={wakeTime}
+              onChange={(e) => setWakeTime(e.target.value)}
+              className="px-2.5 py-1 rounded-md aura-input text-xs font-mono"
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {bedtimes.map((b) => (
+              <div
+                key={b.cycles}
+                className="p-2.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] text-center"
+              >
+                <div className="text-sm font-mono font-bold text-[#1E3A8A]">{b.time}</div>
+                <div className="font-mono text-[10px] text-[#6B7280] mt-0.5">
+                  {b.cycles} cycles · {b.hours}h
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-          <div className="p-3 rounded-lg aura-subtle-surface">
-            <div className="text-xl font-bold font-mono text-cyan-400">{vault.courses.length}</div>
-            <div className="text-[11px] text-slate-400">Courses</div>
+
+        <div className="aura-glass rounded-lg p-4 space-y-3">
+          <div className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-[#1E3A8A]" /> Semester Telemetry
           </div>
-          <div className="p-3 rounded-lg aura-subtle-surface">
-            <div className="text-xl font-bold font-mono text-emerald-400">{vault.lectures.length}</div>
-            <div className="text-[11px] text-slate-400">Weekly Slots</div>
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="p-2.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="text-lg font-bold font-mono text-[#111827]">{vault.courses.length}</div>
+              <div className="text-[10px] text-[#6B7280]">Courses</div>
+            </div>
+            <div className="p-2.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="text-lg font-bold font-mono text-[#111827]">{vault.lectures.length}</div>
+              <div className="text-[10px] text-[#6B7280]">Slots</div>
+            </div>
+            <div className="p-2.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="text-lg font-bold font-mono text-[#111827]">{vault.flashcards.length}</div>
+              <div className="text-[10px] text-[#6B7280]">Cards</div>
+            </div>
+            <div className="p-2.5 rounded-md bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="text-lg font-bold font-mono text-[#1E3A8A]">{totalFocusHrs}h</div>
+              <div className="text-[10px] text-[#6B7280]">Focus</div>
+            </div>
           </div>
-          <div className="p-3 rounded-lg aura-subtle-surface">
-            <div className="text-xl font-bold font-mono text-violet-400">{vault.flashcards.length}</div>
-            <div className="text-[11px] text-slate-400">SM-2 Cards</div>
-          </div>
-          <div className="p-3 rounded-lg aura-subtle-surface">
-            <div className="text-xl font-bold font-mono text-amber-400">{totalFocusHrs}h</div>
-            <div className="text-[11px] text-slate-400">Deep Focus</div>
-          </div>
+        </div>
+      </div>
+
+      {/* Mobile PWA Add-to-Home-Screen Notice */}
+      <div className="aura-glass rounded-lg p-3.5 flex items-start gap-3">
+        <Smartphone className="w-4 h-4 text-[#1E3A8A] shrink-0 mt-0.5" />
+        <div className="text-xs text-[#6B7280] leading-relaxed">
+          <strong className="text-[#111827]">Install as Web App:</strong> In iOS Safari or desktop Chrome, select{' '}
+          <strong>Share → Add to Home Screen</strong> (or Install App) for offline timetable access.
         </div>
       </div>
     </div>

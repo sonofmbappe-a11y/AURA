@@ -215,6 +215,7 @@ export interface AuraLocalVault {
   deletedGroupIds?: string[];
   citations: WebCitation[];
   lastAutoRestoredUid?: string;
+  lastBackupUpdatedAtMs?: number;
 }
 
 export interface CloudStudyRoom {

@@ -12,18 +12,11 @@ interface AuraModalProps {
   children: React.ReactNode;
 }
 
-const ACCENT_BORDER: Record<NonNullable<AuraModalProps['accentColor']>, string> = {
-  emerald: 'border-cyan-500/40',
-  sky: 'border-cyan-500/40',
-  violet: 'border-violet-500/40',
-  amber: 'border-amber-500/45'
-};
-
 const ACCENT_BADGE: Record<NonNullable<AuraModalProps['accentColor']>, string> = {
-  emerald: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-  sky: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-  violet: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-  amber: 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+  emerald: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]',
+  sky: 'bg-[#EFF6FF] text-[#1E3A8A] border-[#BFDBFE]',
+  violet: 'bg-[#EFF6FF] text-[#1E3A8A] border-[#BFDBFE]',
+  amber: 'bg-[#FFFBEB] text-[#92400E] border-[#FDE68A]'
 };
 
 export const AuraModal: React.FC<AuraModalProps> = ({
@@ -54,35 +47,35 @@ export const AuraModal: React.FC<AuraModalProps> = ({
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-[70] bg-slate-950/85 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[70] bg-[#111827]/45 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`aura-glass rounded-xl w-full ${maxWidthClass} max-h-[88dvh] flex flex-col border ${ACCENT_BORDER[accentColor]} shadow-2xl my-auto overflow-hidden`}
+        className={`bg-[#FFFFFF] rounded-lg w-full ${maxWidthClass} max-h-[88dvh] flex flex-col border border-[#E5E7EB] my-auto overflow-hidden`}
       >
-        <div className="px-5 pt-4 pb-3 border-b border-slate-800 flex items-start justify-between gap-3 shrink-0">
+        <div className="px-4 pt-3.5 pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0 space-y-1">
             {badge && (
               <span
-                className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${ACCENT_BADGE[accentColor]}`}
+                className={`inline-block px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider border ${ACCENT_BADGE[accentColor]}`}
               >
                 {badge}
               </span>
             )}
-            <h3 className="font-bold text-base sm:text-lg leading-snug">{title}</h3>
-            {subtitle && <p className="text-xs text-slate-400 leading-relaxed">{subtitle}</p>}
+            <h3 className="font-bold text-base text-[#111827] leading-snug">{title}</h3>
+            {subtitle && <p className="text-xs text-[#6B7280] leading-relaxed">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-rose-500/20 hover:text-rose-300 text-slate-300 flex items-center justify-center shrink-0 transition"
+            className="w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] text-[#6B7280] hover:text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 overflow-y-auto space-y-3.5">{children}</div>
+        <div className="p-4 overflow-y-auto space-y-3.5 text-[#111827]">{children}</div>
       </div>
     </div>
   );

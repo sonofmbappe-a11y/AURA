@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -11,139 +11,85 @@ body {
   min-height: 100dvh;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #0b1220;
-  color: #f8fafc;
+  background-color: #fafafa;
+  color: #111827;
 }
 
-html.light {
-  color-scheme: light;
-}
-
-html.light body {
-  color: #0f172a;
-  background-color: #f8fafc;
-}
-
-/* Crisp Elevated Surface (Linear / Notion / Slack aesthetic) */
+/* Crisp Editorial Swiss Grid Surfaces (Flat, High Contrast, 150ms Hover Borders) */
 .aura-glass {
-  background: #111827;
-  border: 1px solid #1e293b;
-  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.35);
-}
-
-html.light .aura-glass {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 14px -4px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e5e7eb;
+  transition: border-color 150ms ease;
 }
 
-/* Editorial Surface Card */
+.aura-glass:hover {
+  border-color: #d1d5db;
+}
+
 .aura-hero-card {
   position: relative;
-  background: #111827;
-  border: 1px solid #1e293b;
-  box-shadow: 0 6px 20px -6px rgba(0, 0, 0, 0.4);
-}
-
-html.light .aura-hero-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 6px 18px -6px rgba(15, 23, 42, 0.07);
+  border: 1px solid #e5e7eb;
+  transition: border-color 150ms ease;
 }
 
-/* Custom Inputs with Crisp Electric Cyan Focus */
+.aura-subtle-surface {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.aura-subtle-surface:hover {
+  border-color: #9ca3af;
+}
+
+/* Editorial Inputs with Crisp Academic Navy Focus */
 .aura-input {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  color: #f8fafc;
-  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .aura-input::placeholder {
-  color: #64748b;
+  color: #9ca3af;
 }
 
 .aura-input:focus {
   outline: none;
-  border-color: #06b6d4;
-  background: #0b1220;
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.25);
-}
-
-html.light .aura-input {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
-}
-
-html.light .aura-input::placeholder {
-  color: #64748b;
-}
-
-html.light .aura-input:focus {
+  border-color: #1e3a8a;
   background: #ffffff;
-  border-color: #0891b2;
-  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.18);
 }
 
-.aura-subtle-surface {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-
-html.light .aura-subtle-surface {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-}
-
-/* Crisp Action Buttons */
+/* Action Buttons */
 .aura-pill-btn {
   border-radius: 0.5rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 150ms ease, border-color 150ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.aura-pill-btn:active {
-  transform: scale(0.98);
-}
-
 .aura-knock-pulse {
-  border-color: #f59e0b;
+  border-color: #b45309;
 }
 
-/* Sound Wave Indicator for Live Voice Active Speakers */
-@keyframes waveBars {
-  0%, 100% {
-    height: 4px;
-  }
-  50% {
-    height: 14px;
-  }
-}
-
+/* Minimal Static Equalizer Indicator */
 .aura-sound-bar {
-  animation: waveBars 0.8s ease-in-out infinite;
-}
-.aura-sound-bar:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.aura-sound-bar:nth-child(3) {
-  animation-delay: 0.4s;
+  height: 10px;
 }
 
 .aura-shimmer-btn {
-  background: #06b6d4;
-  color: #020617;
+  background: #1e3a8a;
+  color: #ffffff;
   font-weight: 600;
-  transition: background-color 0.15s ease;
+  transition: background-color 150ms ease;
 }
+
 .aura-shimmer-btn:hover {
-  background: #22d3ee;
+  background: #1e40af;
 }
 
 /* Utility to hide scrollbars */
@@ -156,34 +102,23 @@ html.light .aura-subtle-surface {
 }
 
 .aura-cast-glow {
-  border-color: #06b6d4;
+  border-color: #1e3a8a;
 }
 
 .aura-active-speaker {
-  box-shadow: 0 0 0 2px #06b6d4;
+  border-color: #1e3a8a;
 }
 
-/* Studio Dock */
+/* Crisp Editorial Navigation Dock */
 .aura-dock {
-  background: #0b1220;
-  border: 1px solid #1e293b;
-  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
-}
-
-html.light .aura-dock {
   background: #ffffff;
-  border: 1px solid #cbd5e1;
-  box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.12);
+  border: 1px solid #e5e7eb;
 }
 
 .aura-float-emoji {
   pointer-events: none;
-  opacity: 0.9;
 }
 
 .aura-sprint-chip {
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.aura-sprint-chip:active {
-  transform: scale(0.98);
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
