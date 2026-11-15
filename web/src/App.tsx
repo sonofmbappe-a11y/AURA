@@ -5,9 +5,11 @@ import {
   Calendar,
   CheckCircle2,
   Flame,
+  Moon,
   Quote,
   RefreshCw,
   Sliders,
+  Sun,
   Users,
   Video,
   X
@@ -79,11 +81,44 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Ensure crisp editorial light mode class on <html>
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('aura_web_theme_v1');
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+    } catch {
+      // Ignore storage access failures
+    }
+    return Boolean(loadLocalVault().profile.isDarkTheme);
+  });
+
+  // Sync editorial Light / Obsidian Dark theme class on <html>
   useEffect(() => {
     const html = document.documentElement;
-    html.classList.add('light');
-    html.classList.remove('dark');
+    if (isDarkMode) {
+      html.classList.add('dark');
+      html.classList.remove('light');
+    } else {
+      html.classList.add('light');
+      html.classList.remove('dark');
+    }
+    try {
+      localStorage.setItem('aura_web_theme_v1', isDarkMode ? 'dark' : 'light');
+    } catch {
+      // Ignore storage write failures
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode((prev) => {
+      const next = !prev;
+      setVault((v) => {
+        const updated = { ...v, profile: { ...v.profile, isDarkTheme: next } };
+        saveLocalVault(updated);
+        return updated;
+      });
+      return next;
+    });
   }, []);
 
   // Handle Google OAuth redirect fallback on iOS Safari & Firebase Auth lifecycle
@@ -300,6 +335,16 @@ export const App: React.FC = () => {
                 : 'Cloud Synced'}
             </span>
           )}
+
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            className="w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] hover:bg-[#F3F4F6] text-[#4B5563] hover:text-[#111827] flex items-center justify-center transition-colors duration-150 shrink-0"
+          >
+            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
 
           <button
             type="button"

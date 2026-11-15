@@ -200,7 +200,11 @@ export function loadLocalVault(): AuraLocalVault {
     const parsed = JSON.parse(raw) as Partial<AuraLocalVault>;
     const def = createDefaultVault();
     return {
-      profile: { ...def.profile, ...(parsed.profile || {}), isDarkTheme: false },
+      profile: {
+        ...def.profile,
+        ...(parsed.profile || {}),
+        isDarkTheme: Boolean(parsed.profile?.isDarkTheme)
+      },
       courses: Array.isArray(parsed.courses) ? parsed.courses : def.courses,
       lectures: Array.isArray(parsed.lectures) ? parsed.lectures : def.lectures,
       assessments: Array.isArray(parsed.assessments) ? parsed.assessments : def.assessments,
@@ -314,7 +318,7 @@ export async function saveCloudBackupFromWeb(
     `academicLevel=${p.academicLevel}`,
     `semester=${p.semester}`,
     `timeZone=${p.timeZone}`,
-    `isDarkTheme=false`,
+    `isDarkTheme=${Boolean(p.isDarkTheme)}`,
     `attendanceTargetPercent=${p.attendanceTargetPercent}`,
     `studyGoalHoursPerWeek=${p.studyGoalHoursPerWeek}`,
     `semesterBudgetLimit=${p.semesterBudgetLimit}`,
@@ -571,7 +575,10 @@ export async function fetchAndMergeCloudBackupToWeb(
     academicLevel: settingsMap.academicLevel || current.profile.academicLevel,
     semester: settingsMap.semester || current.profile.semester,
     timeZone: settingsMap.timeZone || current.profile.timeZone,
-    isDarkTheme: false,
+    isDarkTheme:
+      settingsMap.isDarkTheme !== undefined
+        ? settingsMap.isDarkTheme === 'true'
+        : current.profile.isDarkTheme,
     attendanceTargetPercent:
       Number(settingsMap.attendanceTargetPercent) || current.profile.attendanceTargetPercent,
     studyGoalHoursPerWeek:

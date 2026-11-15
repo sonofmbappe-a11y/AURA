@@ -6,6 +6,10 @@
   color-scheme: light;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
@@ -13,24 +17,44 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   background-color: #fafafa;
   color: #111827;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+html.dark body {
+  background-color: #0b0f17;
+  color: #f9fafb;
 }
 
 /* Crisp Editorial Swiss Grid Surfaces (Flat, High Contrast, 150ms Hover Borders) */
 .aura-glass {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  transition: border-color 150ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .aura-glass:hover {
   border-color: #d1d5db;
 }
 
+html.dark .aura-glass {
+  background: #111827;
+  border-color: #1f2937;
+}
+
+html.dark .aura-glass:hover {
+  border-color: #374151;
+}
+
 .aura-hero-card {
   position: relative;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  transition: border-color 150ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+html.dark .aura-hero-card {
+  background: #111827;
+  border-color: #1f2937;
 }
 
 .aura-subtle-surface {
@@ -43,12 +67,21 @@ body {
   border-color: #9ca3af;
 }
 
+html.dark .aura-subtle-surface {
+  background: #182030;
+  border-color: #273244;
+}
+
+html.dark .aura-subtle-surface:hover {
+  border-color: #4b5563;
+}
+
 /* Editorial Inputs with Crisp Academic Navy Focus */
 .aura-input {
   background: #ffffff;
   border: 1px solid #d1d5db;
   color: #111827;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 .aura-input::placeholder {
@@ -59,6 +92,21 @@ body {
   outline: none;
   border-color: #1e3a8a;
   background: #ffffff;
+}
+
+html.dark .aura-input {
+  background: #0f1623;
+  border-color: #374151;
+  color: #f9fafb;
+}
+
+html.dark .aura-input::placeholder {
+  color: #6b7280;
+}
+
+html.dark .aura-input:focus {
+  border-color: #3b82f6;
+  background: #111827;
 }
 
 /* Action Buttons */
@@ -113,6 +161,12 @@ body {
 .aura-dock {
   background: #ffffff;
   border: 1px solid #e5e7eb;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+html.dark .aura-dock {
+  background: #111827;
+  border-color: #1f2937;
 }
 
 .aura-float-emoji {
@@ -121,4 +175,105 @@ body {
 
 .aura-sprint-chip {
   transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+/* Editorial Obsidian Dark Mode Overrides across Swiss-Grid Components */
+html.dark .bg-\[\#FAFAFA\] {
+  background-color: #0b0f17;
+}
+html.dark .bg-\[\#FFFFFF\]:not(canvas) {
+  background-color: #111827;
+}
+html.dark .bg-\[\#F9FAFB\],
+html.dark .bg-\[\#F8FAFC\] {
+  background-color: #151c2c;
+}
+html.dark .bg-\[\#F3F4F6\] {
+  background-color: #1b2436;
+}
+html.dark .bg-\[\#EFF6FF\] {
+  background-color: #172554;
+}
+html.dark .bg-\[\#ECFDF5\] {
+  background-color: #064e3b;
+}
+html.dark .bg-\[\#FEF2F2\] {
+  background-color: #450a0a;
+}
+html.dark .bg-\[\#FFFBEB\] {
+  background-color: #451a03;
+}
+
+html.dark .text-\[\#111827\] {
+  color: #f9fafb;
+}
+html.dark .text-\[\#374151\] {
+  color: #e5e7eb;
+}
+html.dark .text-\[\#4B5563\] {
+  color: #d1d5db;
+}
+html.dark .text-\[\#6B7280\] {
+  color: #9ca3af;
+}
+html.dark .text-\[\#1E3A8A\] {
+  color: #60a5fa;
+}
+html.dark .text-\[\#065F46\],
+html.dark .text-\[\#047857\],
+html.dark .text-\[\#059669\] {
+  color: #34d399;
+}
+html.dark .text-\[\#DC2626\],
+html.dark .text-\[\#B91C1C\],
+html.dark .text-\[\#991B1B\] {
+  color: #f87171;
+}
+html.dark .text-\[\#92400E\],
+html.dark .text-\[\#B45309\] {
+  color: #fbbf24;
+}
+
+html.dark .border-\[\#E5E7EB\],
+html.dark .divide-\[\#E5E7EB\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1f2937;
+}
+html.dark .border-\[\#D1D5DB\] {
+  border-color: #374151;
+}
+html.dark .border-\[\#BFDBFE\] {
+  border-color: #1e40af;
+}
+html.dark .border-\[\#A7F3D0\] {
+  border-color: #065f46;
+}
+html.dark .border-\[\#FECACA\] {
+  border-color: #7f1d1d;
+}
+html.dark .border-\[\#FDE68A\] {
+  border-color: #78350f;
+}
+
+html.dark .hover\:bg-\[\#F3F4F6\]:hover,
+html.dark .hover\:bg-\[\#F9FAFB\]:hover {
+  background-color: #1f2937;
+}
+html.dark .hover\:bg-\[\#EFF6FF\]:hover {
+  background-color: #1e3a8a;
+}
+html.dark .hover\:border-\[\#9CA3AF\]:hover,
+html.dark .hover\:border-\[\#D1D5DB\]:hover {
+  border-color: #4b5563;
+}
+html.dark .hover\:text-\[\#111827\]:hover {
+  color: #f9fafb;
+}
+html.dark .hover\:text-\[\#1E3A8A\]:hover {
+  color: #93c5fd;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
 }
