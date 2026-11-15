@@ -187,6 +187,7 @@ export function createDefaultVault(): AuraLocalVault {
         messageType: 'TEXT'
       }
     ],
+    deletedGroupIds: [],
     citations: [
       {
         id: 'cit_1',

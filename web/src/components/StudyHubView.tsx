@@ -251,31 +251,56 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   const activeCard = vault.flashcards[cardIndex] || vault.flashcards[0];
 
+  const scholarStreakDays = useMemo(() => {
+    const uniqueDays = new Set(
+      vault.focusSessions.map((s) => new Date(s.completedAt).toDateString())
+    );
+    return Math.max(1, uniqueDays.size);
+  }, [vault.focusSessions]);
+
+  const scholarRank = useMemo(() => {
+    const totalMins = vault.focusSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+    if (totalMins >= 900) return { title: "👑 Aura Dean's Scholar", color: "text-purple-400 bg-purple-500/15 border-purple-500/30" };
+    if (totalMins >= 300) return { title: "🏆 Master Scholar", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" };
+    if (totalMins >= 60) return { title: "⚡ Focused Scholar", color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" };
+    return { title: "🌱 Novice Scholar", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
+  }, [vault.focusSessions]);
+
   return (
     <div className="space-y-4">
-      {/* Sub-navigation */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-        {(
-          [
-            ['NOTES', 'Notes Vault'],
-            ['FLASHCARDS', `SM-2 Cards (${vault.flashcards.length})`],
-            ['QUIZ_SIM', 'Exam Simulator'],
-            ['EXAMS', `Exams & Tasks (${vault.assessments.length})`],
-            ['SLIDE_PARSER', 'Slide Extractor']
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => setSubTab(id)}
-            className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition ${
-              subTab === id
-                ? 'bg-cyan-500 text-slate-950 border-cyan-400'
-                : 'aura-glass border-slate-800 text-slate-300 hover:text-white'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Sub-navigation & Scholar Status Badges */}
+      <div className="flex items-center justify-between flex-wrap gap-2 pb-1">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+          {(
+            [
+              ['NOTES', 'Notes Vault'],
+              ['FLASHCARDS', `SM-2 Cards (${vault.flashcards.length})`],
+              ['QUIZ_SIM', 'Exam Simulator'],
+              ['EXAMS', `Exams & Tasks (${vault.assessments.length})`],
+              ['SLIDE_PARSER', 'Slide Extractor']
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setSubTab(id)}
+              className={`px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border transition ${
+                subTab === id
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400'
+                  : 'aura-glass border-slate-800 text-slate-300 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-flex items-center gap-1">
+            🔥 {scholarStreakDays}d Streak
+          </span>
+          <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border inline-flex items-center gap-1 ${scholarRank.color}`}>
+            {scholarRank.title}
+          </span>
+        </div>
       </div>
 
       {subTab === 'NOTES' && (

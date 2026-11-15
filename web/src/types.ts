@@ -153,10 +153,14 @@ export interface WebGroupProject {
   syncedPomodoroState?: {
     isRunning: boolean;
     remainingSeconds: number;
+    durationMinutes?: number;
     mode: 'FOCUS' | 'BREAK';
+    endEpochMillis?: number;
     lastUpdated: number;
     initiatorName: string;
+    initiatorEmail?: string;
   };
+  memberStatuses?: Record<string, { status: string; note?: string; updatedAt: number }>;
 }
 
 export interface WebGroupInvitation {
@@ -208,6 +212,7 @@ export interface AuraLocalVault {
   distractions: string[];
   groupProjects: WebGroupProject[];
   groupMessages: WebGroupChatMessage[];
+  deletedGroupIds?: string[];
   citations: WebCitation[];
   lastAutoRestoredUid?: string;
 }

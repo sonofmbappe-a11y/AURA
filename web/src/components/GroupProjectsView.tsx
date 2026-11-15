@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getDocsFromServer,
   onSnapshot,
   orderBy,
   query,
@@ -44,6 +45,7 @@ import {
   Pin,
   Play,
   Plus,
+  RefreshCw,
   Search,
   Send,
   Settings,
@@ -104,11 +106,20 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     initialGroupId || vault.groupProjects[0]?.id || ''
   );
-  const [activeTab, setActiveTab] = useState<'CHAT' | 'DELIVERABLES' | 'RESOURCES' | 'MEMBERS'>('CHAT');
+  const [activeTab, setActiveTab] = useState<'CHAT' | 'DELIVERABLES' | 'SPRINT' | 'RESOURCES' | 'MEMBERS'>('CHAT');
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Track deleted or left project IDs in memory to avoid stale snapshot revival
-  const deletedProjectIdsRef = useRef<Set<string>>(new Set());
+  // Track deleted or left project IDs in memory + persisted vault tombstones
+  const deletedProjectIdsRef = useRef<Set<string>>(new Set(vault.deletedGroupIds || []));
+  const groupProjectsRef = useRef<WebGroupProject[]>(vault.groupProjects);
+  groupProjectsRef.current = vault.groupProjects;
   const targetDbs = useMemo(() => (defaultDb !== db ? [defaultDb, db] : [defaultDb]), []);
+
+  useEffect(() => {
+    const next = new Set(vault.deletedGroupIds || []);
+    deletedProjectIdsRef.current.forEach((id) => next.add(id));
+    deletedProjectIdsRef.current = next;
+  }, [vault.deletedGroupIds]);
 
   // Pending Invitations received by the current user
   const [pendingInvitations, setPendingInvitations] = useState<WebGroupInvitation[]>([]);
@@ -124,7 +135,7 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
-  // Shared Team Resource Vault State (Feature 2)
+  // Shared Team Resource Vault State (Feature 1)
   const [newResourceTitle, setNewResourceTitle] = useState('');
   const [newResourceUrl, setNewResourceUrl] = useState('');
   const [newResourceCategory, setNewResourceCategory] = useState<'SLIDES' | 'DOCUMENT' | 'RESEARCH_LINK' | 'PAST_PAPER'>('SLIDES');
@@ -149,9 +160,8 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [voiceHuddleActive, setVoiceHuddleActive] = useState(false);
   const [isWebMicMuted, setIsWebMicMuted] = useState(false);
 
-  // Group Synced Pomodoro Sprint State
+  // Group Synced Pomodoro Sprint State (derived from activeProject.syncedPomodoroState)
   const [pomodoroSeconds, setPomodoroSeconds] = useState(25 * 60);
-  const [pomodoroRunning, setPomodoroRunning] = useState(false);
 
   // Deliverables filter & search
   const [taskFilter, setTaskFilter] = useState<'ALL' | 'PENDING' | 'DONE'>('ALL');
@@ -204,21 +214,39 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
   }, [projectMessages.length, activeTab]);
 
-  // Pomodoro timer tick
+  // Synced Pomodoro timer tick derived from activeProject.syncedPomodoroState
+  const syncedPomo = activeProject?.syncedPomodoroState;
+  const pomodoroRunning = Boolean(syncedPomo?.isRunning);
+  const pomodoroDurationMin = syncedPomo?.durationMinutes || 25;
+  const pomodoroMode = syncedPomo?.mode || 'FOCUS';
+
   useEffect(() => {
-    if (!pomodoroRunning) return;
+    const computeRemaining = () => {
+      if (!syncedPomo) return 25 * 60;
+      if (syncedPomo.isRunning && syncedPomo.endEpochMillis) {
+        return Math.max(0, Math.floor((syncedPomo.endEpochMillis - Date.now()) / 1000));
+      }
+      return Math.max(0, syncedPomo.remainingSeconds ?? (syncedPomo.durationMinutes || 25) * 60);
+    };
+    setPomodoroSeconds(computeRemaining());
+    if (!syncedPomo?.isRunning) return;
     const interval = window.setInterval(() => {
-      setPomodoroSeconds((prev) => {
-        if (prev <= 1) {
-          setPomodoroRunning(false);
-          onNotify('Group 25-minute Pomodoro Sprint Complete! Time for a team break.');
-          return 25 * 60;
-        }
-        return prev - 1;
-      });
+      const left = computeRemaining();
+      setPomodoroSeconds(left);
+      if (left <= 0) {
+        window.clearInterval(interval);
+        onNotify('Group Pomodoro Sprint Complete! Time for a team break.');
+      }
     }, 1000);
     return () => window.clearInterval(interval);
-  }, [pomodoroRunning, onNotify]);
+  }, [
+    syncedPomo?.isRunning,
+    syncedPomo?.endEpochMillis,
+    syncedPomo?.remainingSeconds,
+    syncedPomo?.durationMinutes,
+    syncedPomo?.lastUpdated,
+    onNotify
+  ]);
 
   // Clean up voice recording on unmount
   useEffect(() => {
@@ -315,16 +343,18 @@ export const GroupProjectsView: React.FC<Props> = ({
         teamName: data.teamName || 'Team 1',
         objective: data.objective || data.groupTarget || '',
         groupTarget: data.groupTarget || 'Grade A',
-        avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || 'GRP',
+        avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
         avatarColorHex: data.avatarColorHex || '#06B6D4',
         creatorUid: data.creatorUid || '',
         creatorEmail: data.creatorEmail || '',
-        adminEmails: data.adminEmails || [data.creatorEmail || ''],
-        memberEmails: data.memberEmails || [currentEmail],
+        adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails : [data.creatorEmail || ''].filter(Boolean),
+        memberEmails: Array.isArray(data.memberEmails) ? data.memberEmails : [currentEmail],
         joinCode: data.joinCode || '',
         dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
-        tasks: data.tasks || [],
-        resources: data.resources || []
+        tasks: Array.isArray(data.tasks) ? data.tasks : [],
+        resources: Array.isArray(data.resources) ? data.resources : [],
+        syncedPomodoroState: data.syncedPomodoroState || undefined,
+        memberStatuses: data.memberStatuses || undefined
       };
       return { project, updatedAtMs };
     };
@@ -384,6 +414,13 @@ export const GroupProjectsView: React.FC<Props> = ({
           where('adminEmails', 'array-contains', currentEmail)
         )
       );
+      registerQuery(
+        `creator_email_${dbIdx}`,
+        query(
+          collection(targetDb, 'group_projects'),
+          where('creatorEmail', '==', currentEmail)
+        )
+      );
       if (user.uid) {
         registerQuery(
           `creator_${dbIdx}`,
@@ -393,6 +430,40 @@ export const GroupProjectsView: React.FC<Props> = ({
           )
         );
       }
+
+      // Real-time tombstone listener for zero-delay deletion synchronization with Android app
+      try {
+        const unsubDel = onSnapshot(
+          collection(targetDb, 'deleted_group_projects'),
+          (snap) => {
+            let hasNewDeletions = false;
+            snap.docs.forEach((d) => {
+              if (!deletedProjectIdsRef.current.has(d.id)) {
+                deletedProjectIdsRef.current.add(d.id);
+                hasNewDeletions = true;
+              }
+            });
+            if (hasNewDeletions) {
+              const allDeleted = Array.from(deletedProjectIdsRef.current);
+              onUpdateVault((prev) => ({
+                ...prev,
+                deletedGroupIds: allDeleted,
+                groupProjects: prev.groupProjects.filter((p) => !deletedProjectIdsRef.current.has(p.id)),
+                groupMessages: prev.groupMessages.filter((m) => !deletedProjectIdsRef.current.has(m.projectId))
+              }));
+              setSelectedProjectId((prevId) => {
+                if (deletedProjectIdsRef.current.has(prevId)) {
+                  const remaining = groupProjectsRef.current.filter((p) => !deletedProjectIdsRef.current.has(p.id));
+                  return remaining[0]?.id || '';
+                }
+                return prevId;
+              });
+            }
+          },
+          () => {}
+        );
+        unsubs.push(unsubDel);
+      } catch {}
     });
 
     return () => {
@@ -438,12 +509,20 @@ export const GroupProjectsView: React.FC<Props> = ({
               memberEmails: members,
               joinCode: data.joinCode || '',
               dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
-              tasks: data.tasks || []
+              tasks: data.tasks || [],
+              resources: data.resources || [],
+              syncedPomodoroState: data.syncedPomodoroState,
+              memberStatuses: data.memberStatuses || {}
             };
 
+            deletedProjectIdsRef.current.delete(joinedProj.id);
             onUpdateVault((prev) => {
               const other = prev.groupProjects.filter((p) => p.id !== joinedProj.id);
-              return { ...prev, groupProjects: [joinedProj, ...other] };
+              return {
+                ...prev,
+                deletedGroupIds: (prev.deletedGroupIds || []).filter((id) => id !== joinedProj.id),
+                groupProjects: [joinedProj, ...other]
+              };
             });
             setSelectedProjectId(joinedProj.id);
             onNotify(`Joined '${joinedProj.teamName}' via invite link!`);
@@ -458,7 +537,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     performDirectJoin();
   }, [initialGroupId, user, currentEmail, targetDbs, onUpdateVault, onNotify]);
 
-  // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT
+  // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT (handles polls, docs & message deletion)
   useEffect(() => {
     if (!activeProject?.id || !user) return;
     const unsubs: (() => void)[] = [];
@@ -472,29 +551,84 @@ export const GroupProjectsView: React.FC<Props> = ({
           q,
           (snap) => {
             const cloudMsgs: WebGroupChatMessage[] = snap.docs.map((d) => {
-              const data = d.data();
+              const data = d.data() as Record<string, any>;
+              // Parse Poll from either Web pollData or Android pollQuestion + pollOptionsCsv + pollVotesJson
+              let parsedPoll = data.pollData;
+              if (!parsedPoll && data.pollQuestion) {
+                const opts = String(data.pollOptionsCsv || '')
+                  .split('|')
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                let votesObj: Record<string, string[]> = {};
+                if (data.pollVotesJson) {
+                  try {
+                    votesObj = JSON.parse(data.pollVotesJson);
+                  } catch {}
+                }
+                parsedPoll = {
+                  question: data.pollQuestion,
+                  options: opts.map((optText) => ({
+                    text: optText,
+                    votes: Array.isArray(votesObj[optText]) ? votesObj[optText] : []
+                  }))
+                };
+              } else if (parsedPoll && data.pollVotesJson) {
+                try {
+                  const votesObj = JSON.parse(data.pollVotesJson) as Record<string, string[]>;
+                  parsedPoll = {
+                    ...parsedPoll,
+                    options: (parsedPoll.options || []).map((opt: any) => ({
+                      ...opt,
+                      votes: Array.isArray(votesObj[opt.text]) ? votesObj[opt.text] : opt.votes || []
+                    }))
+                  };
+                } catch {}
+              }
+
+              // Parse Doc from either Web docData or Android sharedDocTitle/sharedDocUrl
+              const parsedDoc =
+                data.docData ||
+                (data.sharedDocTitle
+                  ? {
+                      id: d.id,
+                      title: data.sharedDocTitle,
+                      linkOrFileName: data.sharedDocUrl || '',
+                      category: 'DOCUMENT' as const,
+                      addedByEmail: data.senderEmail || '',
+                      addedAt: Date.now()
+                    }
+                  : undefined);
+
               return {
                 id: d.id,
                 projectId: activeProject.id,
+                senderUid: data.senderUid || '',
                 senderEmail: data.senderEmail || '',
                 senderName: data.senderName || 'Teammate',
                 messageText: data.messageText || '',
                 timestamp: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
                 isPinned: Boolean(data.isPinned),
                 messageType: data.messageType || 'TEXT',
-                taggedDeliverableTitle: data.taggedDeliverableTitle,
+                taggedDeliverableTitle: data.taggedDeliverableTitle || undefined,
                 reactions: data.reactions || {},
-                pollData: data.pollData,
-                docData: data.docData,
+                pollData: parsedPoll,
+                docData: parsedDoc,
                 audioUrl: data.audioUrl,
                 audioDurationSec: data.audioDurationSec,
                 imageUrl: data.imageUrl
               };
             });
 
-            if (cloudMsgs.length > 0) {
+            const fromServer = !snap.metadata.fromCache;
+            if (fromServer || cloudMsgs.length > 0) {
               onUpdateVault((prev) => {
                 const other = prev.groupMessages.filter((m) => m.projectId !== activeProject.id);
+                if (fromServer) {
+                  return {
+                    ...prev,
+                    groupMessages: [...other, ...cloudMsgs]
+                  };
+                }
                 const mergedMap = new Map<string, WebGroupChatMessage>();
                 prev.groupMessages
                   .filter((m) => m.projectId === activeProject.id)
@@ -570,11 +704,16 @@ export const GroupProjectsView: React.FC<Props> = ({
             memberEmails: pData.memberEmails || [inv.senderEmail, currentEmail],
             joinCode: pData.joinCode || inv.joinCode || '',
             dueEpochMillis: pData.dueEpochMillis || Date.now() + 14 * 86_400_000,
-            tasks: pData.tasks || []
+            tasks: pData.tasks || [],
+            resources: pData.resources || [],
+            syncedPomodoroState: pData.syncedPomodoroState,
+            memberStatuses: pData.memberStatuses || {}
           };
 
+          deletedProjectIdsRef.current.delete(joined.id);
           onUpdateVault((prev) => ({
             ...prev,
+            deletedGroupIds: (prev.deletedGroupIds || []).filter((id) => id !== joined.id),
             groupProjects: [joined, ...prev.groupProjects.filter((p) => p.id !== joined.id)]
           }));
           setSelectedProjectId(joined.id);
@@ -654,7 +793,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                 memberEmails: d.memberEmails || [],
                 joinCode: d.joinCode || '',
                 dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
-                tasks: d.tasks || []
+                tasks: d.tasks || [],
+                resources: d.resources || [],
+                syncedPomodoroState: d.syncedPomodoroState,
+                memberStatuses: d.memberStatuses || {}
               };
               break;
             }
@@ -686,7 +828,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                 memberEmails: d.memberEmails || [],
                 joinCode: d.joinCode || codeCandidate,
                 dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
-                tasks: d.tasks || []
+                tasks: d.tasks || [],
+                resources: d.resources || [],
+                syncedPomodoroState: d.syncedPomodoroState,
+                memberStatuses: d.memberStatuses || {}
               };
               break;
             }
@@ -717,8 +862,10 @@ export const GroupProjectsView: React.FC<Props> = ({
         );
       }
 
+      deletedProjectIdsRef.current.delete(targetDoc.id);
       onUpdateVault((prev) => ({
         ...prev,
+        deletedGroupIds: (prev.deletedGroupIds || []).filter((id) => id !== targetDoc!.id),
         groupProjects: [targetDoc!, ...prev.groupProjects.filter((p) => p.id !== targetDoc!.id)]
       }));
       setSelectedProjectId(targetDoc.id);
@@ -1020,9 +1167,9 @@ export const GroupProjectsView: React.FC<Props> = ({
     onNotify('Team poll posted to chat!');
   };
 
-  // VOTE ON POLL
-  const handleVotePoll = (msg: WebGroupChatMessage, optionText: string) => {
-    if (!msg.pollData) return;
+  // VOTE ON POLL (Synced to Firestore for Android & Web)
+  const handleVotePoll = async (msg: WebGroupChatMessage, optionText: string) => {
+    if (!msg.pollData || !activeProject) return;
     const updatedOptions = msg.pollData.options.map((opt) => {
       const filtered = opt.votes.filter((e) => e.toLowerCase() !== currentEmail);
       if (opt.text === optionText) {
@@ -1035,20 +1182,39 @@ export const GroupProjectsView: React.FC<Props> = ({
       return { ...opt, votes: filtered };
     });
 
+    const nextPollData = {
+      ...msg.pollData,
+      options: updatedOptions
+    };
+    const votesRecord: Record<string, string[]> = {};
+    updatedOptions.forEach((o) => {
+      votesRecord[o.text] = o.votes;
+    });
+    const pollVotesJson = JSON.stringify(votesRecord);
+
     onUpdateVault((prev) => ({
       ...prev,
       groupMessages: prev.groupMessages.map((m) =>
-        m.id === msg.id
-          ? {
-              ...m,
-              pollData: {
-                ...m.pollData!,
-                options: updatedOptions
-              }
-            }
-          : m
+        m.id === msg.id ? { ...m, pollData: nextPollData } : m
       )
     }));
+
+    if (user) {
+      await Promise.allSettled(
+        targetDbs.map((targetDb) =>
+          setDoc(
+            doc(targetDb, 'group_projects', activeProject.id, 'messages', msg.id),
+            {
+              pollData: nextPollData,
+              pollVotesJson,
+              pollQuestion: nextPollData.question,
+              pollOptionsCsv: updatedOptions.map((o) => o.text).join('|')
+            },
+            { merge: true }
+          )
+        )
+      );
+    }
   };
 
   // SEND DOC / RESOURCE
@@ -1355,11 +1521,13 @@ export const GroupProjectsView: React.FC<Props> = ({
       return;
 
     deletedProjectIdsRef.current.add(projId);
+    const persistedDeleted = Array.from(deletedProjectIdsRef.current);
 
     onUpdateVault((prev) => {
       const remaining = prev.groupProjects.filter((p) => p.id !== projId);
       return {
         ...prev,
+        deletedGroupIds: persistedDeleted,
         groupProjects: remaining,
         groupMessages: prev.groupMessages.filter((m) => m.projectId !== projId)
       };
@@ -1367,7 +1535,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     setSelectedProjectId((prevId) => {
       if (prevId === projId) {
-        const remaining = vault.groupProjects.filter((p) => p.id !== projId);
+        const remaining = groupProjectsRef.current.filter((p) => p.id !== projId);
         return remaining[0]?.id || '';
       }
       return prevId;
@@ -1375,7 +1543,13 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     if (user) {
       await Promise.allSettled(
-        targetDbs.map((targetDb) => deleteDoc(doc(targetDb, 'group_projects', projId)))
+        targetDbs.flatMap((targetDb) => [
+          deleteDoc(doc(targetDb, 'group_projects', projId)),
+          setDoc(doc(targetDb, 'deleted_group_projects', projId), {
+            deletedAt: serverTimestamp(),
+            deletedBy: currentEmail || user.email || 'web-user'
+          })
+        ])
       );
     }
 
@@ -1391,11 +1565,13 @@ export const GroupProjectsView: React.FC<Props> = ({
       return;
 
     deletedProjectIdsRef.current.add(projId);
+    const persistedDeleted = Array.from(deletedProjectIdsRef.current);
 
     onUpdateVault((prev) => {
       const remaining = prev.groupProjects.filter((p) => p.id !== projId);
       return {
         ...prev,
+        deletedGroupIds: persistedDeleted,
         groupProjects: remaining,
         groupMessages: prev.groupMessages.filter((m) => m.projectId !== projId)
       };
@@ -1403,7 +1579,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     setSelectedProjectId((prevId) => {
       if (prevId === projId) {
-        const remaining = vault.groupProjects.filter((p) => p.id !== projId);
+        const remaining = groupProjectsRef.current.filter((p) => p.id !== projId);
         return remaining[0]?.id || '';
       }
       return prevId;
@@ -1430,7 +1606,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     onNotify(`You left '${proj.teamName}'.`);
   };
 
-  // ADD SHARED RESOURCE TO TEAM VAULT (Feature 2)
+  // ADD SHARED RESOURCE TO TEAM VAULT (Feature 1)
   const handleAddResource = async () => {
     if (!activeProject || !newResourceTitle.trim() || !newResourceUrl.trim()) return;
     const resource: WebGroupResourceDoc = {
@@ -1492,6 +1668,255 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
 
     onNotify('Resource removed from Vault.');
+  };
+
+  // FEATURE 2: SYNCED GROUP POMODORO SPRINT TIMER ACTIONS (Web <-> Android)
+  const handlePomodoroAction = async (
+    action: 'START' | 'PAUSE' | 'RESET' | 'MODE',
+    durationMins = pomodoroDurationMin,
+    modeLabel: 'FOCUS' | 'BREAK' = pomodoroMode
+  ) => {
+    if (!activeProject) return;
+    const now = Date.now();
+    const initiatorName = user?.displayName || vault.profile.name || 'Scholar';
+    let nextRunning = false;
+    let nextRemaining = durationMins * 60;
+    let nextEndEpoch = 0;
+
+    if (action === 'START') {
+      const secs = pomodoroSeconds > 0 && pomodoroSeconds <= 7200 ? pomodoroSeconds : durationMins * 60;
+      nextRunning = true;
+      nextRemaining = secs;
+      nextEndEpoch = now + secs * 1000;
+    } else if (action === 'PAUSE') {
+      nextRunning = false;
+      nextRemaining = Math.max(0, pomodoroSeconds);
+      nextEndEpoch = 0;
+    } else {
+      nextRunning = false;
+      nextRemaining = durationMins * 60;
+      nextEndEpoch = 0;
+    }
+
+    const nextState = {
+      isRunning: nextRunning,
+      remainingSeconds: nextRemaining,
+      durationMinutes: durationMins,
+      mode: modeLabel,
+      endEpochMillis: nextEndEpoch,
+      lastUpdated: now,
+      initiatorName,
+      initiatorEmail: currentEmail
+    };
+
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupProjects: prev.groupProjects.map((p) =>
+        p.id === activeProject.id ? { ...p, syncedPomodoroState: nextState } : p
+      )
+    }));
+
+    if (user) {
+      await Promise.allSettled(
+        targetDbs.map((tDb) =>
+          setDoc(
+            doc(tDb, 'group_projects', activeProject.id),
+            {
+              syncedPomodoroState: nextState,
+              updatedAt: serverTimestamp()
+            },
+            { merge: true }
+          )
+        )
+      );
+    }
+
+    if (action === 'START') {
+      onNotify(`Started synced ${durationMins}m ${modeLabel.toLowerCase()} sprint!`);
+    }
+  };
+
+  // FEATURE 3: LIVE MEMBER STUDY STATUS & 1-TAP STANDUP PULSE (Web <-> Android)
+  const handleUpdateMyStatus = async (statusCode: string, note = '') => {
+    if (!activeProject || !currentEmail) return;
+    const nextStatuses = {
+      ...(activeProject.memberStatuses || {}),
+      [currentEmail]: {
+        status: statusCode,
+        note,
+        updatedAt: Date.now()
+      }
+    };
+
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupProjects: prev.groupProjects.map((p) =>
+        p.id === activeProject.id ? { ...p, memberStatuses: nextStatuses } : p
+      )
+    }));
+
+    if (user) {
+      await Promise.allSettled(
+        targetDbs.map((tDb) =>
+          setDoc(
+            doc(tDb, 'group_projects', activeProject.id),
+            {
+              memberStatuses: nextStatuses,
+              updatedAt: serverTimestamp()
+            },
+            { merge: true }
+          )
+        )
+      );
+    }
+    onNotify('Live study status synced!');
+  };
+
+  const handleSendStandupPulse = async () => {
+    if (!activeProject) return;
+    const myStatus = activeProject.memberStatuses?.[currentEmail]?.status || 'FOCUSING';
+    const statusLabel =
+      myStatus === 'FOCUSING'
+        ? '🔥 Focusing'
+        : myStatus === 'IN_LIBRARY'
+        ? '📚 In Library'
+        : myStatus === 'ON_BREAK'
+        ? '☕ On Break'
+        : '✅ Ready to Review';
+    const senderName = user?.displayName || vault.profile.name || 'Scholar';
+    const text = `⚡ Standup Pulse (${statusLabel}) • ${senderName} checked in — Team Readiness ${taskProgressPct}% (${doneTasks}/${tasks.length} deliverables done)`;
+    const noticeId = uidGen('pulse');
+    const newMsg: WebGroupChatMessage = {
+      id: noticeId,
+      projectId: activeProject.id,
+      senderEmail: currentEmail,
+      senderName,
+      messageText: text,
+      timestamp: Date.now(),
+      isPinned: false,
+      messageType: 'NOTICE'
+    };
+
+    await handleUpdateMyStatus(myStatus, `${doneTasks}/${tasks.length} tasks done`);
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupMessages: [...prev.groupMessages, newMsg]
+    }));
+
+    if (user) {
+      await Promise.allSettled(
+        targetDbs.map((tDb) =>
+          setDoc(doc(tDb, 'group_projects', activeProject.id, 'messages', noticeId), {
+            projectId: activeProject.id,
+            senderUid: user.uid,
+            senderEmail: currentEmail,
+            senderName,
+            messageText: text,
+            isPinned: false,
+            messageType: 'NOTICE',
+            createdAt: serverTimestamp()
+          })
+        )
+      );
+    }
+    onNotify('Standup pulse posted & synced!');
+  };
+
+  // 1-TAP FORCE CLOUD SYNC (Strict Server Reconciliation)
+  const handleForceSync = async () => {
+    setIsSyncing(true);
+    try {
+      for (const tDb of targetDbs) {
+        const delSnap = await getDocsFromServer(collection(tDb, 'deleted_group_projects'))
+          .catch(() => getDocs(collection(tDb, 'deleted_group_projects')))
+          .catch(() => null);
+        if (delSnap) {
+          delSnap.docs.forEach((d) => deletedProjectIdsRef.current.add(d.id));
+        }
+      }
+
+      const fetchedMap = new Map<string, WebGroupProject>();
+      let anyServerSucceeded = false;
+
+      for (const tDb of targetDbs) {
+        const queries = [
+          query(collection(tDb, 'group_projects'), where('memberEmails', 'array-contains', currentEmail)),
+          query(collection(tDb, 'group_projects'), where('adminEmails', 'array-contains', currentEmail)),
+          query(collection(tDb, 'group_projects'), where('creatorEmail', '==', currentEmail))
+        ];
+        if (user?.uid) {
+          queries.push(query(collection(tDb, 'group_projects'), where('creatorUid', '==', user.uid)));
+        }
+
+        for (const qRef of queries) {
+          const snap = await getDocsFromServer(qRef).catch(() => null);
+          const effectiveSnap = snap || (await getDocs(qRef).catch(() => null));
+          if (snap) anyServerSucceeded = true;
+
+          effectiveSnap?.docs.forEach((d) => {
+            if (deletedProjectIdsRef.current.has(d.id)) return;
+            const data = (d.data() || {}) as Record<string, any>;
+            fetchedMap.set(d.id, {
+              id: d.id,
+              teamName: data.teamName || 'Study Team',
+              projectTitle: data.projectTitle || data.teamName || 'Group Project',
+              courseCode: data.courseCode || 'GEN-101',
+              objective: data.objective || data.groupTarget || '',
+              groupTarget: data.groupTarget || data.objective || '',
+              creatorEmail: data.creatorEmail || '',
+              creatorUid: data.creatorUid || '',
+              avatarColorHex: data.avatarColorHex || '#06B6D4',
+              avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
+              memberEmails: Array.isArray(data.memberEmails) ? data.memberEmails : [],
+              adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails : [],
+              joinCode: data.joinCode || d.id.slice(0, 6).toUpperCase(),
+              dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
+              tasks: Array.isArray(data.tasks) ? data.tasks : [],
+              resources: Array.isArray(data.resources) ? data.resources : [],
+              syncedPomodoroState: data.syncedPomodoroState || undefined,
+              memberStatuses: data.memberStatuses || undefined
+            });
+          });
+        }
+      }
+
+      const persistedDeleted = Array.from(deletedProjectIdsRef.current);
+      const fetchedList = Array.from(fetchedMap.values());
+
+      onUpdateVault((prev) => {
+        const nextProjects = anyServerSucceeded
+          ? fetchedList
+          : (() => {
+              const map = new Map<string, WebGroupProject>();
+              prev.groupProjects.forEach((p) => {
+                if (!deletedProjectIdsRef.current.has(p.id)) map.set(p.id, p);
+              });
+              fetchedList.forEach((p) => {
+                if (!deletedProjectIdsRef.current.has(p.id)) map.set(p.id, p);
+              });
+              return Array.from(map.values());
+            })();
+        return {
+          ...prev,
+          deletedGroupIds: persistedDeleted,
+          groupProjects: nextProjects,
+          groupMessages: prev.groupMessages.filter((m) => !deletedProjectIdsRef.current.has(m.projectId))
+        };
+      });
+
+      setSelectedProjectId((prevId) => {
+        if (deletedProjectIdsRef.current.has(prevId) || (anyServerSucceeded && prevId && !fetchedMap.has(prevId))) {
+          return fetchedList[0]?.id || '';
+        }
+        return prevId;
+      });
+
+      onNotify(anyServerSucceeded ? '⚡ Server sync complete! Cloud teams & tasks updated.' : 'Synced with local cache.');
+    } catch {
+      onNotify('Synced with local cache.');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   // EXPORT CHAT TRANSCRIPT
@@ -1638,6 +2063,16 @@ export const GroupProjectsView: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleForceSync}
+              className="px-3 py-2 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/50 text-xs font-semibold transition flex items-center gap-1.5"
+              title="Force Instant Cloud Sync across Web and Mobile"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>⚡ Force Re-Sync</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
@@ -1879,29 +2314,56 @@ export const GroupProjectsView: React.FC<Props> = ({
                 )}
               </div>
 
-              {/* Group Pomodoro Live Sprint Widget */}
-              <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+              {/* Synced Group Pomodoro Live Sprint Widget (Feature 2) */}
+              <div className="p-3 rounded-lg bg-slate-900 border border-cyan-500/30 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Flame className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs font-bold text-white">Group Focus Sprint</span>
+                    <span className="text-xs font-bold text-white">
+                      Synced Team Sprint ({pomodoroMode})
+                    </span>
                   </div>
-                  <span className="text-[11px] font-mono font-bold text-cyan-400">
+                  <span className="text-xs font-mono font-extrabold text-cyan-400">
                     {Math.floor(pomodoroSeconds / 60)
                       .toString()
                       .padStart(2, '0')}
                     :{(pomodoroSeconds % 60).toString().padStart(2, '0')}
                   </span>
                 </div>
+                {syncedPomo?.initiatorName && (
+                  <div className="text-[10px] text-emerald-400 font-medium">
+                    {pomodoroRunning ? `Running • Started by ${syncedPomo.initiatorName}` : `Paused • Last updated by ${syncedPomo.initiatorName}`}
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                  {[
+                    { dur: 25, mode: 'FOCUS' as const, label: '25m Focus' },
+                    { dur: 50, mode: 'FOCUS' as const, label: '50m Deep' },
+                    { dur: 5, mode: 'BREAK' as const, label: '5m Break' }
+                  ].map((preset) => {
+                    const selected = pomodoroDurationMin === preset.dur && pomodoroMode === preset.mode;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handlePomodoroAction('MODE', preset.dur, preset.mode)}
+                        className={`py-1 rounded-md transition ${
+                          selected
+                            ? 'bg-cyan-500 text-slate-950'
+                            : 'bg-slate-800 text-slate-300 hover:text-white'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      setPomodoroRunning(!pomodoroRunning);
-                      if (!pomodoroRunning) {
-                        onNotify('Started synchronized 25-minute study sprint!');
-                      }
-                    }}
+                    onClick={() =>
+                      handlePomodoroAction(pomodoroRunning ? 'PAUSE' : 'START', pomodoroDurationMin, pomodoroMode)
+                    }
                     className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 ${
                       pomodoroRunning
                         ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
@@ -1909,14 +2371,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                     }`}
                   >
                     {pomodoroRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                    <span>{pomodoroRunning ? 'Pause Sprint' : 'Start 25m Sprint'}</span>
+                    <span>{pomodoroRunning ? 'Pause Synced' : `Start ${pomodoroDurationMin}m Sprint`}</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setPomodoroRunning(false);
-                      setPomodoroSeconds(25 * 60);
-                    }}
+                    onClick={() => handlePomodoroAction('RESET', pomodoroDurationMin, pomodoroMode)}
                     className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white text-xs font-semibold"
                   >
                     Reset
@@ -1941,7 +2400,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
 
               {/* Navigation Sub-Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1 p-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
                 <button
                   type="button"
                   onClick={() => setActiveTab('CHAT')}
@@ -1965,6 +2424,18 @@ export const GroupProjectsView: React.FC<Props> = ({
                 >
                   <FolderKanban className="w-3.5 h-3.5" />
                   <span>Tasks ({tasks.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('SPRINT')}
+                  className={`py-1.5 px-2 rounded-md font-semibold transition flex items-center justify-center gap-1.5 ${
+                    activeTab === 'SPRINT'
+                      ? 'bg-cyan-500 text-slate-950 font-bold'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>📌 Sprint</span>
                 </button>
                 <button
                   type="button"
@@ -2480,15 +2951,252 @@ export const GroupProjectsView: React.FC<Props> = ({
               </div>
             )}
 
+            {/* SPRINT KANBAN ROADMAP TAB (Feature 1) */}
+            {activeTab === 'SPRINT' && (
+              <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
+                {/* Sprint Header & Velocity Card */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900 to-sky-950/40 border border-cyan-500/30 flex items-center justify-between gap-4 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-cyan-400" />
+                      <h4 className="font-extrabold text-white text-base">
+                        Live Team Sprint Milestone &amp; Kanban
+                      </h4>
+                    </div>
+                    <p className="text-xs text-amber-300 mt-1">
+                      Target Goal: {activeProject.groupTarget || 'Complete all deliverables on schedule'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-xs text-slate-400">Sprint Velocity</div>
+                      <div className="text-sm font-bold text-cyan-400">
+                        {doneTasks} / {tasks.length} cleared ({taskProgressPct}%)
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddTaskModal(true)}
+                      className="px-3.5 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>New Task</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Team Readiness & Workload Leaderboard + 1-Tap Standup Pulse (Feature 3) */}
+                <div className="p-4 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div>
+                      <h5 className="text-xs sm:text-sm font-extrabold text-white">
+                        📊 Team Readiness &amp; Workload Leaderboard
+                      </h5>
+                      <p className="text-[11px] text-slate-400">
+                        Per-member deliverable completion &amp; instant standup check-in synced with Android
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-extrabold">
+                        {taskProgressPct}% Ready
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleSendStandupPulse}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition"
+                      >
+                        ⚡ Send Standup Pulse
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {activeProject.memberEmails.map((mEmail) => {
+                      const prefix = mEmail.split('@')[0].toLowerCase();
+                      const mTasks = tasks.filter(
+                        (t) =>
+                          t.memberContact?.toLowerCase() === mEmail.toLowerCase() ||
+                          t.memberName?.toLowerCase() === mEmail.toLowerCase() ||
+                          (prefix && t.memberName?.toLowerCase().includes(prefix))
+                      );
+                      const mDone = mTasks.filter((t) => t.isCompleted).length;
+                      const mPct = mTasks.length > 0 ? Math.round((mDone / mTasks.length) * 100) : 0;
+                      return (
+                        <div key={mEmail} className="flex items-center gap-3 text-xs">
+                          <span className="w-28 truncate text-slate-300 font-semibold">{prefix || mEmail}</span>
+                          <div className="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-400 transition-all duration-300"
+                              style={{ width: `${mPct}%` }}
+                            />
+                          </div>
+                          <span className="w-14 text-right font-mono text-cyan-300 font-bold">
+                            {mDone}/{mTasks.length}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 3-Column Kanban Board */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Column 1: Backlog / To-Do */}
+                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-300">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        🎯 Backlog &amp; To-Do
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 font-mono">
+                        {tasks.filter((t) => !t.isCompleted).length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 min-h-[160px]">
+                      {tasks.filter((t) => !t.isCompleted).map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 hover:border-cyan-500/40 transition space-y-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-semibold text-white leading-snug">
+                              {task.taskTitle}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTask(task)}
+                              title="Mark as Done"
+                              className="w-5 h-5 rounded-md border border-slate-600 hover:border-emerald-400 flex items-center justify-center shrink-0 transition"
+                            >
+                              <Check className="w-3 h-3 text-slate-400 hover:text-emerald-400" />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-700/40">
+                            <span>👤 {task.memberName}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setChatInput(`📌 Working on sprint task: '${task.taskTitle}'!`);
+                                setSelectedDeliverableTag(task.taskTitle);
+                                setActiveTab('CHAT');
+                              }}
+                              className="text-cyan-400 hover:underline"
+                            >
+                              Share
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      {tasks.filter((t) => !t.isCompleted).length === 0 && (
+                        <div className="text-center py-8 text-xs text-slate-500">
+                          All tasks cleared! 🎉
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 2: In Active Sprint */}
+                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-amber-300">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        ⚡ Active Sprint
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-[10px] text-amber-300 font-mono">
+                        {tasks.filter((t) => !t.isCompleted).length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 min-h-[160px]">
+                      {tasks.filter((t) => !t.isCompleted).map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-500/30 hover:border-amber-400/60 transition space-y-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-semibold text-amber-100 leading-snug">
+                              {task.taskTitle}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTask(task)}
+                              title="Mark as Completed"
+                              className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold hover:bg-emerald-500/30 transition shrink-0"
+                            >
+                              Complete
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-amber-500/20">
+                            <span>Assignee: {task.memberName}</span>
+                            <span className="text-amber-400">In Progress</span>
+                          </div>
+                        </div>
+                      ))}
+                      {tasks.filter((t) => !t.isCompleted).length === 0 && (
+                        <div className="text-center py-8 text-xs text-slate-500">
+                          No active sprint items
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Column 3: Completed & Verified */}
+                  <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+                    <div className="flex items-center justify-between px-1 text-xs font-bold text-emerald-400">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        ✅ Completed &amp; Verified
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-[10px] text-emerald-400 font-mono">
+                        {doneTasks}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 min-h-[160px]">
+                      {tasks.filter((t) => t.isCompleted).map((task) => (
+                        <div
+                          key={task.id}
+                          className="p-2.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-300 line-through leading-snug">
+                              {task.taskTitle}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleTask(task)}
+                              title="Re-open Task"
+                              className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-emerald-500/20">
+                            <span>Completed by {task.memberName}</span>
+                            <span className="text-emerald-400 font-semibold">Done ✓</span>
+                          </div>
+                        </div>
+                      ))}
+                      {doneTasks === 0 && (
+                        <div className="text-center py-8 text-xs text-slate-500">
+                          No completed tasks yet
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {activeTab === 'MEMBERS' && (
               <div className="aura-glass rounded-3xl p-4 sm:p-5 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-extrabold text-white text-sm sm:text-base">
-                      Teammates &amp; Member Status
+                      Teammates &amp; Live Study Status
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Teammates added by email can access this team and chat live.
+                      Set your live check-in status &amp; manage teammates across Web and Android.
                     </p>
                   </div>
                   <button
@@ -2501,6 +3209,37 @@ export const GroupProjectsView: React.FC<Props> = ({
                   </button>
                 </div>
 
+                {/* Live Study Check-In Bar (Feature 3) */}
+                <div className="p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/30 space-y-2">
+                  <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                    My Live Study Check-In Status
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { code: 'FOCUSING', label: '🔥 Focusing' },
+                      { code: 'IN_LIBRARY', label: '📚 In Library' },
+                      { code: 'ON_BREAK', label: '☕ On Break' },
+                      { code: 'READY', label: '✅ Ready to Review' }
+                    ].map((st) => {
+                      const active = (activeProject.memberStatuses?.[currentEmail]?.status || 'FOCUSING') === st.code;
+                      return (
+                        <button
+                          key={st.code}
+                          type="button"
+                          onClick={() => handleUpdateMyStatus(st.code)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                            active
+                              ? 'bg-cyan-500 text-slate-950'
+                              : 'aura-subtle-surface text-slate-300 hover:text-white'
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   {activeProject.memberEmails.map((email) => {
                     const isAdmin = (activeProject.adminEmails || [])
@@ -2510,6 +3249,17 @@ export const GroupProjectsView: React.FC<Props> = ({
                       activeProject.creatorEmail &&
                       activeProject.creatorEmail.toLowerCase() === email.toLowerCase();
                     const isMe = email.toLowerCase() === currentEmail;
+                    const rawStatus = activeProject.memberStatuses?.[email.toLowerCase()]?.status;
+                    const statusBadge =
+                      rawStatus === 'FOCUSING'
+                        ? '🔥 Focusing'
+                        : rawStatus === 'IN_LIBRARY'
+                        ? '📚 In Library'
+                        : rawStatus === 'ON_BREAK'
+                        ? '☕ Break'
+                        : rawStatus === 'READY'
+                        ? '✅ Ready'
+                        : null;
 
                     return (
                       <div
@@ -2521,13 +3271,18 @@ export const GroupProjectsView: React.FC<Props> = ({
                             {email.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs sm:text-sm font-bold text-white truncate">
                                 {email}
                               </span>
                               {isMe && (
                                 <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] font-extrabold">
                                   You
+                                </span>
+                              )}
+                              {statusBadge && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                                  {statusBadge}
                                 </span>
                               )}
                             </div>

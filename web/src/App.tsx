@@ -96,7 +96,7 @@ export const App: React.FC = () => {
         const switchedAccount =
           Boolean(current.lastAutoRestoredUid) && current.lastAutoRestoredUid !== u.uid;
         const baseVault = switchedAccount
-          ? { ...current, groupProjects: [], groupMessages: [] }
+          ? { ...current, groupProjects: [], groupMessages: [], deletedGroupIds: [] }
           : current;
         if (switchedAccount) {
           setVault(baseVault);
@@ -121,7 +121,8 @@ export const App: React.FC = () => {
             ...current,
             lastAutoRestoredUid: '',
             groupProjects: [],
-            groupMessages: []
+            groupMessages: [],
+            deletedGroupIds: []
           };
           setVault(cleared);
           saveLocalVault(cleared);
@@ -169,7 +170,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Sticky Top App Bar */}
-      <header className="sticky top-2 z-30 aura-glass rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-2.5">
+      <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 aura-glass rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-[#0B1220] border border-cyan-500/40 flex items-center justify-center font-bold text-cyan-400 text-sm shrink-0">
             A

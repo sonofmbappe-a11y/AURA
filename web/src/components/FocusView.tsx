@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Headphones,
   Pause,
@@ -199,6 +199,20 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   const circumference = 2 * Math.PI * 104;
   const totalLoggedMins = vault.focusSessions.reduce((s, x) => s + x.durationMinutes, 0);
 
+  const scholarStreakDays = useMemo(() => {
+    const uniqueDays = new Set(
+      vault.focusSessions.map((s) => new Date(s.completedAt).toDateString())
+    );
+    return Math.max(1, uniqueDays.size);
+  }, [vault.focusSessions]);
+
+  const scholarRank = useMemo(() => {
+    if (totalLoggedMins >= 900) return { title: "👑 Aura Dean's Scholar", color: "text-purple-400 bg-purple-500/15 border-purple-500/30" };
+    if (totalLoggedMins >= 300) return { title: "🏆 Master Scholar", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" };
+    if (totalLoggedMins >= 60) return { title: "⚡ Focused Scholar", color: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30" };
+    return { title: "🌱 Novice Scholar", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" };
+  }, [totalLoggedMins]);
+
   const addDistraction = () => {
     const text = distractionInput.trim();
     if (!text) return;
@@ -231,13 +245,21 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   return (
     <div className="space-y-4">
       <div className="aura-glass rounded-xl p-6 text-center space-y-5 border border-slate-800">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 inline-flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" /> DEEP FOCUS SANCTUARY
           </span>
-          <span className="text-xs text-emerald-400 font-mono font-bold">
-            {(totalLoggedMins / 60).toFixed(1)}h Logged
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/25 inline-flex items-center gap-1">
+              🔥 {scholarStreakDays}d Streak
+            </span>
+            <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border inline-flex items-center gap-1 ${scholarRank.color}`}>
+              {scholarRank.title}
+            </span>
+            <span className="text-xs text-emerald-400 font-mono font-bold">
+              {(totalLoggedMins / 60).toFixed(1)}h Logged
+            </span>
+          </div>
         </div>
 
         {/* Course Selector + Custom Time Trigger */}
