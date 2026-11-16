@@ -10,7 +10,12 @@ import {
   signOut as firebaseSignOut,
   type User
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  enableNetwork,
+  getFirestore,
+  initializeFirestore,
+  type Firestore
+} from 'firebase/firestore';
 
 /**
  * Shared Firebase project & named Firestore database with the AURA Android App.
@@ -33,14 +38,31 @@ export const FIRESTORE_DATABASE_ID =
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-export const defaultDb = getFirestore(app);
+function initResilientFirestore(databaseId?: string): Firestore {
+  try {
+    return initializeFirestore(
+      app,
+      {
+        experimentalAutoDetectLongPolling: true
+      },
+      databaseId
+    );
+  } catch {
+    return databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+  }
+}
+
+export const defaultDb = initResilientFirestore();
+enableNetwork(defaultDb).catch(() => {
+  // Ignore if offline at startup
+});
 
 // Connect to provisioned named database with automatic fallback
 export const namedDb = (() => {
   const targetId = FIRESTORE_DATABASE_ID;
   if (targetId && targetId !== '(default)' && !targetId.startsWith('ai-studio-android-aura-')) {
     try {
-      return getFirestore(app, targetId);
+      return initResilientFirestore(targetId);
     } catch {
       return defaultDb;
     }

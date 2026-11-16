@@ -33,18 +33,61 @@ export function emailBackupKey(email: string): string {
   return normalized.replace(/[^a-z0-9_-]/g, '_');
 }
 
+async function tryGetDocServerFirst(
+  ref: DocumentReference<DocumentData>
+): Promise<{ snap: DocumentSnapshot<DocumentData> | null; error: unknown | null }> {
+  try {
+    const snap = await getDocFromServer(ref);
+    return { snap, error: null };
+  } catch (serverErr) {
+    try {
+      const cached = await getDoc(ref);
+      if (cached.exists()) return { snap: cached, error: null };
+      return { snap: null, error: serverErr };
+    } catch {
+      return { snap: null, error: serverErr };
+    }
+  }
+}
+
 async function getDocServerFirst(
   ref: DocumentReference<DocumentData>
 ): Promise<DocumentSnapshot<DocumentData> | null> {
-  try {
-    return await getDocFromServer(ref);
-  } catch {
-    try {
-      return await getDoc(ref);
-    } catch {
-      return null;
-    }
-  }
+  const res = await tryGetDocServerFirst(ref);
+  return res.snap;
+}
+
+export function createSignedOutVault(isDarkTheme = false): AuraLocalVault {
+  return {
+    profile: {
+      name: 'Scholar',
+      email: '',
+      institution: 'University Campus',
+      programme: 'General Studies',
+      academicLevel: 'Level 300',
+      semester: 'Semester 1',
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      isDarkTheme,
+      attendanceTargetPercent: 75,
+      studyGoalHoursPerWeek: 18,
+      semesterBudgetLimit: 1500,
+      currencySymbol: 'GH₵'
+    },
+    courses: [],
+    lectures: [],
+    assessments: [],
+    flashcards: [],
+    notes: [],
+    grades: [],
+    focusSessions: [],
+    distractions: [],
+    groupProjects: [],
+    groupMessages: [],
+    deletedGroupIds: [],
+    citations: [],
+    lastAutoRestoredUid: '',
+    lastBackupUpdatedAtMs: 0
+  };
 }
 
 export function createDefaultVault(): AuraLocalVault {
@@ -505,18 +548,25 @@ export async function saveCloudBackupFromWeb(
   return Date.now();
 }
 
-function isFulfilled<T>(res: PromiseSettledResult<T>): res is PromiseFulfilledResult<NonNullable<T>> {
-  return res.status === 'fulfilled' && res.value !== null && res.value !== undefined;
+type FetchAttempt = { snap: DocumentSnapshot<DocumentData> | null; error: unknown | null };
+
+function isAttemptWithSnap(res: PromiseSettledResult<FetchAttempt>): res is PromiseFulfilledResult<{
+  snap: DocumentSnapshot<DocumentData>;
+  error: unknown | null;
+}> {
+  return res.status === 'fulfilled' && res.value.snap !== null;
 }
 
 /**
  * Fetches user_backups/{uid} (plus cross-provider email backup fallback) from Firestore server
- * and merges/restores into the local vault.
+ * and replaces/restores into the local vault. Throws on connectivity/offline errors so callers
+ * do not mistake an offline failure for "account has no backup".
  */
 export async function fetchAndMergeCloudBackupToWeb(
   uid: string,
   current: AuraLocalVault,
-  accountEmail = ''
+  accountEmail = '',
+  replaceLocal = true
 ): Promise<{ updatedVault: AuraLocalVault; summary: string; serverUpdatedAtMs: number } | null> {
   const refs: DocumentReference<DocumentData>[] =
     db !== defaultDb
@@ -528,12 +578,18 @@ export async function fetchAndMergeCloudBackupToWeb(
     refs.push(doc(defaultDb, 'user_backups_by_email', eKey));
   }
 
-  const results = await Promise.allSettled(refs.map((r) => getDocServerFirst(r)));
-  const existingSnaps = results
-    .filter(isFulfilled)
-    .map((r) => r.value)
-    .filter((s) => s.exists());
+  const results = await Promise.allSettled(refs.map((r) => tryGetDocServerFirst(r)));
+  const succeededAttempts = results.filter(isAttemptWithSnap).map((r) => r.value.snap);
+  const errors = results
+    .map((r) => (r.status === 'fulfilled' ? r.value.error : r.reason))
+    .filter(Boolean);
 
+  if (succeededAttempts.length === 0) {
+    const firstErr = (errors[0] as Error | undefined) || new Error('Client is offline.');
+    throw firstErr;
+  }
+
+  const existingSnaps = succeededAttempts.filter((s) => s.exists());
   if (existingSnaps.length === 0) return null;
 
   const snap = existingSnaps.reduce((best, cur) => {
@@ -729,27 +785,38 @@ export async function fetchAndMergeCloudBackupToWeb(
     ...current,
     profile: updatedProfile,
     courses:
-      importedCourses.length > 0 || (starterOnly && cloudHasAnyAcademic)
+      replaceLocal || importedCourses.length > 0 || (starterOnly && cloudHasAnyAcademic)
         ? importedCourses
         : current.courses,
     lectures:
-      importedLectures.length > 0 || (starterOnly && cloudHasAnyAcademic)
+      replaceLocal || importedLectures.length > 0 || (starterOnly && cloudHasAnyAcademic)
         ? importedLectures
         : current.lectures,
     assessments:
-      importedAssessments.length > 0 || (starterOnly && cloudHasAnyAcademic)
+      replaceLocal || importedAssessments.length > 0 || (starterOnly && cloudHasAnyAcademic)
         ? importedAssessments
         : current.assessments,
     flashcards:
-      importedCards.length > 0 || (starterOnly && cloudHasAnyAcademic)
+      replaceLocal || importedCards.length > 0 || (starterOnly && cloudHasAnyAcademic)
         ? importedCards
         : current.flashcards,
     notes:
-      importedNotes.length > 0 || (starterOnly && cloudHasAnyAcademic)
+      replaceLocal || importedNotes.length > 0 || (starterOnly && cloudHasAnyAcademic)
         ? importedNotes
         : current.notes,
-    grades: importedGrades.length > 0 ? importedGrades : current.grades,
-    focusSessions: nextFocusSessions,
+    grades: replaceLocal || importedGrades.length > 0 ? importedGrades : current.grades,
+    focusSessions: replaceLocal
+      ? cloudFocusMins > 0
+        ? [
+            {
+              id: uidGen('foc_cloud'),
+              courseCode: importedCourses[0]?.code || 'GENERAL',
+              durationMinutes: cloudFocusMins,
+              completedAt: serverUpdatedAtMs
+            }
+          ]
+        : []
+      : nextFocusSessions,
     lastAutoRestoredUid: uid,
     lastBackupUpdatedAtMs: serverUpdatedAtMs
   };

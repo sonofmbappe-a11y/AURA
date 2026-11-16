@@ -17,6 +17,7 @@ import {
 import { auth, normalizeJoinCode } from './firebase';
 import {
   computeCloudVaultSignature,
+  createSignedOutVault,
   fetchAndMergeCloudBackupToWeb,
   isDefaultStarterVault,
   loadLocalVault,
@@ -135,14 +136,9 @@ export const App: React.FC = () => {
         const current = loadLocalVault();
         const switchedAccount =
           Boolean(current.lastAutoRestoredUid) && current.lastAutoRestoredUid !== u.uid;
+        // Always isolate accounts: when switching accounts, wipe previous account's data first
         const baseVault: AuraLocalVault = switchedAccount
-          ? {
-              ...current,
-              groupProjects: [],
-              groupMessages: [],
-              deletedGroupIds: [],
-              lastBackupUpdatedAtMs: 0
-            }
+          ? createSignedOutVault(current.profile.isDarkTheme)
           : current;
         if (switchedAccount) {
           setVault(baseVault);
@@ -150,7 +146,12 @@ export const App: React.FC = () => {
         }
 
         try {
-          const res = await fetchAndMergeCloudBackupToWeb(u.uid, baseVault, u.email || '');
+          const res = await fetchAndMergeCloudBackupToWeb(
+            u.uid,
+            baseVault,
+            u.email || '',
+            true
+          );
           if (res) {
             const shouldApplyCloud =
               switchedAccount ||
@@ -175,20 +176,26 @@ export const App: React.FC = () => {
               notify(`Cloud Vault synced (${res.summary})`);
             }
           } else {
-            // No backup exists yet on server for this user
+            // Verified on server: no backup exists yet for this account.
+            // Start clean unless user just edited offline as guest (never restored another uid)
+            const freshEmpty =
+              switchedAccount || Boolean(current.lastAutoRestoredUid) || isDefaultStarterVault(baseVault);
+            const targetBase = freshEmpty
+              ? createSignedOutVault(current.profile.isDarkTheme)
+              : baseVault;
             const seeded: AuraLocalVault = {
-              ...baseVault,
+              ...targetBase,
               profile: {
-                ...baseVault.profile,
-                email: u.email || baseVault.profile.email,
+                ...targetBase.profile,
+                email: u.email || targetBase.profile.email,
                 name:
-                  baseVault.profile.name === 'Scholar' && u.displayName
+                  targetBase.profile.name === 'Scholar' && u.displayName
                     ? u.displayName
-                    : baseVault.profile.name
+                    : targetBase.profile.name
               },
               lastAutoRestoredUid: u.uid
             };
-            if (!isDefaultStarterVault(seeded)) {
+            if (!freshEmpty && !isDefaultStarterVault(seeded)) {
               const savedAt = await saveCloudBackupFromWeb(u.uid, u.email || '', seeded);
               seeded.lastBackupUpdatedAtMs = savedAt;
             }
@@ -202,7 +209,7 @@ export const App: React.FC = () => {
           setCloudStatus('ERROR');
           notify(
             'Could not check Cloud Vault: ' +
-              ((err as Error)?.message || 'Please check your connection or tap Import Android Backup.')
+              ((err as Error)?.message || 'Client appears offline. Check your connection.')
           );
         }
       } else {
@@ -210,15 +217,9 @@ export const App: React.FC = () => {
         lastSyncedSigRef.current = '';
         setCloudStatus('IDLE');
         const current = loadLocalVault();
+        // On logout (previously signed into an account), clear all user courses, timetable & vault data
         if (current.lastAutoRestoredUid) {
-          const cleared: AuraLocalVault = {
-            ...current,
-            lastAutoRestoredUid: '',
-            lastBackupUpdatedAtMs: 0,
-            groupProjects: [],
-            groupMessages: [],
-            deletedGroupIds: []
-          };
+          const cleared = createSignedOutVault(current.profile.isDarkTheme);
           setVault(cleared);
           saveLocalVault(cleared);
         }
