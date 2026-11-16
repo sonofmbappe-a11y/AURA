@@ -350,19 +350,24 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   return (
     <div className="space-y-4">
-      <div className="aura-glass rounded-lg p-5 text-center space-y-5">
+      <div className="aura-hero-card rounded-xl p-5 sm:p-6 text-center space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] inline-flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5" /> Deep Focus Timer
-          </span>
+          <div className="text-left">
+            <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0] inline-flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5" /> Deep Focus Session
+            </span>
+            <h2 className="font-serif text-xl sm:text-2xl text-[#141923] mt-1">
+              Academic Focus Studio
+            </h2>
+          </div>
           <div className="flex items-center gap-2 flex-wrap font-mono text-[11px]">
-            <span className="px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-semibold">
+            <span className="px-2.5 py-1 rounded-md bg-[#EFECE6] border border-[#E4E0D8] text-[#141923] font-semibold">
               {scholarStreakDays}d Streak
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-semibold">
+            <span className="px-2.5 py-1 rounded-md bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] font-semibold">
               {scholarRank}
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-bold">
+            <span className="px-2.5 py-1 rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-bold">
               {(totalLoggedMins / 60).toFixed(1)}h Logged
             </span>
           </div>

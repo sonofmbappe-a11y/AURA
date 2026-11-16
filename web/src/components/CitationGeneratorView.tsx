@@ -153,20 +153,20 @@ export const CitationGeneratorView: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       {/* Editorial Header */}
-      <div className="aura-glass rounded-lg p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-md bg-[#EFF6FF] text-[#1E3A8A] flex items-center justify-center border border-[#BFDBFE] shrink-0">
-          <Quote className="w-4 h-4" />
+      <div className="aura-hero-card rounded-xl p-4 sm:p-5 flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-lg bg-[#EEF2FA] text-[#1D3B8B] flex items-center justify-center border border-[#C7D4F0] shrink-0">
+          <Quote className="w-4.5 h-4.5" />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base font-bold text-[#111827]">
+            <h2 className="font-serif text-xl sm:text-2xl text-[#141923]">
               Citation &amp; Bibliography Engine
             </h2>
-            <span className="px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[10px] font-semibold text-[#4B5563] uppercase">
+            <span className="px-2 py-0.5 rounded bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[10px] font-semibold text-[#4B5563] uppercase">
               APA · MLA · IEEE · Harvard · BibTeX
             </span>
           </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
+          <p className="text-xs text-[#646B78] mt-0.5">
             Format scholarly references and export clean BibTeX blocks for papers and theses.
           </p>
         </div>

@@ -31,6 +31,7 @@ import {
   uidGen
 } from '../storage';
 import type { AuraLocalVault } from '../types';
+import { AuraLogo } from './AuraLogo';
 
 interface Props {
   user: User | null;
@@ -266,25 +267,25 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   return (
     <div className="space-y-4">
       {/* Cross-Platform Cloud Backup & Restore Card */}
-      <div className="aura-glass rounded-lg p-4 space-y-3.5">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#BFDBFE] bg-[#EFF6FF] shrink-0 shadow-xs">
+      <div className="aura-hero-card rounded-xl p-4 sm:p-5 space-y-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl overflow-hidden border border-[#C7D4F0] bg-[#EEF2FA] shrink-0 flex items-center justify-center">
               {vault.profile.photoUrl ? (
                 <img src={vault.profile.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <img src="/app_logo.jpg" alt="AURA Logo" className="w-full h-full object-cover" />
+                <AuraLogo size={44} className="rounded-xl" />
               )}
             </div>
             <div className="min-w-0">
-              <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider">
+              <span className="px-2 py-0.5 rounded bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0] font-mono text-[10px] font-semibold uppercase tracking-wider">
                 Cross-Platform Cloud Vault
               </span>
-              <h3 className="font-bold text-base text-[#111827] mt-1 truncate">
+              <h2 className="font-serif text-xl sm:text-2xl text-[#141923] mt-1 truncate">
                 {user ? user.displayName || user.email : 'Sign In to Sync Timetable & Profile'}
-              </h3>
+              </h2>
               {user && (
-                <div className="font-mono text-[11px] text-[#6B7280] mt-0.5 truncate">
+                <div className="font-mono text-[11px] text-[#646B78] mt-0.5 truncate">
                   {user.email} · Last Sync: {lastSyncedLabel}
                 </div>
               )}
@@ -293,7 +294,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           {user && (
             <button
               onClick={() => (onSignOut ? onSignOut() : signOutBrowser())}
-              className="p-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
+              className="p-2 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#646B78] hover:text-[#DC2626] transition-colors duration-150 shrink-0"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -301,7 +302,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           )}
         </div>
 
-        <p className="text-xs text-[#6B7280] leading-relaxed">
+        <p className="text-xs text-[#646B78] leading-relaxed">
           Edits save locally for offline speed and automatically synchronize with your Android AURA account whenever signed in.
         </p>
 
@@ -406,22 +407,22 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* Student Profile */}
-      <div className="aura-glass rounded-lg p-4 space-y-3.5">
+      <div className="aura-glass rounded-xl p-4 sm:p-5 space-y-3.5">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
+          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1D3B8B] flex items-center gap-1.5">
             <UserCircle className="w-4 h-4" /> Scholar Profile
           </span>
-          <span className="font-mono text-[11px] text-[#6B7280]">{vault.profile.academicLevel}</span>
+          <span className="font-mono text-[11px] text-[#646B78]">{vault.profile.academicLevel}</span>
         </div>
 
         {/* Profile Avatar & Photo Uploader */}
-        <div className="p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col sm:flex-row items-center gap-3.5">
+        <div className="p-3.5 rounded-xl aura-subtle-surface flex flex-col sm:flex-row items-center gap-3.5">
           <div
             className="relative group cursor-pointer shrink-0"
             onClick={() => avatarFileRef.current?.click()}
             title="Click to Upload Profile Photo"
           >
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#1E3A8A] bg-[#EFF6FF] flex items-center justify-center shadow-xs">
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#1D3B8B] bg-[#EEF2FA] flex items-center justify-center">
               {vault.profile.photoUrl ? (
                 <img
                   src={vault.profile.photoUrl}
@@ -429,17 +430,10 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <img
-                  src="/app_logo.jpg"
-                  alt="AURA Emblem"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                <AuraLogo size={64} className="rounded-full" />
               )}
             </div>
-            <div className="absolute inset-0 rounded-full bg-[#111827]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[#FFFFFF]">
+            <div className="absolute inset-0 rounded-full bg-[#141923]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[#FFFFFF]">
               <Camera className="w-5 h-5" />
             </div>
             <input
@@ -456,7 +450,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                     ...prev,
                     profile: { ...prev.profile, photoUrl: compressed }
                   }));
-                  onNotify('Profile picture updated and ready to sync!');
+                  onNotify('Profile picture updated and ready to sync.');
                 } catch {
                   onNotify('Could not load image.');
                 }
@@ -465,19 +459,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           </div>
 
           <div className="flex-1 text-center sm:text-left min-w-0">
-            <h4 className="font-bold text-sm text-[#111827] truncate">
+            <h4 className="font-serif text-lg text-[#141923] truncate">
               {vault.profile.name || 'Scholar Profile'}
             </h4>
-            <p className="text-xs text-[#6B7280] truncate">
+            <p className="text-xs text-[#646B78] truncate">
               {vault.profile.email || user?.email || 'Set your profile picture and campus details.'}
             </p>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
               <button
                 type="button"
                 onClick={() => avatarFileRef.current?.click()}
-                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#D1D5DB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] inline-flex items-center gap-1.5 transition-colors duration-150"
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#D5D0C6] hover:border-[#1D3B8B] text-xs font-semibold text-[#141923] inline-flex items-center gap-1.5 transition-colors duration-150"
               >
-                <Camera className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                <Camera className="w-3.5 h-3.5 text-[#1D3B8B]" />
                 <span>Upload Picture</span>
               </button>
               <button
@@ -485,13 +479,13 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 onClick={() => {
                   onUpdateVault((prev) => ({
                     ...prev,
-                    profile: { ...prev.profile, photoUrl: '/app_logo.jpg' }
+                    profile: { ...prev.profile, photoUrl: '/icon.svg' }
                   }));
-                  onNotify('Set AURA app emblem as profile picture.');
+                  onNotify('Set AURA emblem as profile picture.');
                 }}
-                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-xs font-medium text-[#4B5563] inline-flex items-center gap-1.5 transition-colors duration-150"
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-xs font-medium text-[#4B5563] inline-flex items-center gap-1.5 transition-colors duration-150"
               >
-                <ImageIcon className="w-3.5 h-3.5 text-[#059669]" />
+                <ImageIcon className="w-3.5 h-3.5 text-[#0F766E]" />
                 <span>Use App Emblem</span>
               </button>
               {vault.profile.photoUrl && (

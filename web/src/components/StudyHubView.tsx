@@ -257,9 +257,28 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   return (
     <div className="space-y-4">
-      {/* Sub-navigation & Scholar Telemetry */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Study Hub Editorial Header & Sub-navigation */}
+      <div className="aura-hero-card rounded-xl p-4 sm:p-5 space-y-3.5">
+        <div className="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <span className="px-2 py-0.5 rounded bg-[#EEF2FA] border border-[#C7D4F0] font-mono text-[10px] font-semibold uppercase tracking-wider text-[#1D3B8B]">
+              Course Knowledge Archive
+            </span>
+            <h2 className="font-serif text-xl sm:text-2xl text-[#141923] mt-1">
+              Study Hub &amp; SM-2 Recall
+            </h2>
+          </div>
+          <div className="flex items-center gap-1.5 font-mono text-[11px]">
+            <span className="px-2.5 py-1 rounded-md bg-[#EFECE6] border border-[#E4E0D8] text-[#141923] font-semibold">
+              {scholarStreakDays}d Streak
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] font-semibold">
+              {scholarRank}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           {(
             [
               ['NOTES', 'Notes Vault'],
@@ -272,23 +291,15 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={id}
               onClick={() => setSubTab(id)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap border transition-colors duration-150 ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors duration-150 ${
                 subTab === id
-                  ? 'bg-[#1E3A8A] text-[#FFFFFF] border-[#1E3A8A]'
-                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
+                  ? 'bg-[#1D3B8B] text-[#FFFFFF] border-[#1D3B8B] shadow-xs'
+                  : 'bg-[#FFFFFF] border-[#E4E0D8] text-[#646B78] hover:border-[#9CA3AF] hover:text-[#141923]'
               }`}
             >
               {label}
             </button>
           ))}
-        </div>
-        <div className="flex items-center gap-1.5 font-mono text-[11px]">
-          <span className="px-2 py-1 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-semibold">
-            {scholarStreakDays}d Streak
-          </span>
-          <span className="px-2 py-1 rounded bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] font-semibold">
-            {scholarRank}
-          </span>
         </div>
       </div>
 

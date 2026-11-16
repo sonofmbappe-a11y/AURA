@@ -15,60 +15,69 @@ body {
   min-height: 100dvh;
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  background-color: #fafafa;
-  color: #111827;
-  transition: background-color 150ms ease, color 150ms ease;
+  background-color: #f6f4ef;
+  color: #141923;
+  transition: background-color 180ms ease, color 180ms ease;
 }
 
 html.dark body {
-  background-color: #0b0f17;
-  color: #f9fafb;
+  background-color: #0c1018;
+  color: #f3f1ec;
 }
 
-/* Crisp Editorial Swiss Grid Surfaces (Flat, High Contrast, 150ms Hover Borders) */
+/* Editorial Academic Studio Elevated Cards */
 .aura-glass {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  border: 1px solid #e4e0d8;
+  box-shadow:
+    0 1px 2px rgba(20, 25, 35, 0.04),
+    0 6px 18px -6px rgba(20, 25, 35, 0.05);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
 .aura-glass:hover {
-  border-color: #d1d5db;
+  border-color: #cfc9bd;
 }
 
 html.dark .aura-glass {
-  background: #111827;
-  border-color: #1f2937;
+  background: #131924;
+  border-color: #232c3d;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.32),
+    0 10px 24px -10px rgba(0, 0, 0, 0.45);
 }
 
 html.dark .aura-glass:hover {
-  border-color: #374151;
+  border-color: #364359;
 }
 
 .aura-hero-card {
   position: relative;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e4e0d8;
+  box-shadow:
+    0 2px 6px rgba(20, 25, 35, 0.04),
+    0 12px 28px -10px rgba(29, 59, 139, 0.08);
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 html.dark .aura-hero-card {
-  background: #111827;
-  border-color: #1f2937;
+  background: #131924;
+  border-color: #232c3d;
 }
 
 .aura-subtle-surface {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  background: #efece6;
+  border: 1px solid #e4e0d8;
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .aura-subtle-surface:hover {
-  border-color: #9ca3af;
+  border-color: #b8b1a3;
 }
 
 html.dark .aura-subtle-surface {
-  background: #182030;
+  background: #192231;
   border-color: #273244;
 }
 
@@ -76,28 +85,29 @@ html.dark .aura-subtle-surface:hover {
   border-color: #4b5563;
 }
 
-/* Editorial Inputs with Crisp Academic Navy Focus */
+/* Editorial Inputs with Crisp Cobalt Focus Ring */
 .aura-input {
   background: #ffffff;
-  border: 1px solid #d1d5db;
-  color: #111827;
-  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+  border: 1px solid #d5d0c6;
+  color: #141923;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
 }
 
 .aura-input::placeholder {
-  color: #9ca3af;
+  color: #8c929d;
 }
 
 .aura-input:focus {
   outline: none;
-  border-color: #1e3a8a;
+  border-color: #1d3b8b;
+  box-shadow: 0 0 0 3px rgba(29, 59, 139, 0.12);
   background: #ffffff;
 }
 
 html.dark .aura-input {
-  background: #0f1623;
-  border-color: #374151;
-  color: #f9fafb;
+  background: #0f1521;
+  border-color: #2e394d;
+  color: #f3f1ec;
 }
 
 html.dark .aura-input::placeholder {
@@ -105,16 +115,17 @@ html.dark .aura-input::placeholder {
 }
 
 html.dark .aura-input:focus {
-  border-color: #3b82f6;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.14);
   background: #111827;
 }
 
 /* Action Buttons */
 .aura-pill-btn {
-  border-radius: 0.5rem;
+  border-radius: 0.625rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -124,23 +135,22 @@ html.dark .aura-input:focus {
   border-color: #b45309;
 }
 
-/* Minimal Static Equalizer Indicator */
 .aura-sound-bar {
   height: 10px;
 }
 
 .aura-shimmer-btn {
-  background: #1e3a8a;
+  background: #1d3b8b;
   color: #ffffff;
   font-weight: 600;
   transition: background-color 150ms ease;
 }
 
 .aura-shimmer-btn:hover {
-  background: #1e40af;
+  background: #162f70;
 }
 
-/* Utility to hide scrollbars */
+/* Subtle Custom Scrollbars & Hide Utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -150,23 +160,30 @@ html.dark .aura-input:focus {
 }
 
 .aura-cast-glow {
-  border-color: #1e3a8a;
+  border-color: #1d3b8b;
 }
 
 .aura-active-speaker {
-  border-color: #1e3a8a;
+  border-color: #1d3b8b;
 }
 
 /* Crisp Editorial Navigation Dock */
 .aura-dock {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1px solid #dcd7ce;
+  box-shadow:
+    0 8px 24px -6px rgba(20, 25, 35, 0.12),
+    0 2px 6px rgba(20, 25, 35, 0.05);
   transition: background-color 150ms ease, border-color 150ms ease;
 }
 
 html.dark .aura-dock {
-  background: #111827;
-  border-color: #1f2937;
+  background: rgba(19, 25, 36, 0.94);
+  border-color: #273245;
+  box-shadow:
+    0 10px 28px -6px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .aura-float-emoji {
@@ -177,21 +194,25 @@ html.dark .aura-dock {
   transition: border-color 150ms ease, background-color 150ms ease;
 }
 
-/* Editorial Obsidian Dark Mode Overrides across Swiss-Grid Components */
+/* Editorial Obsidian Dark Mode Overrides across Studio Components */
+html.dark .bg-\[\#F6F4EF\],
 html.dark .bg-\[\#FAFAFA\] {
-  background-color: #0b0f17;
+  background-color: #0c1018;
 }
 html.dark .bg-\[\#FFFFFF\]:not(canvas) {
-  background-color: #111827;
+  background-color: #131924;
 }
 html.dark .bg-\[\#F9FAFB\],
-html.dark .bg-\[\#F8FAFC\] {
-  background-color: #151c2c;
+html.dark .bg-\[\#F8FAFC\],
+html.dark .bg-\[\#FAF8F5\] {
+  background-color: #172030;
 }
-html.dark .bg-\[\#F3F4F6\] {
-  background-color: #1b2436;
+html.dark .bg-\[\#F3F4F6\],
+html.dark .bg-\[\#EFECE6\] {
+  background-color: #1d2738;
 }
-html.dark .bg-\[\#EFF6FF\] {
+html.dark .bg-\[\#EFF6FF\],
+html.dark .bg-\[\#EEF2FA\] {
   background-color: #172554;
 }
 html.dark .bg-\[\#ECFDF5\] {
@@ -204,8 +225,9 @@ html.dark .bg-\[\#FFFBEB\] {
   background-color: #451a03;
 }
 
+html.dark .text-\[\#141923\],
 html.dark .text-\[\#111827\] {
-  color: #f9fafb;
+  color: #f3f1ec;
 }
 html.dark .text-\[\#374151\] {
   color: #e5e7eb;
@@ -213,9 +235,11 @@ html.dark .text-\[\#374151\] {
 html.dark .text-\[\#4B5563\] {
   color: #d1d5db;
 }
+html.dark .text-\[\#646B78\],
 html.dark .text-\[\#6B7280\] {
   color: #9ca3af;
 }
+html.dark .text-\[\#1D3B8B\],
 html.dark .text-\[\#1E3A8A\] {
   color: #60a5fa;
 }
@@ -234,14 +258,18 @@ html.dark .text-\[\#B45309\] {
   color: #fbbf24;
 }
 
+html.dark .border-\[\#E4E0D8\],
 html.dark .border-\[\#E5E7EB\],
+html.dark .divide-\[\#E4E0D8\] > :not([hidden]) ~ :not([hidden]),
 html.dark .divide-\[\#E5E7EB\] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #1f2937;
+  border-color: #232c3d;
 }
+html.dark .border-\[\#D5D0C6\],
 html.dark .border-\[\#D1D5DB\] {
   border-color: #374151;
 }
-html.dark .border-\[\#BFDBFE\] {
+html.dark .border-\[\#BFDBFE\],
+html.dark .border-\[\#C7D4F0\] {
   border-color: #1e40af;
 }
 html.dark .border-\[\#A7F3D0\] {
@@ -255,19 +283,23 @@ html.dark .border-\[\#FDE68A\] {
 }
 
 html.dark .hover\:bg-\[\#F3F4F6\]:hover,
+html.dark .hover\:bg-\[\#EFECE6\]:hover,
 html.dark .hover\:bg-\[\#F9FAFB\]:hover {
   background-color: #1f2937;
 }
-html.dark .hover\:bg-\[\#EFF6FF\]:hover {
+html.dark .hover\:bg-\[\#EFF6FF\]:hover,
+html.dark .hover\:bg-\[\#EEF2FA\]:hover {
   background-color: #1e3a8a;
 }
 html.dark .hover\:border-\[\#9CA3AF\]:hover,
 html.dark .hover\:border-\[\#D1D5DB\]:hover {
   border-color: #4b5563;
 }
+html.dark .hover\:text-\[\#141923\]:hover,
 html.dark .hover\:text-\[\#111827\]:hover {
-  color: #f9fafb;
+  color: #f3f1ec;
 }
+html.dark .hover\:text-\[\#1D3B8B\]:hover,
 html.dark .hover\:text-\[\#1E3A8A\]:hover {
   color: #93c5fd;
 }

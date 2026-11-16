@@ -341,7 +341,7 @@ export const LiveStudyStage: React.FC<Props> = ({
     a.download = `AURA_${liveRoom?.courseCode || 'Study'}_Transcript.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    onNotify('📥 Study transcript downloaded as text file!');
+    onNotify('Study transcript downloaded as text file.');
   };
 
   const triggerFloatingReaction = (emoji: string) => {
@@ -368,7 +368,7 @@ export const LiveStudyStage: React.FC<Props> = ({
         isMutedByHost: false,
         updatedAt: serverTimestamp()
       });
-      onNotify('🎙️ Floor granted to scholar: Hand cleared & mic unmuted.');
+      onNotify('Floor granted to scholar: hand cleared and mic unmuted.');
     } catch (err) {
       onNotify('Could not call on scholar: ' + ((err as Error)?.message || 'error'));
     }
@@ -400,7 +400,7 @@ export const LiveStudyStage: React.FC<Props> = ({
         timerRemainingSeconds: mins * 60,
         updatedAt: serverTimestamp()
       });
-      onNotify(`⚡ ${label} started: ${mins}-minute synchronized focus clock running!`);
+      onNotify(`${label} started: ${mins}-minute synchronized focus clock running.`);
     } catch (err) {
       onNotify('Could not start sprint: ' + ((err as Error)?.message || 'error'));
     }
@@ -439,7 +439,7 @@ export const LiveStudyStage: React.FC<Props> = ({
           }).catch(() => {});
         }
       }
-      onNotify('🔇 Muted all other scholars on stage.');
+      onNotify('Muted all other scholars on stage.');
     } catch (err) {
       onNotify('Could not mute all scholars: ' + ((err as Error)?.message || 'error'));
     }
@@ -449,7 +449,7 @@ export const LiveStudyStage: React.FC<Props> = ({
     if (jitsiApiRef.current) {
       try {
         jitsiApiRef.current.executeCommand('toggleShareScreen');
-        onNotify('🔴 Broadcasting your screen live via WebRTC to all Android and Web scholars!');
+        onNotify('Broadcasting your screen live via WebRTC to all Android and Web scholars.');
         return;
       } catch (err) {
         console.warn('Jitsi toggleShareScreen error:', err);
@@ -481,12 +481,12 @@ export const LiveStudyStage: React.FC<Props> = ({
       if (liveRoom && user) {
         try {
           await updateDoc(doc(db, 'study_rooms', liveRoom.id), {
-            spotlightCardText: `🔴 LIVE PRESENTATION: ${user.displayName || 'Host'} is presenting slides & screen!`,
+            spotlightCardText: `LIVE PRESENTATION: ${user.displayName || 'Host'} is presenting slides & screen.`,
             updatedAt: serverTimestamp()
           });
         } catch (_) {}
       }
-      onNotify('🔴 Screen broadcast live to all connected devices!');
+      onNotify('Screen broadcast live to all connected devices.');
     } catch (err) {
       if ((err as Error)?.name !== 'NotAllowedError') {
         onNotify('Screen casting cancelled.');
@@ -663,12 +663,12 @@ export const LiveStudyStage: React.FC<Props> = ({
           if (liveRoom && user) {
             updateDoc(doc(db, 'study_rooms', liveRoom.id), {
               spotlightCardText: on
-                ? `🔴 LIVE PRESENTATION: ${user.displayName || 'Host'} is sharing screen!`
+                ? `LIVE PRESENTATION: ${user.displayName || 'Host'} is sharing screen.`
                 : '',
               updatedAt: serverTimestamp()
             }).catch(() => {});
           }
-          onNotify(on ? '🔴 Broadcasting screen via WebRTC to all scholars on Android & Web!' : 'Screen sharing ended.');
+          onNotify(on ? 'Broadcasting screen via WebRTC to all scholars on Android & Web.' : 'Screen sharing ended.');
         });
 
         jitsiApiRef.current = api;
@@ -707,7 +707,7 @@ export const LiveStudyStage: React.FC<Props> = ({
   // Listen to remote room completion so participants auto-return to lobby
   useEffect(() => {
     if (liveRoom && liveRoom.status === 'COMPLETED') {
-      onNotify('🔴 The host has ended this meeting.');
+      onNotify('The host has ended this meeting.');
       const t = setTimeout(() => {
         setSelectedRoomId(null);
       }, 2000);
@@ -863,7 +863,7 @@ export const LiveStudyStage: React.FC<Props> = ({
             if (!knownWaitingIdsRef.current.has(guest.userId)) {
               knownWaitingIdsRef.current.add(guest.userId);
               playDoorKnockChime();
-              onNotify(`🚪 ${guest.displayName} is knocking to join! Tap Admit at the top.`);
+              onNotify(`${guest.displayName} is knocking to join. Select Admit at the top.`);
             }
           }
           const activeSet = new Set(currentWaiting.map((g) => g.userId));
@@ -955,7 +955,7 @@ export const LiveStudyStage: React.FC<Props> = ({
     room: CloudStudyRoom,
     status: 'FOCUSING' | 'BREAK' | 'QUIZZING' | 'READY' = 'FOCUSING',
     handRaised = false,
-    emoji = '👋',
+    emoji = '',
     overrideCity?: string,
     overrideMuted?: boolean,
     overrideCamera?: boolean
@@ -1206,11 +1206,11 @@ export const LiveStudyStage: React.FC<Props> = ({
       setBoardDirty(false);
       setSelectedRoomId(roomId);
       try {
-        await upsertMyPresence(createdStub, 'FOCUSING', false, '🎙️', payload.cityBadge);
+        await upsertMyPresence(createdStub, 'FOCUSING', false, '', payload.cityBadge);
       } catch (presenceErr) {
         console.warn('Initial presence upsert warning:', presenceErr);
       }
-      onNotify(`🎉 Room Live! Share Code ${code} or QR Link with Android & iPhone classmates.`);
+      onNotify(`Room Live: share code ${code} or QR link with Android & iPhone classmates.`);
     } catch (e: unknown) {
       const msg = (e as Error)?.message || 'Failed to create study session.';
       setHostModalError(msg);
@@ -1257,7 +1257,7 @@ export const LiveStudyStage: React.FC<Props> = ({
       }
       setSelectedRoomId(null);
       setShowEndMeetingModal(false);
-      onNotify('🔴 Meeting ended for everyone.');
+      onNotify('Meeting ended for everyone.');
     } catch (err: any) {
       onNotify('Unable to end meeting: ' + (err?.message || 'Error'));
     }
@@ -1369,10 +1369,10 @@ export const LiveStudyStage: React.FC<Props> = ({
             return;
           }
           await signUpWithEmailBrowser(authEmail, authPassword, authName.trim() || 'Scholar');
-          onNotify('🎉 Scholar Account created! Welcome to AURA Live Stage.');
+          onNotify('Scholar Account created. Welcome to AURA Live Stage.');
         } else {
           await signInWithEmailBrowser(authEmail, authPassword);
-          onNotify('👋 Welcome back! Signed into AURA Live Stage.');
+          onNotify('Welcome back. Signed into AURA Live Stage.');
         }
       } catch (err: unknown) {
         const msg = (err as Error)?.message || 'Authentication failed.';
@@ -1384,19 +1384,19 @@ export const LiveStudyStage: React.FC<Props> = ({
     };
 
     return (
-      <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-6 sm:p-8 text-center space-y-6 max-w-xl mx-auto">
-        <div className="w-12 h-12 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] mx-auto flex items-center justify-center">
+      <div className="aura-hero-card rounded-xl p-6 sm:p-8 text-center space-y-6 max-w-xl mx-auto">
+        <div className="w-12 h-12 rounded-xl bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] mx-auto flex items-center justify-center">
           <Users className="w-6 h-6" />
         </div>
         <div className="space-y-2">
-          <span className="inline-block px-2.5 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#F9FAFB] text-[#4B5563] border border-[#E5E7EB]">
+          <span className="inline-block px-2.5 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EFECE6] text-[#4B5563] border border-[#E4E0D8]">
             ANDROID • IPHONE SAFARI • CHROME • MAC / PC
           </span>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111827] pt-1">
+          <h2 className="font-serif text-2xl sm:text-3xl tracking-tight text-[#141923] pt-1">
             Universal Live Study Stage
           </h2>
-          <p className="text-xs text-[#6B7280] max-w-md mx-auto leading-relaxed">
-            Join Android & Web study rooms via 6-character code or QR link, knock on Waiting Rooms, share live slides & screen cast, or host your own session.
+          <p className="text-xs text-[#646B78] max-w-md mx-auto leading-relaxed">
+            Join Android &amp; Web study rooms via 6-character code or QR link, knock on Waiting Rooms, share live slides &amp; screen cast, or host your own session.
           </p>
         </div>
 
@@ -1642,7 +1642,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                         liveRoom,
                         (myP?.studyStatus as 'FOCUSING') || 'FOCUSING',
                         true,
-                        '🚪'
+                        ''
                       );
                       onNotify(`Rang the Waiting Room bell for ${liveRoom.ownerName}.`);
                     } catch (e: unknown) {
@@ -2282,26 +2282,26 @@ export const LiveStudyStage: React.FC<Props> = ({
                               key={idx}
                               type="button"
                               disabled={isLocked}
-                              onClick={async () => {
-                                if (!myP) {
-                                  await upsertMyPresence(liveRoom, 'QUIZZING', false, '📊');
-                                }
-                                await updateDoc(doc(db, 'study_rooms', liveRoom.id, 'participants', user.uid), {
-                                  pollVoteIndex: idx,
-                                  updatedAt: serverTimestamp()
-                                });
-                              }}
-                              className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-[11px] transition-colors duration-150 ${
-                                isCorrect
-                                  ? 'bg-[#ECFDF5] border-[#10B981] text-[#065F46] font-bold'
-                                  : myVote
-                                  ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A] font-bold'
-                                  : 'bg-[#F9FAFB] border-[#E5E7EB] text-[#111827] hover:border-[#9CA3AF]'
-                              }`}
-                            >
-                              <span className="truncate pr-1">
-                                {opt} {isCorrect && '✓'} {myVote && '• My vote'}
-                              </span>
+                                onClick={async () => {
+                                  if (!myP) {
+                                    await upsertMyPresence(liveRoom, 'QUIZZING', false, '');
+                                  }
+                                  await updateDoc(doc(db, 'study_rooms', liveRoom.id, 'participants', user.uid), {
+                                    pollVoteIndex: idx,
+                                    updatedAt: serverTimestamp()
+                                  });
+                                }}
+                                className={`w-full p-1.5 rounded-lg border text-left flex items-center justify-between text-[11px] transition-colors duration-150 ${
+                                  isCorrect
+                                    ? 'bg-[#ECFDF5] border-[#10B981] text-[#065F46] font-bold'
+                                    : myVote
+                                    ? 'bg-[#EFF6FF] border-[#1D3B8B] text-[#1D3B8B] font-bold'
+                                    : 'bg-[#F9FAFB] border-[#E4E0D8] text-[#141923] hover:border-[#9CA3AF]'
+                                }`}
+                              >
+                                <span className="truncate pr-1">
+                                  {opt} {isCorrect ? '(Correct)' : ''} {myVote ? '• My vote' : ''}
+                                </span>
                               <span className="text-[10px] font-mono text-[#1E3A8A] font-bold shrink-0">{pct}%</span>
                             </button>
                           );
@@ -2997,7 +2997,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               activePollRevealed: false,
               updatedAt: serverTimestamp()
             });
-            onNotify('📊 Live Pop-Quiz Poll pushed to all screens!');
+            onNotify('Live Pop-Quiz Poll pushed to all screens.');
           }}
         />
 
@@ -3010,7 +3010,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               spotlightCardText: text,
               updatedAt: serverTimestamp()
             });
-            onNotify(text ? '📌 Pinned Stage Spotlight!' : 'Cleared Stage Spotlight.');
+            onNotify(text ? 'Pinned Stage Spotlight.' : 'Cleared Stage Spotlight.');
           }}
         />
 
@@ -3034,7 +3034,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             });
-            onNotify('🃏 Flashcard dropped to live study room!');
+            onNotify('Flashcard shared to live study room.');
           }}
         />
 
@@ -3050,7 +3050,7 @@ export const LiveStudyStage: React.FC<Props> = ({
               timerRemainingSeconds: mins * 60,
               updatedAt: serverTimestamp()
             });
-            onNotify(`⏱️ Room clock set to ${mins} minutes.`);
+            onNotify(`Room clock set to ${mins} minutes.`);
           }}
         />
 
@@ -3113,7 +3113,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                 ...prev.notes
               ]
             }));
-            onNotify('📋 Saved Smart Study Minutes to your Notes Vault!');
+            onNotify('Saved Study Minutes to your Notes Vault.');
           }}
           onNotify={onNotify}
         />

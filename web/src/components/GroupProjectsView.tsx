@@ -7,6 +7,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
   getDocsFromServer,
   onSnapshot,
@@ -17,6 +18,7 @@ import {
   where
 } from 'firebase/firestore';
 import {
+  AlertTriangle,
   BarChart3,
   BookOpen,
   Camera,
@@ -78,9 +80,10 @@ interface Props {
   initialGroupId?: string;
   onUpdateVault: (updater: (prev: AuraLocalVault) => AuraLocalVault) => void;
   onNotify: (msg: string) => void;
+  onRequireAuth?: () => void;
 }
 
-const COLOR_OPTIONS = ['#1E3A8A', '#0F766E', '#B45309', '#374151', '#1D4ED8', '#047857'];
+const COLOR_OPTIONS = ['#1D3B8B', '#0F766E', '#B45309', '#374151', '#047857', '#7C2D12'];
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -96,7 +99,8 @@ export const GroupProjectsView: React.FC<Props> = ({
   vault,
   initialGroupId = '',
   onUpdateVault,
-  onNotify
+  onNotify,
+  onRequireAuth
 }) => {
   const currentEmail = (user?.email || vault.profile.email || 'scholar@university.edu')
     .trim()
@@ -108,13 +112,42 @@ export const GroupProjectsView: React.FC<Props> = ({
   const [activeTab, setActiveTab] = useState<'CHAT' | 'DELIVERABLES' | 'SPRINT' | 'RESOURCES' | 'MEMBERS'>('CHAT');
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Track deleted or left project IDs in memory + persisted vault tombstones
+  // Track deleted or left project IDs + unsent/deleted message IDs in memory and vault tombstones
   const deletedProjectIdsRef = useRef<Set<string>>(new Set(vault.deletedGroupIds || []));
+  const deletedMsgIdsRef = useRef<Set<string>>(new Set());
   const groupProjectsRef = useRef<WebGroupProject[]>(vault.groupProjects);
   groupProjectsRef.current = vault.groupProjects;
   // Track message payloads currently in-flight or failed locally so server snapshots never erase them
   const pendingMsgsRef = useRef<Map<string, { msg: WebGroupChatMessage; payload: Record<string, any> }>>(new Map());
   const readDbs = useMemo(() => (db !== defaultDb ? [db, defaultDb] : [db]), []);
+
+  // Channel B Helper: touch parent project doc messageIds / event stamp so Android & Web wake up instantaneously
+  const touchProjectMessageIndex = useCallback(
+    async (projectId: string, msgId: string, isDelete = false) => {
+      if (!user || !projectId || !msgId) return;
+      const nowMs = Date.now();
+      const indexUpdate: Record<string, any> = isDelete
+        ? {
+            messageIds: arrayRemove(msgId),
+            deletedMessageIds: arrayUnion(msgId),
+            lastMsgEventId: msgId,
+            lastMsgEventAt: nowMs,
+            updatedAt: serverTimestamp()
+          }
+        : {
+            messageIds: arrayUnion(msgId),
+            lastMsgEventId: msgId,
+            lastMsgEventAt: nowMs,
+            updatedAt: serverTimestamp()
+          };
+      await Promise.allSettled(
+        readDbs.map((targetDb) =>
+          setDoc(doc(targetDb, 'group_projects', projectId), indexUpdate, { merge: true })
+        )
+      );
+    },
+    [user, readDbs]
+  );
 
   useEffect(() => {
     const next = new Set(vault.deletedGroupIds || []);
@@ -370,25 +403,34 @@ export const GroupProjectsView: React.FC<Props> = ({
       string,
       Map<string, { project: WebGroupProject; updatedAtMs: number }>
     >();
+    const primaryBucketsFired = new Set<string>();
 
     const mapDoc = (d: { id: string; data: () => unknown }) => {
       const data = (d.data() || {}) as Record<string, any>;
       const updatedAtMs =
         data.updatedAt?.toMillis?.() ?? data.createdAt?.toMillis?.() ?? 0;
+      const code = String(data.courseCode || 'GENERAL').toUpperCase();
+      const rawCreator = String(data.creatorEmail || '').trim().toLowerCase();
+      const normAdmins = Array.isArray(data.adminEmails)
+        ? data.adminEmails.map((e: unknown) => String(e).trim().toLowerCase()).filter(Boolean)
+        : [rawCreator].filter(Boolean);
+      const normMembers = Array.isArray(data.memberEmails)
+        ? data.memberEmails.map((e: unknown) => String(e).trim().toLowerCase()).filter(Boolean)
+        : [currentEmail];
       const project: WebGroupProject = {
         id: d.id,
-        courseCode: data.courseCode || 'GENERAL',
+        courseCode: code,
         projectTitle: data.projectTitle || 'Group Project',
         teamName: data.teamName || 'Team 1',
         objective: data.objective || data.groupTarget || '',
         groupTarget: data.groupTarget || 'Grade A',
-        avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
+        avatarEmoji: data.avatarEmoji || code.slice(0, 3) || 'GRP',
         avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
-        avatarColorHex: data.avatarColorHex || '#06B6D4',
+        avatarColorHex: data.avatarColorHex || '#1D3B8B',
         creatorUid: data.creatorUid || '',
-        creatorEmail: data.creatorEmail || '',
-        adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails : [data.creatorEmail || ''].filter(Boolean),
-        memberEmails: Array.isArray(data.memberEmails) ? data.memberEmails : [currentEmail],
+        creatorEmail: rawCreator,
+        adminEmails: normAdmins,
+        memberEmails: normMembers,
         joinCode: data.joinCode || '',
         dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
         tasks: Array.isArray(data.tasks) ? data.tasks : [],
@@ -410,6 +452,9 @@ export const GroupProjectsView: React.FC<Props> = ({
           }
         });
       });
+      // Do not overwrite existing projects with [] before primary DB listeners settle
+      if (merged.size === 0 && primaryBucketsFired.size === 0) return;
+
       const syncedList = Array.from(merged.values()).map((v) => v.project);
       onUpdateVault((prev) => ({
         ...prev,
@@ -430,6 +475,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                 }
               });
               resultsByKey.set(key, bucket);
+              if (dbIdx === 0 && !snap.metadata.fromCache) {
+                primaryBucketsFired.add(key);
+              }
               flushMerged();
             },
             () => {}
@@ -537,13 +585,13 @@ export const GroupProjectsView: React.FC<Props> = ({
               teamName: data.teamName || 'Team 1',
               objective: data.objective || data.groupTarget || '',
               groupTarget: data.groupTarget || 'Grade A',
-              avatarEmoji: data.avatarEmoji || '👥',
+              avatarEmoji: data.avatarEmoji || String(data.courseCode || 'GRP').slice(0, 3).toUpperCase(),
               avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
-              avatarColorHex: data.avatarColorHex || '#10B981',
+              avatarColorHex: data.avatarColorHex || '#1D3B8B',
               creatorUid: data.creatorUid || '',
-              creatorEmail: data.creatorEmail || '',
-              adminEmails: data.adminEmails || [],
-              memberEmails: members,
+              creatorEmail: String(data.creatorEmail || '').trim().toLowerCase(),
+              adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails.map((e: unknown) => String(e).trim().toLowerCase()) : [],
+              memberEmails: members.map((e) => String(e).trim().toLowerCase()),
               joinCode: data.joinCode || '',
               dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
               tasks: data.tasks || [],
@@ -671,31 +719,48 @@ export const GroupProjectsView: React.FC<Props> = ({
     []
   );
 
-  // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT
-  // Uses per-DB buckets so an empty defaultDb NEVER wipes out messages from the primary DB,
-  // removes orderBy('createdAt') so pending serverTimestamp() docs are never dropped,
-  // and subscribes with includeMetadataChanges for instant local-to-server updates.
+  // 4. DUAL-CHANNEL REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT
+  // Channel A: Subcollection onSnapshot (works when Firestore rules allow list on messages).
+  // Channel B: Parent project doc onSnapshot + parallel single-doc getDoc() (immune to list rule blocks,
+  // delivering zero-delay sync across Web & Android whenever any device writes a message, reaction, pin, or poll).
   useEffect(() => {
     const projectId = activeProject?.id;
     if (!projectId || !user) return;
     lastSeenMsgCountRef.current = 0;
 
+    let disposed = false;
     const msgsByDb = new Map<number, Map<string, WebGroupChatMessage>>();
+    const docIndexMsgs = new Map<string, WebGroupChatMessage>();
     const serverConfirmedByDb = new Map<number, boolean>();
+    const fetchedMsgIds = new Set<string>();
+    const lastEventByDb = new Map<number, string>();
     const unsubs: (() => void)[] = [];
 
     const flushMessages = () => {
+      if (disposed) return;
       const merged = new Map<string, WebGroupChatMessage>();
-      // Merge in reverse DB index so primary DB (idx 0) always wins conflicts
+
+      // Seed from Channel B fetched docs first
+      docIndexMsgs.forEach((m, id) => {
+        if (!deletedMsgIdsRef.current.has(id)) {
+          merged.set(id, m);
+        }
+      });
+
+      // Overlay Channel A buckets in reverse DB index so primary DB (idx 0) always wins
       const indices = Array.from(msgsByDb.keys()).sort((a, b) => b - a);
       for (const idx of indices) {
         const bucket = msgsByDb.get(idx);
-        bucket?.forEach((m, id) => merged.set(id, m));
+        bucket?.forEach((m, id) => {
+          if (!deletedMsgIdsRef.current.has(id)) {
+            merged.set(id, m);
+          }
+        });
       }
 
-      // Preserve any locally sent messages that are still in-flight or failed so they never vanish
+      // Preserve any locally sent messages that are still in-flight or failed
       pendingMsgsRef.current.forEach(({ msg }, id) => {
-        if (msg.projectId === projectId) {
+        if (msg.projectId === projectId && !deletedMsgIdsRef.current.has(id)) {
           const existingCloud = merged.get(id);
           if (!existingCloud) {
             merged.set(id, msg);
@@ -705,15 +770,16 @@ export const GroupProjectsView: React.FC<Props> = ({
         }
       });
 
-      const primaryConfirmed = serverConfirmedByDb.get(0) === true;
+      const primaryConfirmed =
+        serverConfirmedByDb.get(0) === true || serverConfirmedByDb.get(100) === true;
 
       onUpdateVault((prev) => {
         const other = prev.groupMessages.filter((m) => m.projectId !== projectId);
         const finalMap = new Map<string, WebGroupChatMessage>();
-        if (!primaryConfirmed) {
-          // Before primary server confirms, keep cached messages and overlay incoming ones
+        if (!primaryConfirmed || serverConfirmedByDb.get(0) !== true) {
+          // Retain cached messages until full collection list is confirmed, while respecting deletions
           prev.groupMessages
-            .filter((m) => m.projectId === projectId)
+            .filter((m) => m.projectId === projectId && !deletedMsgIdsRef.current.has(m.id))
             .forEach((m) => finalMap.set(m.id, m));
         }
         merged.forEach((m, id) => finalMap.set(id, m));
@@ -728,16 +794,103 @@ export const GroupProjectsView: React.FC<Props> = ({
       });
     };
 
+    const fetchDocIndexedMessages = async (
+      targetDb: typeof db,
+      dbIdx: number,
+      data: Record<string, any> | undefined,
+      fromCache: boolean
+    ) => {
+      if (!data || disposed) return;
+      const docIds: string[] = Array.isArray(data.messageIds)
+        ? data.messageIds.map((x: unknown) => String(x)).filter(Boolean)
+        : [];
+      const deletedIds: string[] = Array.isArray(data.deletedMessageIds)
+        ? data.deletedMessageIds.map((x: unknown) => String(x)).filter(Boolean)
+        : [];
+
+      let hadDeletions = false;
+      deletedIds.forEach((id) => {
+        if (!deletedMsgIdsRef.current.has(id)) {
+          deletedMsgIdsRef.current.add(id);
+          hadDeletions = true;
+        }
+        docIndexMsgs.delete(id);
+        fetchedMsgIds.delete(id);
+        msgsByDb.forEach((b) => b.delete(id));
+      });
+      if (hadDeletions) flushMessages();
+
+      const eventId = String(data.lastMsgEventId || '');
+      const eventAt = String(data.lastMsgEventAt || '');
+      const eventKey = `${eventId}_${eventAt}`;
+      const prevEventKey = lastEventByDb.get(dbIdx);
+      const eventChanged = Boolean(eventId) && eventKey !== prevEventKey;
+      if (eventId) lastEventByDb.set(dbIdx, eventKey);
+
+      const idsToFetch = docIds.filter(
+        (id) =>
+          !deletedMsgIdsRef.current.has(id) &&
+          (!fetchedMsgIds.has(id) || (eventChanged && id === eventId))
+      );
+
+      if (!fromCache && docIds.length === 0) {
+        serverConfirmedByDb.set(100 + dbIdx, true);
+      }
+
+      if (idsToFetch.length === 0) return;
+
+      const snaps = await Promise.all(
+        idsToFetch.map(async (mid) => {
+          try {
+            const msgRef = doc(targetDb, 'group_projects', projectId, 'messages', mid);
+            // Force server read when updating an existing message event (reaction/pin/poll vote)
+            const snap =
+              eventChanged && mid === eventId
+                ? await getDocFromServer(msgRef).catch(() => getDoc(msgRef))
+                : await getDoc(msgRef).catch(() => null);
+            return { mid, snap };
+          } catch {
+            return { mid, snap: null };
+          }
+        })
+      );
+
+      if (disposed) return;
+
+      let changed = false;
+      snaps.forEach(({ mid, snap }) => {
+        if (snap && snap.exists()) {
+          fetchedMsgIds.add(mid);
+          docIndexMsgs.set(mid, mapFirestoreMessageDoc(projectId, snap, false));
+          changed = true;
+        } else if (snap && !snap.exists() && eventChanged && mid === eventId) {
+          deletedMsgIdsRef.current.add(mid);
+          docIndexMsgs.delete(mid);
+          changed = true;
+        }
+      });
+
+      if (!fromCache) {
+        serverConfirmedByDb.set(100 + dbIdx, true);
+      }
+      if (changed) {
+        flushMessages();
+      }
+    };
+
     readDbs.forEach((targetDb, dbIdx) => {
+      // Channel A: Subcollection snapshot
       try {
         const colRef = collection(targetDb, 'group_projects', projectId, 'messages');
-        const unsub = onSnapshot(
+        const unsubA = onSnapshot(
           colRef,
           { includeMetadataChanges: true },
           (snap) => {
             const bucket = new Map<string, WebGroupChatMessage>();
             snap.docs.forEach((d) => {
-              bucket.set(d.id, mapFirestoreMessageDoc(projectId, d, d.metadata.hasPendingWrites));
+              if (!deletedMsgIdsRef.current.has(d.id)) {
+                bucket.set(d.id, mapFirestoreMessageDoc(projectId, d, d.metadata.hasPendingWrites));
+              }
             });
             msgsByDb.set(dbIdx, bucket);
             if (!snap.metadata.fromCache) {
@@ -746,23 +899,56 @@ export const GroupProjectsView: React.FC<Props> = ({
             flushMessages();
           },
           (err) => {
-            if (dbIdx === 0) {
+            const code = (err as { code?: string })?.code || '';
+            if (dbIdx === 0 && !code.includes('permission-denied')) {
               onNotify(`Chat sync issue: ${(err as Error)?.message || 'Check connection.'}`);
             }
           }
         );
-        unsubs.push(unsub);
+        unsubs.push(unsubA);
+      } catch {
+        // Offline fallback
+      }
+
+      // Channel B: Parent project document watcher + server prime
+      try {
+        const projRef = doc(targetDb, 'group_projects', projectId);
+        void getDocFromServer(projRef)
+          .then((s) => {
+            if (s.exists()) {
+              void fetchDocIndexedMessages(targetDb, dbIdx, s.data() as Record<string, any>, false);
+            }
+          })
+          .catch(() => {});
+
+        const unsubB = onSnapshot(
+          projRef,
+          { includeMetadataChanges: true },
+          (snap) => {
+            if (snap.exists()) {
+              void fetchDocIndexedMessages(
+                targetDb,
+                dbIdx,
+                snap.data() as Record<string, any>,
+                snap.metadata.fromCache
+              );
+            }
+          },
+          () => {}
+        );
+        unsubs.push(unsubB);
       } catch {
         // Offline fallback
       }
     });
 
     return () => {
+      disposed = true;
       unsubs.forEach((u) => u());
     };
   }, [activeProject?.id, user, readDbs, onUpdateVault, mapFirestoreMessageDoc, onNotify]);
 
-  // 4B. BACKGROUND MESSAGE NOTIFICATION BADGE LISTENER FOR OTHER TEAMS
+  // 4B. BACKGROUND MESSAGE NOTIFICATION BADGE LISTENER FOR OTHER TEAMS (via Channel B doc watcher)
   const projectIdsKey = useMemo(
     () => vault.groupProjects.map((p) => p.id).sort().join(','),
     [vault.groupProjects]
@@ -781,9 +967,11 @@ export const GroupProjectsView: React.FC<Props> = ({
     otherIds.forEach((pid) => {
       try {
         const unsub = onSnapshot(
-          collection(db, 'group_projects', pid, 'messages'),
+          doc(db, 'group_projects', pid),
           (snap) => {
-            const count = snap.size;
+            if (!snap.exists()) return;
+            const data = (snap.data() || {}) as Record<string, any>;
+            const count = Array.isArray(data.messageIds) ? data.messageIds.length : 0;
             const prevCount = baselineCounts.get(pid);
             baselineCounts.set(pid, count);
             if (prevCount !== undefined && count > prevCount) {
@@ -816,7 +1004,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           senderUid: user.uid,
           senderEmail: currentEmail,
           senderName: user.displayName || vault.profile.name || 'New Teammate',
-          messageText: `🎉 ${user.displayName || currentEmail} accepted the invitation and joined the group!`,
+          messageText: `${user.displayName || currentEmail} accepted the invitation and joined the group.`,
           isPinned: false,
           messageType: 'NOTICE',
           timestampEpochMillis: nowMs,
@@ -833,6 +1021,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           }),
           setDoc(doc(db, 'group_projects', inv.projectId, 'messages', noticeMsgId), noticePayload)
         ]);
+        await touchProjectMessageIndex(inv.projectId, noticeMsgId, false);
       }
 
       for (const targetDb of readDbs) {
@@ -846,12 +1035,16 @@ export const GroupProjectsView: React.FC<Props> = ({
             teamName: pData.teamName || inv.teamName,
             objective: pData.objective || inv.groupTarget,
             groupTarget: pData.groupTarget || inv.groupTarget,
-            avatarEmoji: pData.avatarEmoji || inv.avatarEmoji || '👥',
-            avatarColorHex: pData.avatarColorHex || inv.avatarColorHex || '#10B981',
+            avatarEmoji: pData.avatarEmoji || inv.avatarEmoji || inv.courseCode?.slice(0, 3) || 'GRP',
+            avatarColorHex: pData.avatarColorHex || inv.avatarColorHex || '#1D3B8B',
             creatorUid: pData.creatorUid || '',
-            creatorEmail: pData.creatorEmail || inv.senderEmail,
-            adminEmails: pData.adminEmails || [inv.senderEmail],
-            memberEmails: pData.memberEmails || [inv.senderEmail, currentEmail],
+            creatorEmail: String(pData.creatorEmail || inv.senderEmail || '').trim().toLowerCase(),
+            adminEmails: Array.isArray(pData.adminEmails)
+              ? pData.adminEmails.map((e: unknown) => String(e).trim().toLowerCase())
+              : [inv.senderEmail.toLowerCase()],
+            memberEmails: Array.isArray(pData.memberEmails)
+              ? pData.memberEmails.map((e: unknown) => String(e).trim().toLowerCase())
+              : [inv.senderEmail.toLowerCase(), currentEmail],
             joinCode: pData.joinCode || inv.joinCode || '',
             dueEpochMillis: pData.dueEpochMillis || Date.now() + 14 * 86_400_000,
             tasks: pData.tasks || [],
@@ -872,9 +1065,9 @@ export const GroupProjectsView: React.FC<Props> = ({
       }
 
       setPendingInvitations((prev) => prev.filter((i) => i.id !== inv.id));
-      onNotify(`🎉 Successfully joined ${inv.teamName}!`);
+      onNotify(`Successfully joined ${inv.teamName}.`);
     } catch {
-      onNotify(`Joined ${inv.teamName}!`);
+      onNotify(`Joined ${inv.teamName}.`);
     }
   };
 
@@ -935,13 +1128,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                 teamName: d.teamName || 'Team 1',
                 objective: d.objective || '',
                 groupTarget: d.groupTarget || 'Grade A',
-                avatarEmoji: d.avatarEmoji || '👥',
+                avatarEmoji: d.avatarEmoji || String(d.courseCode || 'GRP').slice(0, 3).toUpperCase(),
                 avatarEmojiOrUrl: d.avatarEmojiOrUrl || d.avatarEmoji || '',
-                avatarColorHex: d.avatarColorHex || '#10B981',
+                avatarColorHex: d.avatarColorHex || '#1D3B8B',
                 creatorUid: d.creatorUid || '',
-                creatorEmail: d.creatorEmail || '',
-                adminEmails: d.adminEmails || [],
-                memberEmails: d.memberEmails || [],
+                creatorEmail: String(d.creatorEmail || '').trim().toLowerCase(),
+                adminEmails: Array.isArray(d.adminEmails) ? d.adminEmails.map((e: unknown) => String(e).trim().toLowerCase()) : [],
+                memberEmails: Array.isArray(d.memberEmails) ? d.memberEmails.map((e: unknown) => String(e).trim().toLowerCase()) : [],
                 joinCode: d.joinCode || '',
                 dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
                 tasks: d.tasks || [],
@@ -971,13 +1164,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                 teamName: d.teamName || 'Team 1',
                 objective: d.objective || '',
                 groupTarget: d.groupTarget || 'Grade A',
-                avatarEmoji: d.avatarEmoji || '👥',
+                avatarEmoji: d.avatarEmoji || String(d.courseCode || 'GRP').slice(0, 3).toUpperCase(),
                 avatarEmojiOrUrl: d.avatarEmojiOrUrl || d.avatarEmoji || '',
-                avatarColorHex: d.avatarColorHex || '#10B981',
+                avatarColorHex: d.avatarColorHex || '#1D3B8B',
                 creatorUid: d.creatorUid || '',
-                creatorEmail: d.creatorEmail || '',
-                adminEmails: d.adminEmails || [],
-                memberEmails: d.memberEmails || [],
+                creatorEmail: String(d.creatorEmail || '').trim().toLowerCase(),
+                adminEmails: Array.isArray(d.adminEmails) ? d.adminEmails.map((e: unknown) => String(e).trim().toLowerCase()) : [],
+                memberEmails: Array.isArray(d.memberEmails) ? d.memberEmails.map((e: unknown) => String(e).trim().toLowerCase()) : [],
                 joinCode: d.joinCode || codeCandidate,
                 dueEpochMillis: d.dueEpochMillis || Date.now() + 14 * 86_400_000,
                 tasks: d.tasks || [],
@@ -998,7 +1191,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         return;
       }
 
-      if (!targetDoc.memberEmails.includes(currentEmail)) {
+      if (!targetDoc.memberEmails.map((e) => e.toLowerCase()).includes(currentEmail)) {
         targetDoc.memberEmails.push(currentEmail);
       }
 
@@ -1019,31 +1212,43 @@ export const GroupProjectsView: React.FC<Props> = ({
       setSelectedProjectId(targetDoc.id);
       setShowJoinByCodeModal(false);
       setJoinCodeInput('');
-      onNotify(`🎉 Successfully joined ${targetDoc.teamName}!`);
+      onNotify(`Successfully joined ${targetDoc.teamName}.`);
     } catch {
       onNotify('Unable to join team right now. Check connection.');
     }
   };
 
-  // AUTHORITATIVE OPTIMISTIC SEND + SERVER WRITE HELPER
+  // AUTHORITATIVE OPTIMISTIC SEND + SERVER WRITE HELPER (writes message doc + updates Channel B doc index)
   const sendPayloadToCloud = useCallback(
     async (newMsg: WebGroupChatMessage, payload: Record<string, any>) => {
+      if (!user) {
+        const failedUnauth: WebGroupChatMessage = {
+          ...newMsg,
+          syncStatus: 'FAILED',
+          syncError: 'Sign in required to send messages across devices'
+        };
+        onUpdateVault((prev) => ({
+          ...prev,
+          groupMessages: [...prev.groupMessages.filter((m) => m.id !== newMsg.id), failedUnauth]
+        }));
+        onNotify('Please sign in first to send and sync group messages.');
+        onRequireAuth?.();
+        return;
+      }
+
       const optimistic: WebGroupChatMessage = {
         ...newMsg,
-        syncStatus: user ? 'SENDING' : 'SYNCED'
+        syncStatus: 'SENDING'
       };
-      if (user) {
-        pendingMsgsRef.current.set(newMsg.id, { msg: optimistic, payload });
-      }
+      pendingMsgsRef.current.set(newMsg.id, { msg: optimistic, payload });
       onUpdateVault((prev) => ({
         ...prev,
         groupMessages: [...prev.groupMessages.filter((m) => m.id !== newMsg.id), optimistic]
       }));
 
-      if (!user) return;
-
       try {
         await setDoc(doc(db, 'group_projects', newMsg.projectId, 'messages', newMsg.id), payload);
+        await touchProjectMessageIndex(newMsg.projectId, newMsg.id, false);
         const syncedMsg: WebGroupChatMessage = { ...optimistic, syncStatus: 'SYNCED', syncError: undefined };
         pendingMsgsRef.current.delete(newMsg.id);
         onUpdateVault((prev) => ({
@@ -1065,7 +1270,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         onNotify(`Message not sent to cloud: ${errMsg}. Tap Retry on the message.`);
       }
     },
-    [user, onUpdateVault, onNotify]
+    [user, onUpdateVault, onNotify, onRequireAuth, touchProjectMessageIndex]
   );
 
   const handleRetryMessage = useCallback(
@@ -1180,6 +1385,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         },
         { merge: true }
       ).catch(() => {});
+      await touchProjectMessageIndex(activeProject.id, msg.id, false);
     }
   };
 
@@ -1197,6 +1403,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       await updateDoc(doc(db, 'group_projects', activeProject.id, 'messages', msg.id), {
         isPinned: nextPinned
       }).catch(() => {});
+      await touchProjectMessageIndex(activeProject.id, msg.id, false);
     }
   };
 
@@ -1212,6 +1419,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     if (!window.confirm(isMe ? 'Unsend this message for everyone?' : 'Delete this message as Admin?')) return;
 
+    deletedMsgIdsRef.current.add(msg.id);
     pendingMsgsRef.current.delete(msg.id);
     onUpdateVault((prev) => ({
       ...prev,
@@ -1224,6 +1432,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           deleteDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', msg.id))
         )
       );
+      await touchProjectMessageIndex(activeProject.id, msg.id, true);
     }
 
     onNotify(isMe ? 'Message unsent.' : 'Message deleted by admin.');
@@ -1307,7 +1516,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           senderUid: user?.uid || '',
           senderEmail: currentEmail,
           senderName: user?.displayName || vault.profile.name || 'Scholar',
-          messageText: `🎙️ Voice Note (${dur}s)`,
+          messageText: `Voice Note (${dur}s)`,
           timestamp: nowMs,
           isPinned: false,
           messageType: 'VOICE_NOTE',
@@ -1331,7 +1540,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           createdAt: serverTimestamp()
         };
         await sendPayloadToCloud(newMsg, payload);
-        onNotify('Voice note sent to team!');
+        onNotify('Voice note sent to team.');
       };
       reader.readAsDataURL(audioBlob);
     };
@@ -1366,7 +1575,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           senderUid: user?.uid || '',
           senderEmail: currentEmail,
           senderName: user?.displayName || vault.profile.name || 'Scholar',
-          messageText: `📸 Photo: ${file.name || 'image.jpg'}`,
+          messageText: `Photo: ${file.name || 'image.jpg'}`,
           timestamp: nowMs,
           isPinned: false,
           messageType: 'IMAGE_SHARE',
@@ -1390,7 +1599,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         };
 
         await sendPayloadToCloud(newMsg, payload);
-        onNotify('Photo shared with group!');
+        onNotify('Photo shared with group.');
       } catch {
         onNotify('Could not process selected image.');
       }
@@ -1420,7 +1629,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName: user?.displayName || vault.profile.name || 'Scholar',
-      messageText: `📊 Team Vote: ${q}`,
+      messageText: `Team Vote: ${q}`,
       timestamp: nowMs,
       isPinned: false,
       messageType: 'POLL',
@@ -1450,7 +1659,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     };
 
     await sendPayloadToCloud(newMsg, payload);
-    onNotify('Team poll posted to chat!');
+    onNotify('Team poll posted to chat.');
   };
 
   // VOTE ON POLL (Synced to Firestore for Android & Web)
@@ -1496,6 +1705,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         },
         { merge: true }
       ).catch(() => {});
+      await touchProjectMessageIndex(activeProject.id, msg.id, false);
     }
   };
 
@@ -1513,7 +1723,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName: user?.displayName || vault.profile.name || 'Scholar',
-      messageText: `📎 Shared Document: ${title}`,
+      messageText: `Shared Document: ${title}`,
       timestamp: nowMs,
       isPinned: false,
       messageType: 'DOC_SHARE',
@@ -1548,7 +1758,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     };
 
     await sendPayloadToCloud(newMsg, payload);
-    onNotify('Resource shared to group!');
+    onNotify('Resource shared to group.');
   };
 
   // ADD MEMBER BY EMAIL & SEND INVITATION
@@ -1564,8 +1774,10 @@ export const GroupProjectsView: React.FC<Props> = ({
       return;
     }
 
-    const updatedMembers = [...activeProject.memberEmails, clean];
+    const updatedMembers = [...activeProject.memberEmails.map((e) => e.toLowerCase()), clean];
     const projectJoinCode = activeProject.joinCode || generateJoinCode();
+    const noticeId = uidGen('notice');
+    const nowMs = Date.now();
 
     onUpdateVault((prev) => ({
       ...prev,
@@ -1577,12 +1789,12 @@ export const GroupProjectsView: React.FC<Props> = ({
       groupMessages: [
         ...prev.groupMessages,
         {
-          id: uidGen('gm_notice'),
+          id: noticeId,
           projectId: activeProject.id,
           senderEmail: 'system@aura',
-          senderName: 'AURA Team Bot',
-          messageText: `🎉 ${clean} was invited to join ${activeProject.teamName}!`,
-          timestamp: Date.now(),
+          senderName: 'Team System',
+          messageText: `${clean} was invited to join ${activeProject.teamName}.`,
+          timestamp: nowMs,
           isPinned: false,
           messageType: 'NOTICE'
         }
@@ -1597,8 +1809,8 @@ export const GroupProjectsView: React.FC<Props> = ({
         teamName: activeProject.teamName,
         objective: activeProject.objective,
         groupTarget: activeProject.groupTarget,
-        avatarEmoji: activeProject.avatarEmoji || '👥',
-        avatarColorHex: activeProject.avatarColorHex || '#10B981',
+        avatarEmoji: activeProject.avatarEmoji || activeProject.courseCode.slice(0, 3) || 'GRP',
+        avatarColorHex: activeProject.avatarColorHex || '#1D3B8B',
         creatorUid: activeProject.creatorUid || user.uid,
         creatorEmail: activeProject.creatorEmail || currentEmail,
         adminEmails: activeProject.adminEmails,
@@ -1616,8 +1828,8 @@ export const GroupProjectsView: React.FC<Props> = ({
         projectTitle: activeProject.projectTitle,
         courseCode: activeProject.courseCode,
         groupTarget: activeProject.groupTarget,
-        avatarEmoji: activeProject.avatarEmoji || '👥',
-        avatarColorHex: activeProject.avatarColorHex || '#10B981',
+        avatarEmoji: activeProject.avatarEmoji || activeProject.courseCode.slice(0, 3) || 'GRP',
+        avatarColorHex: activeProject.avatarColorHex || '#1D3B8B',
         senderUid: user.uid,
         senderEmail: currentEmail,
         senderName: user.displayName || vault.profile.name || 'Team Leader',
@@ -1626,14 +1838,12 @@ export const GroupProjectsView: React.FC<Props> = ({
         joinCode: projectJoinCode,
         createdAt: serverTimestamp()
       };
-      const noticeId = uidGen('notice');
-      const nowMs = Date.now();
       const noticePayload = {
         projectId: activeProject.id,
         senderUid: user.uid,
         senderEmail: 'system@aura',
-        senderName: 'AURA Team Bot',
-        messageText: `🎉 ${clean} was invited to the group!`,
+        senderName: 'Team System',
+        messageText: `${clean} was invited to the group.`,
         isPinned: false,
         messageType: 'NOTICE',
         timestampEpochMillis: nowMs,
@@ -1646,6 +1856,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           setDoc(doc(db, 'group_invitations', inviteDocId), invitePayload),
           setDoc(doc(db, 'group_projects', activeProject.id, 'messages', noticeId), noticePayload)
         ]);
+        await touchProjectMessageIndex(activeProject.id, noticeId, false);
       } catch (err) {
         onNotify(`Saved locally, cloud invite warning: ${(err as Error)?.message || 'Check connection.'}`);
       }
@@ -1661,7 +1872,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       joinCode: projectJoinCode
     });
 
-    onNotify(`Invited ${clean} to ${activeProject.teamName}!`);
+    onNotify(`Invited ${clean} to ${activeProject.teamName}.`);
   };
 
   // PROMOTE TO ADMIN
@@ -1671,6 +1882,9 @@ export const GroupProjectsView: React.FC<Props> = ({
     if (activeProject.adminEmails.map((e) => e.toLowerCase()).includes(clean)) return;
 
     const updatedAdmins = [...activeProject.adminEmails, clean];
+    const promoMsgId = uidGen('gm_notice');
+    const nowMs = Date.now();
+    const promoText = `${clean} was promoted to Group Admin.`;
     onUpdateVault((prev) => ({
       ...prev,
       groupProjects: prev.groupProjects.map((p) =>
@@ -1679,12 +1893,12 @@ export const GroupProjectsView: React.FC<Props> = ({
       groupMessages: [
         ...prev.groupMessages,
         {
-          id: uidGen('gm_notice'),
+          id: promoMsgId,
           projectId: activeProject.id,
           senderEmail: 'system@aura',
-          senderName: 'AURA Team Bot',
-          messageText: `⭐ ${clean} was promoted to Group Admin`,
-          timestamp: Date.now(),
+          senderName: 'Team System',
+          messageText: promoText,
+          timestamp: nowMs,
           isPinned: false,
           messageType: 'NOTICE'
         }
@@ -1692,10 +1906,24 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await updateDoc(doc(db, 'group_projects', activeProject.id), {
-        adminEmails: updatedAdmins,
-        updatedAt: serverTimestamp()
-      }).catch(() => {});
+      await Promise.allSettled([
+        updateDoc(doc(db, 'group_projects', activeProject.id), {
+          adminEmails: updatedAdmins,
+          updatedAt: serverTimestamp()
+        }),
+        setDoc(doc(db, 'group_projects', activeProject.id, 'messages', promoMsgId), {
+          projectId: activeProject.id,
+          senderUid: user.uid,
+          senderEmail: 'system@aura',
+          senderName: 'Team System',
+          messageText: promoText,
+          isPinned: false,
+          messageType: 'NOTICE',
+          timestampEpochMillis: nowMs,
+          createdAt: serverTimestamp()
+        })
+      ]);
+      await touchProjectMessageIndex(activeProject.id, promoMsgId, false);
     }
 
     onNotify(`Promoted ${clean} to Group Admin.`);
@@ -2025,14 +2253,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     const myStatus = activeProject.memberStatuses?.[currentEmail]?.status || 'FOCUSING';
     const statusLabel =
       myStatus === 'FOCUSING'
-        ? '🔥 Focusing'
+        ? 'Focusing'
         : myStatus === 'IN_LIBRARY'
-        ? '📚 In Library'
+        ? 'In Library'
         : myStatus === 'ON_BREAK'
-        ? '☕ On Break'
-        : '✅ Ready to Review';
+        ? 'On Break'
+        : 'Ready to Review';
     const senderName = user?.displayName || vault.profile.name || 'Scholar';
-    const text = `⚡ Standup Pulse (${statusLabel}) • ${senderName} checked in — Team Readiness ${taskProgressPct}% (${doneTasks}/${tasks.length} deliverables done)`;
+    const text = `Standup Pulse (${statusLabel}) · ${senderName} checked in — Team Readiness ${taskProgressPct}% (${doneTasks}/${tasks.length} deliverables done)`;
     const noticeId = uidGen('pulse');
     const nowMs = Date.now();
     const newMsg: WebGroupChatMessage = {
@@ -2060,11 +2288,16 @@ export const GroupProjectsView: React.FC<Props> = ({
       createdAt: serverTimestamp()
     };
     await sendPayloadToCloud(newMsg, payload);
-    onNotify('Standup pulse posted & synced!');
+    onNotify('Standup pulse posted & synced.');
   };
 
-  // 1-TAP FORCE CLOUD SYNC (Strict Server Reconciliation + Active Chat Fetch)
+  // 1-TAP FORCE CLOUD SYNC (Strict Server Reconciliation + Dual-Channel Active Chat Fetch)
   const handleForceSync = async () => {
+    if (!user) {
+      onNotify('Please sign in first to sync groups and messages from cloud.');
+      onRequireAuth?.();
+      return;
+    }
     setIsSyncing(true);
     try {
       for (const tDb of readDbs) {
@@ -2077,6 +2310,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       }
 
       const fetchedMap = new Map<string, WebGroupProject>();
+      const messageIdsByProject = new Map<string, string[]>();
       let anyServerSucceeded = false;
 
       for (const tDb of readDbs) {
@@ -2097,20 +2331,35 @@ export const GroupProjectsView: React.FC<Props> = ({
           effectiveSnap?.docs.forEach((d) => {
             if (deletedProjectIdsRef.current.has(d.id)) return;
             const data = (d.data() || {}) as Record<string, any>;
+            const code = String(data.courseCode || 'GEN-101').toUpperCase();
+            if (Array.isArray(data.deletedMessageIds)) {
+              data.deletedMessageIds.forEach((id: unknown) => deletedMsgIdsRef.current.add(String(id)));
+            }
+            if (Array.isArray(data.messageIds)) {
+              const prevIds = messageIdsByProject.get(d.id) || [];
+              messageIdsByProject.set(
+                d.id,
+                Array.from(new Set([...prevIds, ...data.messageIds.map((x: unknown) => String(x))]))
+              );
+            }
             fetchedMap.set(d.id, {
               id: d.id,
               teamName: data.teamName || 'Study Team',
               projectTitle: data.projectTitle || data.teamName || 'Group Project',
-              courseCode: data.courseCode || 'GEN-101',
+              courseCode: code,
               objective: data.objective || data.groupTarget || '',
               groupTarget: data.groupTarget || data.objective || '',
-              creatorEmail: data.creatorEmail || '',
+              creatorEmail: String(data.creatorEmail || '').trim().toLowerCase(),
               creatorUid: data.creatorUid || '',
-              avatarColorHex: data.avatarColorHex || '#06B6D4',
-              avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
+              avatarColorHex: data.avatarColorHex || '#1D3B8B',
+              avatarEmoji: data.avatarEmoji || code.slice(0, 3) || 'GRP',
               avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
-              memberEmails: Array.isArray(data.memberEmails) ? data.memberEmails : [],
-              adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails : [],
+              memberEmails: Array.isArray(data.memberEmails)
+                ? data.memberEmails.map((e: unknown) => String(e).trim().toLowerCase())
+                : [],
+              adminEmails: Array.isArray(data.adminEmails)
+                ? data.adminEmails.map((e: unknown) => String(e).trim().toLowerCase())
+                : [],
               joinCode: data.joinCode || d.id.slice(0, 6).toUpperCase(),
               dueEpochMillis: data.dueEpochMillis || Date.now() + 14 * 86_400_000,
               tasks: Array.isArray(data.tasks) ? data.tasks : [],
@@ -2125,7 +2374,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       const persistedDeleted = Array.from(deletedProjectIdsRef.current);
       const fetchedList = Array.from(fetchedMap.values());
 
-      // Also force-fetch active project's server messages immediately
+      // Force-fetch active project's server messages via Channel A, with Channel B single-doc fallback
       const targetProjId = activeProject?.id || fetchedList[0]?.id;
       let freshMessages: WebGroupChatMessage[] | null = null;
       if (targetProjId && user) {
@@ -2135,8 +2384,48 @@ export const GroupProjectsView: React.FC<Props> = ({
         if (msgSnap) {
           anyServerSucceeded = true;
           freshMessages = msgSnap.docs
+            .filter((d) => !deletedMsgIdsRef.current.has(d.id))
             .map((d) => mapFirestoreMessageDoc(targetProjId, d, false))
             .sort((a, b) => (a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id.localeCompare(b.id)));
+        } else {
+          // Channel B single-doc fallback
+          const parentSnap = await getDocFromServer(doc(db, 'group_projects', targetProjId))
+            .catch(() => getDoc(doc(db, 'group_projects', targetProjId)))
+            .catch(() => null);
+          const pData = parentSnap?.exists() ? (parentSnap.data() as Record<string, any>) : null;
+          if (pData && Array.isArray(pData.deletedMessageIds)) {
+            pData.deletedMessageIds.forEach((id: unknown) => deletedMsgIdsRef.current.add(String(id)));
+          }
+          const idxIds = Array.from(
+            new Set([
+              ...(messageIdsByProject.get(targetProjId) || []),
+              ...(Array.isArray(pData?.messageIds) ? pData.messageIds.map((x: unknown) => String(x)) : [])
+            ])
+          ).filter((id) => id && !deletedMsgIdsRef.current.has(id));
+
+          if (idxIds.length > 0) {
+            const docSnaps = await Promise.all(
+              idxIds.map((mid) =>
+                getDocFromServer(doc(db, 'group_projects', targetProjId, 'messages', mid))
+                  .catch(() => getDoc(doc(db, 'group_projects', targetProjId, 'messages', mid)))
+                  .catch(() => null)
+              )
+            );
+            const loaded = docSnaps
+              .filter((s): s is NonNullable<typeof s> => Boolean(s && s.exists()))
+              .map((s) =>
+                mapFirestoreMessageDoc(
+                  targetProjId,
+                  { id: s.id, data: () => (s.data() || {}) as Record<string, any> },
+                  false
+                )
+              )
+              .sort((a, b) => (a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id.localeCompare(b.id)));
+            if (loaded.length > 0) {
+              anyServerSucceeded = true;
+              freshMessages = loaded;
+            }
+          }
         }
       }
 
@@ -2154,15 +2443,27 @@ export const GroupProjectsView: React.FC<Props> = ({
               return Array.from(map.values());
             })();
         const cleanedMessages = prev.groupMessages.filter(
-          (m) => !deletedProjectIdsRef.current.has(m.projectId)
+          (m) => !deletedProjectIdsRef.current.has(m.projectId) && !deletedMsgIdsRef.current.has(m.id)
         );
         let mergedMessages = cleanedMessages;
         if (freshMessages && targetProjId) {
           const otherProjMsgs = cleanedMessages.filter((m) => m.projectId !== targetProjId);
-          const pendingForProj = Array.from(pendingMsgsRef.current.values())
-            .map((x) => x.msg)
-            .filter((m) => m.projectId === targetProjId && !freshMessages!.some((fm) => fm.id === m.id));
-          mergedMessages = [...otherProjMsgs, ...freshMessages, ...pendingForProj];
+          const localForProj = new Map<string, WebGroupChatMessage>();
+          cleanedMessages
+            .filter((m) => m.projectId === targetProjId)
+            .forEach((m) => localForProj.set(m.id, m));
+          freshMessages.forEach((m) => localForProj.set(m.id, m));
+          pendingMsgsRef.current.forEach(({ msg }) => {
+            if (msg.projectId === targetProjId && !deletedMsgIdsRef.current.has(msg.id)) {
+              if (!localForProj.has(msg.id)) localForProj.set(msg.id, msg);
+            }
+          });
+          mergedMessages = [
+            ...otherProjMsgs,
+            ...Array.from(localForProj.values()).sort((a, b) =>
+              a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id.localeCompare(b.id)
+            )
+          ];
         }
         return {
           ...prev,
@@ -2179,7 +2480,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         return prevId;
       });
 
-      onNotify(anyServerSucceeded ? 'Server sync complete! Cloud teams, tasks & messages updated.' : 'Synced with local cache.');
+      onNotify(anyServerSucceeded ? 'Server sync complete: teams, tasks & messages updated.' : 'Synced with local cache.');
     } catch {
       onNotify('Synced with local cache.');
     } finally {
@@ -2241,13 +2542,39 @@ export const GroupProjectsView: React.FC<Props> = ({
 
   return (
     <div className="space-y-4">
+      {/* 0. AUTHENTICATION BANNER WHEN NOT SIGNED IN */}
+      {!user && (
+        <div className="rounded-xl p-4 bg-[#FFFBEB] border border-[#FDE68A] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-[#92400E]">
+                Sign in to enable live cross-device messaging
+              </div>
+              <p className="text-xs text-[#92400E]/90 mt-0.5">
+                Messages, voice notes, and shared groups require an authenticated account to sync instantaneously with Android and teammates.
+              </p>
+            </div>
+          </div>
+          {onRequireAuth && (
+            <button
+              type="button"
+              onClick={onRequireAuth}
+              className="px-4 py-2 rounded-lg bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] text-xs font-semibold shrink-0 transition-colors"
+            >
+              Sign In Now
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 1. PENDING INVITATIONS BANNER */}
       {pendingInvitations.length > 0 && (
         <div className="rounded-xl p-4 bg-[#FFFBEB] border border-[#F59E0B] space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-[#B45309]" />
-              <h3 className="font-bold text-sm sm:text-base text-[#111827]">
+              <h3 className="font-bold text-sm sm:text-base text-[#141923]">
                 Team Invitations ({pendingInvitations.length})
               </h3>
             </div>
@@ -2263,13 +2590,13 @@ export const GroupProjectsView: React.FC<Props> = ({
                 className="p-3.5 rounded-lg bg-[#FFFFFF] border border-[#FDE68A] flex flex-col justify-between gap-3"
               >
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 border border-[#E5E7EB] bg-[#F3F4F6] text-[#111827]">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 border border-[#E4E0D8] bg-[#EFECE6] text-[#141923]">
                     {inv.teamName.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-bold text-[#111827] text-sm">{inv.teamName}</span>
-                      <span className="px-1.5 py-0.5 rounded font-mono bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] text-[10px] font-bold">
+                      <span className="font-bold text-[#141923] text-sm">{inv.teamName}</span>
+                      <span className="px-1.5 py-0.5 rounded font-mono bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] text-[10px] font-bold">
                         {inv.courseCode}
                       </span>
                     </div>
@@ -2277,17 +2604,17 @@ export const GroupProjectsView: React.FC<Props> = ({
                     <p className="text-[11px] text-[#B45309] font-medium mt-0.5">
                       Target: {inv.groupTarget}
                     </p>
-                    <p className="text-[10px] text-[#6B7280] mt-1">
-                      Invited by: <span className="text-[#111827] font-semibold">{inv.senderName}</span> ({inv.senderEmail})
+                    <p className="text-[10px] text-[#646B78] mt-1">
+                      Invited by: <span className="text-[#141923] font-semibold">{inv.senderName}</span> ({inv.senderEmail})
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-[#E5E7EB]">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#E4E0D8]">
                   <button
                     type="button"
                     onClick={() => handleAcceptInvitation(inv)}
-                    className="flex-1 py-1.5 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150 flex items-center justify-center gap-1"
+                    className="flex-1 py-1.5 rounded-lg bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] font-semibold text-xs transition-colors duration-150 flex items-center justify-center gap-1"
                   >
                     <Check className="w-3.5 h-3.5" />
                     Accept &amp; Join
@@ -2295,7 +2622,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   <button
                     type="button"
                     onClick={() => handleDeclineInvitation(inv)}
-                    className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#DC2626] text-[#4B5563] hover:text-[#DC2626] text-xs font-semibold transition-colors duration-150"
+                    className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#DC2626] text-[#4B5563] hover:text-[#DC2626] text-xs font-semibold transition-colors duration-150"
                   >
                     Decline
                   </button>
@@ -2307,23 +2634,29 @@ export const GroupProjectsView: React.FC<Props> = ({
       )}
 
       {/* Top Header Card */}
-      <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5">
+      <div className="aura-glass rounded-xl p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] text-[#1E3A8A] flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] flex items-center justify-center shrink-0">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-lg font-bold text-[#111827] tracking-tight">
+                <h2 className="text-base sm:text-lg font-bold text-[#141923] tracking-tight">
                   Academic Team Hub
                 </h2>
-                <span className="px-2 py-0.5 rounded font-mono bg-[#ECFDF5] border border-[#A7F3D0] text-[10px] font-bold text-[#065F46] uppercase tracking-wider">
-                  Live Cloud
+                <span
+                  className={`px-2 py-0.5 rounded font-mono border text-[10px] font-bold uppercase tracking-wider ${
+                    user
+                      ? 'bg-[#ECFDF5] border-[#A7F3D0] text-[#047857]'
+                      : 'bg-[#FFFBEB] border-[#FDE68A] text-[#B45309]'
+                  }`}
+                >
+                  {user ? 'Live Sync' : 'Sign-In Needed'}
                 </span>
               </div>
-              <p className="text-xs text-[#6B7280]">
-                Voice notes, shared slide vault, focus sprints &amp; deliverable tracking.
+              <p className="text-xs text-[#646B78]">
+                Instant messaging, voice notes, shared vault &amp; sprint milestones.
               </p>
             </div>
           </div>
@@ -2332,26 +2665,26 @@ export const GroupProjectsView: React.FC<Props> = ({
             <button
               type="button"
               onClick={handleForceSync}
-              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#1D3B8B] text-[#141923] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
               title="Force Instant Cloud Sync across Web and Mobile"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#1E3A8A] ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>Force Re-Sync</span>
+              <RefreshCw className={`w-3.5 h-3.5 text-[#1D3B8B] ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>Re-Sync</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowJoinByCodeModal(true)}
-              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#1E3A8A] text-[#111827] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
+              className="px-3 py-2 rounded-lg bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#1D3B8B] text-[#141923] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
             >
-              <KeyRound className="w-3.5 h-3.5 text-[#1E3A8A]" />
-              <span>Join with Code</span>
+              <KeyRound className="w-3.5 h-3.5 text-[#1D3B8B]" />
+              <span>Join Code</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}
-              className="px-3.5 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-lg bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150 flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               New Team
@@ -2774,7 +3107,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           {/* Right Column: Tab Content Stage */}
           <div className="lg:col-span-2">
             {activeTab === 'CHAT' && (
-              <div className="relative rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px]">
+              <div className="aura-glass relative rounded-xl p-3.5 sm:p-5 flex flex-col h-[calc(100dvh-280px)] min-h-[460px] sm:min-h-[520px] max-h-[720px]">
                 {/* Pinned Messages Bar */}
                 {pinnedMessages.length > 0 && (
                   <div className="p-2.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex items-center gap-2 mb-3 shrink-0">
@@ -2794,14 +3127,14 @@ export const GroupProjectsView: React.FC<Props> = ({
                       setShowNewMsgPill(false);
                     }
                   }}
-                  className="flex-1 overflow-y-auto space-y-3 pr-1.5 no-scrollbar"
+                  className="flex-1 overflow-y-auto space-y-3 pr-1 no-scrollbar"
                 >
                   {projectMessages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#6B7280]">
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#646B78]">
                       <MessageSquare className="w-9 h-9 text-[#9CA3AF] mb-2" />
-                      <p className="font-bold text-sm text-[#111827]">No messages yet</p>
+                      <p className="font-bold text-sm text-[#141923]">No messages yet</p>
                       <p className="text-xs mt-1 max-w-xs">
-                        Send messages, record voice notes, and coordinate deliverables in real time.
+                        Send messages, record voice notes, and coordinate deliverables in real time across devices.
                       </p>
                     </div>
                   ) : (
@@ -2817,7 +3150,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                       if (isNotice) {
                         return (
                           <div key={msg.id} className="flex justify-center my-1.5">
-                            <span className="px-3 py-1 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[11px] font-medium text-[#4B5563]">
+                            <span className="px-3 py-1 rounded-lg bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] font-medium text-[#4B5563] text-center">
                               {msg.messageText}
                             </span>
                           </div>
@@ -2830,10 +3163,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                           className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
                         >
                           <div
-                            className={`max-w-[85%] rounded-xl p-3 space-y-2 relative group ${
+                            className={`max-w-[90%] sm:max-w-[82%] rounded-xl p-3 space-y-2 relative group ${
                               isMe
-                                ? 'bg-[#1E3A8A] text-[#FFFFFF]'
-                                : 'bg-[#F9FAFB] border border-[#E5E7EB] text-[#111827]'
+                                ? 'bg-[#1D3B8B] text-[#FFFFFF]'
+                                : 'bg-[#FAF8F5] border border-[#E4E0D8] text-[#141923]'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-3 text-[11px] opacity-85">
@@ -2911,8 +3244,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                                         }`}
                                       >
                                         <div className="flex justify-between text-[11px] mb-1">
-                                          <span>{hasVoted ? '✓ ' : ''}{opt.text}</span>
-                                          <span className="font-mono text-[#4B5563]">
+                                          <span className="inline-flex items-center gap-1">
+                                            {hasVoted && <Check className="w-3 h-3 shrink-0" />}
+                                            {opt.text}
+                                          </span>
+                                          <span className="font-mono text-[#646B78]">
                                             {voteCount} ({pct}%)
                                           </span>
                                         </div>
@@ -3045,7 +3381,9 @@ export const GroupProjectsView: React.FC<Props> = ({
                                         <span className="text-[10px] font-mono opacity-80">Sending...</span>
                                       )}
                                       {isMe && (!msg.syncStatus || msg.syncStatus === 'SYNCED') && (
-                                        <span className="text-[10px] font-mono opacity-80">Sent ✓</span>
+                                        <span className="text-[10px] font-mono opacity-85 inline-flex items-center gap-0.5">
+                                          <Check className="w-2.5 h-2.5" /> Sent
+                                        </span>
                                       )}
                                       {isMe && msg.syncStatus === 'FAILED' && (
                                         <button
@@ -3163,14 +3501,15 @@ export const GroupProjectsView: React.FC<Props> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <div className="flex items-center gap-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                         {/* Voice Note Button */}
                         <button
                           type="button"
                           onClick={handleStartVoiceRecording}
                           title="Record Voice Note"
-                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#DC2626] border border-[#E5E7EB] text-[#DC2626] flex items-center justify-center shrink-0 transition-colors duration-150"
+                          aria-label="Record Voice Note"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#DC2626] border border-[#E4E0D8] text-[#DC2626] flex items-center justify-center shrink-0 transition-colors duration-150"
                         >
                           <Mic className="w-4 h-4" />
                         </button>
@@ -3180,7 +3519,8 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           title="Share Photo / Diagram"
-                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#1E3A8A] flex items-center justify-center shrink-0 transition-colors duration-150"
+                          aria-label="Share Photo"
+                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1D3B8B] border border-[#E4E0D8] text-[#1D3B8B] flex items-center justify-center shrink-0 transition-colors duration-150"
                         >
                           <ImageIcon className="w-4 h-4" />
                         </button>
@@ -3197,7 +3537,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowPollModal(true)}
                           title="Create Team Poll"
-                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
+                          className="h-9 px-2.5 rounded-lg bg-[#FFFFFF] hover:border-[#1D3B8B] border border-[#E4E0D8] text-[#141923] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
                         >
                           Poll
                         </button>
@@ -3207,59 +3547,77 @@ export const GroupProjectsView: React.FC<Props> = ({
                           type="button"
                           onClick={() => setShowDocModal(true)}
                           title="Share Resource Link"
-                          className="w-9 h-9 rounded-lg bg-[#FFFFFF] hover:border-[#1E3A8A] border border-[#E5E7EB] text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
+                          className="h-9 px-2.5 rounded-lg bg-[#FFFFFF] hover:border-[#1D3B8B] border border-[#E4E0D8] text-[#141923] flex items-center justify-center shrink-0 transition-colors duration-150 text-xs font-semibold"
                         >
                           Link
                         </button>
+
+                        {tasks.length > 0 && (
+                          <select
+                            aria-label="Tag deliverable to message"
+                            value={selectedDeliverableTag}
+                            onChange={(e) => setSelectedDeliverableTag(e.target.value)}
+                            className="aura-input sm:hidden h-9 px-2.5 rounded-lg text-xs max-w-[130px] truncate"
+                          >
+                            <option value="">Tag Task</option>
+                            {tasks.map((t) => (
+                              <option key={t.id} value={t.taskTitle}>
+                                {t.taskTitle}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
 
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        onPaste={(e) => {
-                          const items = e.clipboardData?.items;
-                          if (!items) return;
-                          for (let i = 0; i < items.length; i++) {
-                            if (items[i].type.startsWith('image/')) {
-                              const file = items[i].getAsFile();
-                              if (file) {
-                                e.preventDefault();
-                                void sendImageFileToGroup(file);
-                                break;
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                          onPaste={(e) => {
+                            const items = e.clipboardData?.items;
+                            if (!items) return;
+                            for (let i = 0; i < items.length; i++) {
+                              if (items[i].type.startsWith('image/')) {
+                                const file = items[i].getAsFile();
+                                if (file) {
+                                  e.preventDefault();
+                                  void sendImageFileToGroup(file);
+                                  break;
+                                }
                               }
                             }
-                          }
-                        }}
-                        placeholder="Message your team (or paste an image)..."
-                        className="aura-input flex-1 px-4 py-2 rounded-lg text-xs sm:text-sm min-w-[140px]"
-                      />
+                          }}
+                          placeholder="Message your team (or paste an image)..."
+                          className="aura-input flex-1 px-3.5 py-2 rounded-lg text-xs sm:text-sm min-w-0"
+                        />
 
-                      {tasks.length > 0 && (
-                        <select
-                          aria-label="Tag deliverable to message"
-                          value={selectedDeliverableTag}
-                          onChange={(e) => setSelectedDeliverableTag(e.target.value)}
-                          className="aura-input px-3 py-2 rounded-lg text-xs max-w-[120px] truncate"
+                        {tasks.length > 0 && (
+                          <select
+                            aria-label="Tag deliverable to message"
+                            value={selectedDeliverableTag}
+                            onChange={(e) => setSelectedDeliverableTag(e.target.value)}
+                            className="hidden sm:block aura-input px-3 py-2 rounded-lg text-xs max-w-[120px] truncate"
+                          >
+                            <option value="">Tag Task</option>
+                            {tasks.map((t) => (
+                              <option key={t.id} value={t.taskTitle}>
+                                {t.taskTitle}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={handleSendMessage}
+                          aria-label="Send message"
+                          className="w-10 h-10 rounded-lg bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] flex items-center justify-center font-semibold transition-colors duration-150 shrink-0"
                         >
-                          <option value="">Tag Task</option>
-                          {tasks.map((t) => (
-                            <option key={t.id} value={t.taskTitle}>
-                              {t.taskTitle}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={handleSendMessage}
-                        aria-label="Send message"
-                        className="w-10 h-10 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] flex items-center justify-center font-semibold transition-colors duration-150 shrink-0"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -3614,7 +3972,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                           </div>
                           <div className="flex items-center justify-between text-[10px] text-[#6B7280] pt-1 border-t border-[#E5E7EB]">
                             <span>Completed by {task.memberName}</span>
-                            <span className="font-mono text-[#065F46] font-semibold">Done ✓</span>
+                            <span className="font-mono text-[#065F46] font-semibold">Verified</span>
                           </div>
                         </div>
                       ))}
@@ -4960,10 +5318,10 @@ const GroupSettingsModal: React.FC<{
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAvatarEmojiOrUrl('/app_logo.jpg')}
-                    className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-[11px] font-semibold transition-colors duration-150"
+                    onClick={() => setAvatarEmojiOrUrl('/icon.svg')}
+                    className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#141923] text-[11px] font-semibold transition-colors duration-150"
                   >
-                    Use App Emblem
+                    Use Studio Crest
                   </button>
                   {avatarEmojiOrUrl && (
                     <button

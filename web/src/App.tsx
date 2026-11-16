@@ -25,6 +25,7 @@ import {
   saveLocalVault
 } from './storage';
 import type { AuraLocalVault } from './types';
+import { AuraLogo } from './components/AuraLogo';
 import { TimetableView } from './components/TimetableView';
 import { FocusView } from './components/FocusView';
 import { StudyHubView } from './components/StudyHubView';
@@ -60,7 +61,6 @@ export const App: React.FC = () => {
   const [toast, setToast] = useState<string>('');
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [cloudStatus, setCloudStatus] = useState<'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR'>('IDLE');
-  const [logoFailed, setLogoFailed] = useState<boolean>(false);
 
   const cloudHydratedUidRef = useRef<string | null>(null);
   const hadSignedInRef = useRef<boolean>(false);
@@ -147,7 +147,6 @@ export const App: React.FC = () => {
         const switchedAccount =
           Boolean(current.lastAutoRestoredUid) && current.lastAutoRestoredUid !== u.uid;
         const starterSample = isDefaultStarterVault(current);
-        // Always isolate accounts: wipe previous user's or starter data immediately before fetching
         const shouldPreWipe = switchedAccount || starterSample;
         const baseVault: AuraLocalVault = shouldPreWipe
           ? createSignedOutVault(current.profile.isDarkTheme)
@@ -187,7 +186,6 @@ export const App: React.FC = () => {
               notify(`Cloud Vault synced (${res.summary})`);
             }
           } else {
-            // Verified on server: no backup exists yet for this account -> clean empty workspace
             const freshEmpty =
               shouldPreWipe || Boolean(current.lastAutoRestoredUid);
             const targetBase = freshEmpty
@@ -234,7 +232,6 @@ export const App: React.FC = () => {
         } catch {
           // Ignore storage error
         }
-        // Always wipe courses, timetable & vault on logout or when stale starter/signed-in data exists
         if (
           hadSignedInRef.current ||
           hadSessionMarker ||
@@ -303,36 +300,36 @@ export const App: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [user, currentSig]);
 
-  const navItems: { id: MainTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'TIMETABLE', label: 'Timetable', icon: <Calendar className="w-4 h-4" /> },
-    { id: 'FOCUS', label: 'Focus', icon: <Flame className="w-4 h-4" /> },
-    { id: 'STUDY', label: 'Study Hub', icon: <BookOpen className="w-4 h-4" /> },
-    { id: 'GROUPS', label: 'Teams', icon: <Users className="w-4 h-4" /> },
-    { id: 'CITATIONS', label: 'Citations', icon: <Quote className="w-4 h-4" /> },
-    { id: 'LIVE_STAGE', label: 'Live Meet', icon: <Video className="w-4 h-4" /> },
-    { id: 'TOOLS', label: 'Tools', icon: <Sliders className="w-4 h-4" /> }
+  const navItems: { id: MainTab; label: string; shortLabel: string; icon: React.ReactNode }[] = [
+    { id: 'TIMETABLE', label: 'Timetable', shortLabel: 'Schedule', icon: <Calendar className="w-4 h-4" /> },
+    { id: 'FOCUS', label: 'Focus Studio', shortLabel: 'Focus', icon: <Flame className="w-4 h-4" /> },
+    { id: 'STUDY', label: 'Study Hub', shortLabel: 'Notes', icon: <BookOpen className="w-4 h-4" /> },
+    { id: 'GROUPS', label: 'Team Hub', shortLabel: 'Teams', icon: <Users className="w-4 h-4" /> },
+    { id: 'CITATIONS', label: 'Citations', shortLabel: 'Cite', icon: <Quote className="w-4 h-4" /> },
+    { id: 'LIVE_STAGE', label: 'Live Rooms', shortLabel: 'Rooms', icon: <Video className="w-4 h-4" /> },
+    { id: 'TOOLS', label: 'Tools & Profile', shortLabel: 'Profile', icon: <Sliders className="w-4 h-4" /> }
   ];
 
-  const userInitial = (user?.displayName || vault.profile.name || 'A')
+  const userInitial = (user?.displayName || vault.profile.name || 'S')
     .trim()
     .charAt(0)
     .toUpperCase();
 
   return (
-    <div className="min-h-dvh bg-[#FAFAFA] text-[#111827] flex flex-col max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pb-28 sm:pb-32 pt-3">
+    <div className="min-h-dvh bg-[#F6F4EF] text-[#141923] flex flex-col max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 pb-24 md:pb-12 pt-3 sm:pt-4">
       {/* Floating Z-[100] Editorial Toast */}
       {toast && (
         <div className="fixed top-3 left-3 right-3 max-w-lg mx-auto z-[100] pointer-events-auto">
-          <div className="bg-[#FFFFFF] rounded-lg px-3.5 py-2.5 border border-[#1E3A8A] flex items-center justify-between gap-3 shadow-md">
-            <div className="flex items-center gap-2 min-w-0">
-              <CheckCircle2 className="w-4 h-4 text-[#1E3A8A] shrink-0" />
-              <span className="text-xs font-medium text-[#111827] leading-snug">{toast}</span>
+          <div className="bg-[#FFFFFF] rounded-xl px-4 py-3 border border-[#1D3B8B] flex items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <CheckCircle2 className="w-4 h-4 text-[#1D3B8B] shrink-0" />
+              <span className="text-xs font-medium text-[#141923] leading-snug">{toast}</span>
             </div>
             <button
               type="button"
               onClick={() => setToast('')}
               aria-label="Dismiss notification"
-              className="w-6 h-6 rounded border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#6B7280] hover:text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150"
+              className="w-7 h-7 rounded-md border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#646B78] hover:text-[#141923] flex items-center justify-center shrink-0 transition-colors duration-150"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -340,108 +337,126 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Editorial Top Bar */}
-      <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg px-4 py-2.5 mb-4 flex items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-md overflow-hidden border border-[#E5E7EB] shrink-0 bg-[#1E3A8A] flex items-center justify-center shadow-xs">
-            {!logoFailed ? (
-              <img
-                src="/app_logo.jpg"
-                alt="AURA Logo"
-                className="w-full h-full object-cover"
-                onError={() => setLogoFailed(true)}
-              />
-            ) : (
-              <span className="font-mono font-bold text-xs text-[#FFFFFF] select-none">AU</span>
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-[#111827] truncate">
-                AURA
-              </span>
-              <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] font-mono text-[10px] font-semibold text-[#4B5563] uppercase tracking-wider">
-                {vault.profile.semester}
-              </span>
+      {/* Editorial Academic Studio Top Header */}
+      <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 aura-glass rounded-xl px-3.5 sm:px-5 py-2.5 mb-3 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="shrink-0 flex items-center justify-center rounded-lg overflow-hidden shadow-xs">
+              <AuraLogo size={36} />
             </div>
-            <div className="text-[11px] text-[#6B7280] truncate">
-              {vault.profile.name} · {vault.profile.institution}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {user && (
-            <span className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#E5E7EB] bg-[#FAFAFA] font-mono text-[11px] text-[#4B5563]">
-              <RefreshCw
-                className={`w-3 h-3 ${
-                  cloudStatus === 'SYNCING'
-                    ? 'text-[#1E3A8A] animate-spin'
-                    : cloudStatus === 'ERROR'
-                    ? 'text-[#DC2626]'
-                    : 'text-[#059669]'
-                }`}
-              />
-              {cloudStatus === 'SYNCING'
-                ? 'Syncing...'
-                : cloudStatus === 'ERROR'
-                ? 'Sync Error'
-                : 'Cloud Synced'}
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={toggleDarkMode}
-            aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] hover:bg-[#F3F4F6] text-[#4B5563] hover:text-[#111827] flex items-center justify-center transition-colors duration-150 shrink-0"
-          >
-            {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (user) {
-                setActiveTab('TOOLS');
-              } else {
-                setShowAuthModal(true);
-              }
-            }}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-2 border transition-colors duration-150 ${
-              user
-                ? 'bg-[#FFFFFF] border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827]'
-                : 'bg-[#1E3A8A] border-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF]'
-            }`}
-          >
-            {user ? (
-              <>
-                {vault.profile.photoUrl ? (
-                  <img
-                    src={vault.profile.photoUrl}
-                    alt={vault.profile.name}
-                    className="w-5 h-5 rounded-full object-cover border border-[#1E3A8A]"
-                  />
-                ) : (
-                  <span className="w-5 h-5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-bold flex items-center justify-center">
-                    {userInitial}
-                  </span>
-                )}
-                <span className="hidden xs:inline truncate max-w-[120px]">
-                  {user.displayName || user.email?.split('@')[0] || 'Account'}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-lg sm:text-xl leading-none tracking-tight text-[#141923] truncate">
+                  AURA Studio
                 </span>
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    cloudStatus === 'ERROR' ? 'bg-[#DC2626]' : 'bg-[#059669]'
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[10px] font-semibold text-[#4B5563] uppercase tracking-wider">
+                  {vault.profile.semester}
+                </span>
+              </div>
+              <div className="text-[11px] text-[#646B78] truncate mt-0.5">
+                {vault.profile.name} · {vault.profile.institution}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {user && (
+              <span className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#E4E0D8] bg-[#FAF8F5] font-mono text-[11px] text-[#4B5563]">
+                <RefreshCw
+                  className={`w-3 h-3 ${
+                    cloudStatus === 'SYNCING'
+                      ? 'text-[#1D3B8B] animate-spin'
+                      : cloudStatus === 'ERROR'
+                      ? 'text-[#DC2626]'
+                      : 'text-[#047857]'
                   }`}
                 />
-              </>
-            ) : (
-              <span>Sign In</span>
+                {cloudStatus === 'SYNCING'
+                  ? 'Syncing...'
+                  : cloudStatus === 'ERROR'
+                  ? 'Sync Error'
+                  : 'Cloud Synced'}
+              </span>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={toggleDarkMode}
+              aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              className="w-9 h-9 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#9CA3AF] hover:bg-[#EFECE6] text-[#4B5563] hover:text-[#141923] flex items-center justify-center transition-colors duration-150 shrink-0"
+            >
+              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (user) {
+                  setActiveTab('TOOLS');
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
+              className={`h-9 px-3.5 rounded-lg text-xs font-semibold flex items-center gap-2 border transition-colors duration-150 ${
+                user
+                  ? 'bg-[#FFFFFF] border-[#E4E0D8] hover:border-[#9CA3AF] text-[#141923]'
+                  : 'bg-[#1D3B8B] border-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF]'
+              }`}
+            >
+              {user ? (
+                <>
+                  {vault.profile.photoUrl ? (
+                    <img
+                      src={vault.profile.photoUrl}
+                      alt={vault.profile.name}
+                      className="w-5 h-5 rounded-full object-cover border border-[#1D3B8B]"
+                    />
+                  ) : (
+                    <span className="w-5 h-5 rounded-md bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0] font-mono text-[10px] font-bold flex items-center justify-center">
+                      {userInitial}
+                    </span>
+                  )}
+                  <span className="hidden sm:inline truncate max-w-[120px]">
+                    {user.displayName || user.email?.split('@')[0] || 'Account'}
+                  </span>
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      cloudStatus === 'ERROR' ? 'bg-[#DC2626]' : 'bg-[#047857]'
+                    }`}
+                  />
+                </>
+              ) : (
+                <span>Sign In</span>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Desktop & Tablet Workspace Strip */}
+        <nav
+          aria-label="Primary Workspace Navigation"
+          className="hidden md:flex items-center gap-1 pt-2 border-t border-[#E4E0D8] overflow-x-auto no-scrollbar"
+        >
+          {navItems.map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveTab(item.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150 shrink-0 ${
+                  active
+                    ? 'bg-[#1D3B8B] text-[#FFFFFF]'
+                    : 'text-[#646B78] hover:text-[#141923] hover:bg-[#EFECE6]'
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </header>
 
       {/* Auth Modal */}
@@ -469,6 +484,7 @@ export const App: React.FC = () => {
             initialGroupId={initialGroupFromUrl}
             onUpdateVault={updateVault}
             onNotify={notify}
+            onRequireAuth={() => setShowAuthModal(true)}
           />
         )}
         {activeTab === 'CITATIONS' && (
@@ -498,8 +514,11 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Bottom Navigation Dock */}
-      <nav className="fixed bottom-3 left-2.5 right-2.5 max-w-3xl mx-auto z-40 aura-dock rounded-lg p-1 flex items-center justify-around sm:justify-center sm:gap-1 overflow-x-auto no-scrollbar">
+      {/* Mobile Floating Bottom Navigation Dock */}
+      <nav
+        aria-label="Mobile Navigation Dock"
+        className="md:hidden fixed bottom-2.5 left-2.5 right-2.5 max-w-xl mx-auto z-40 aura-dock rounded-xl p-1 flex items-center gap-0.5 overflow-x-auto no-scrollbar"
+      >
         {navItems.map((item) => {
           const active = activeTab === item.id;
           return (
@@ -507,15 +526,15 @@ export const App: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`flex-1 sm:flex-initial py-2 px-2 sm:px-3 rounded-md flex flex-col items-center justify-center gap-1 transition-colors duration-150 shrink-0 min-w-[48px] sm:min-w-[82px] ${
+              className={`flex-1 py-2 px-1.5 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-colors duration-150 shrink-0 min-w-[48px] ${
                 active
-                  ? 'bg-[#1E3A8A] text-[#FFFFFF] font-semibold'
-                  : 'text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                  ? 'bg-[#1D3B8B] text-[#FFFFFF] font-semibold'
+                  : 'text-[#646B78] hover:text-[#141923] hover:bg-[#EFECE6]'
               }`}
             >
               {item.icon}
-              <span className="text-[10px] sm:text-[11px] leading-tight tracking-tight truncate max-w-full font-medium">
-                {item.label}
+              <span className="text-[10px] leading-tight tracking-tight truncate max-w-full font-medium">
+                {item.shortLabel}
               </span>
             </button>
           );

@@ -116,25 +116,25 @@ export const WebAuthModal: React.FC<WebAuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
-      <div className="relative w-full max-w-md bg-[#FFFFFF] rounded-lg p-6 border border-[#E5E7EB] space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#141923]/50 backdrop-blur-[2px]">
+      <div className="relative w-full max-w-md bg-[#FFFFFF] rounded-xl p-6 border border-[#E4E0D8] shadow-xl space-y-5">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] flex items-center justify-center text-[#6B7280] hover:text-[#111827] transition-colors duration-150"
+          className="absolute top-4 right-4 w-8 h-8 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#9CA3AF] flex items-center justify-center text-[#646B78] hover:text-[#141923] transition-colors duration-150"
           aria-label="Close modal"
         >
           <X className="w-4 h-4" />
         </button>
 
         <div className="space-y-1.5 pr-8">
-          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider text-[#1E3A8A]">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#EEF2FA] border border-[#C7D4F0] font-mono text-[10px] font-semibold uppercase tracking-wider text-[#1D3B8B]">
             <ShieldCheck className="w-3.5 h-3.5" /> Cloud Sync Auth
           </div>
-          <h2 className="text-lg font-bold tracking-tight text-[#111827]">
+          <h2 className="font-serif text-2xl tracking-tight text-[#141923]">
             {mode === 'SIGN_IN' ? 'Sign In to AURA' : 'Create Scholar Account'}
           </h2>
-          <p className="text-xs text-[#6B7280]">
+          <p className="text-xs text-[#646B78]">
             Restore and sync your timetable, notes, flashcards, and team workspaces across Android and Web.
           </p>
         </div>

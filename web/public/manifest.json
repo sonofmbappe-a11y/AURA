@@ -1,11 +1,11 @@
 {
-  "name": "AURA Study Companion & Live Stage",
-  "short_name": "AURA Study",
-  "description": "Timetable, Custom Focus Timer, SM-2 Flashcards, Notes, GPA & Cross-Platform Live Study Rooms for iPhone, Android & Desktop.",
+  "name": "AURA Study Studio",
+  "short_name": "AURA Studio",
+  "description": "Timetable, Focus Timer, SM-2 Flashcards, Academic Teams & Cross-Platform Live Study Rooms.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070E1B",
-  "theme_color": "#070E1B",
+  "background_color": "#F6F4EF",
+  "theme_color": "#1D3B8B",
   "orientation": "portrait-primary",
   "icons": [
     {

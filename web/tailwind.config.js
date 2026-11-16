@@ -5,17 +5,20 @@ export default {
     extend: {
       colors: {
         aura: {
-          paper: '#FAFAFA',
+          paper: '#F6F4EF',
           surface: '#FFFFFF',
-          subtle: '#F3F4F6',
-          ink: '#111827',
-          muted: '#6B7280',
-          border: '#E5E7EB',
-          navy: '#1E3A8A'
+          subtle: '#EFECE6',
+          ink: '#141923',
+          muted: '#646B78',
+          border: '#E4E0D8',
+          navy: '#1D3B8B',
+          sage: '#047857',
+          amber: '#B45309'
         }
       },
       fontFamily: {
-        sans: ['"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'Georgia', 'serif'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
       }
     }

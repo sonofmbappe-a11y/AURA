@@ -47,13 +47,13 @@ export const AuraModal: React.FC<AuraModalProps> = ({
       role="dialog"
       aria-modal="true"
       onClick={onClose}
-      className="fixed inset-0 z-[70] bg-[#111827]/45 flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-[70] bg-[#141923]/50 backdrop-blur-[2px] flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-[#FFFFFF] rounded-lg w-full ${maxWidthClass} max-h-[88dvh] flex flex-col border border-[#E5E7EB] my-auto overflow-hidden`}
+        className={`bg-[#FFFFFF] rounded-xl w-full ${maxWidthClass} max-h-[88dvh] flex flex-col border border-[#E4E0D8] shadow-xl my-auto overflow-hidden`}
       >
-        <div className="px-4 pt-3.5 pb-3 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-start justify-between gap-3 shrink-0">
+        <div className="px-4 sm:px-5 pt-4 pb-3 border-b border-[#E4E0D8] bg-[#FAF8F5] flex items-start justify-between gap-3 shrink-0">
           <div className="min-w-0 space-y-1">
             {badge && (
               <span
@@ -62,20 +62,20 @@ export const AuraModal: React.FC<AuraModalProps> = ({
                 {badge}
               </span>
             )}
-            <h3 className="font-bold text-base text-[#111827] leading-snug">{title}</h3>
-            {subtitle && <p className="text-xs text-[#6B7280] leading-relaxed">{subtitle}</p>}
+            <h3 className="font-serif text-xl text-[#141923] leading-snug">{title}</h3>
+            {subtitle && <p className="text-xs text-[#646B78] leading-relaxed">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="w-8 h-8 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#9CA3AF] text-[#6B7280] hover:text-[#111827] flex items-center justify-center shrink-0 transition-colors duration-150"
+            className="w-8 h-8 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#9CA3AF] text-[#646B78] hover:text-[#141923] flex items-center justify-center shrink-0 transition-colors duration-150"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto space-y-3.5 text-[#111827]">{children}</div>
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-[#141923]">{children}</div>
       </div>
     </div>
   );
