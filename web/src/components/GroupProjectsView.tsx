@@ -10,7 +10,6 @@ import {
   getDocs,
   getDocsFromServer,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -113,7 +112,9 @@ export const GroupProjectsView: React.FC<Props> = ({
   const deletedProjectIdsRef = useRef<Set<string>>(new Set(vault.deletedGroupIds || []));
   const groupProjectsRef = useRef<WebGroupProject[]>(vault.groupProjects);
   groupProjectsRef.current = vault.groupProjects;
-  const targetDbs = useMemo(() => (db !== defaultDb ? [db, defaultDb] : [db]), []);
+  // Track message payloads currently in-flight or failed locally so server snapshots never erase them
+  const pendingMsgsRef = useRef<Map<string, { msg: WebGroupChatMessage; payload: Record<string, any> }>>(new Map());
+  const readDbs = useMemo(() => (db !== defaultDb ? [db, defaultDb] : [db]), []);
 
   useEffect(() => {
     const next = new Set(vault.deletedGroupIds || []);
@@ -123,6 +124,9 @@ export const GroupProjectsView: React.FC<Props> = ({
 
   // Pending Invitations received by the current user
   const [pendingInvitations, setPendingInvitations] = useState<WebGroupInvitation[]>([]);
+  // Unread badge counts for inactive team workspaces
+  const [unreadCountsByProject, setUnreadCountsByProject] = useState<Record<string, number>>({});
+  const [showNewMsgPill, setShowNewMsgPill] = useState(false);
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -180,8 +184,10 @@ export const GroupProjectsView: React.FC<Props> = ({
   const recordingTimerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Auto-scroll anchor
+  // Auto-scroll anchor & container ref
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const lastSeenMsgCountRef = useRef<number>(0);
 
   // Active Project
   const activeProject = useMemo(() => {
@@ -199,20 +205,53 @@ export const GroupProjectsView: React.FC<Props> = ({
     );
   }, [activeProject, currentEmail]);
 
-  // Messages for active project
+  // Messages for active project (deduplicated & deterministically ordered)
   const projectMessages = useMemo(() => {
     if (!activeProject) return [];
-    return vault.groupMessages
-      .filter((m) => m.projectId === activeProject.id)
-      .sort((a, b) => a.timestamp - b.timestamp);
+    const dedup = new Map<string, WebGroupChatMessage>();
+    vault.groupMessages.forEach((m) => {
+      if (m.projectId === activeProject.id) {
+        dedup.set(m.id, m);
+      }
+    });
+    return Array.from(dedup.values()).sort((a, b) => {
+      if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+      return a.id.localeCompare(b.id);
+    });
   }, [vault.groupMessages, activeProject]);
 
-  // Scroll to bottom on new messages
+  // Clear unread count when viewing active project chat
   useEffect(() => {
-    if (activeTab === 'CHAT') {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (activeProject?.id && activeTab === 'CHAT') {
+      setUnreadCountsByProject((prev) => {
+        if (!prev[activeProject.id]) return prev;
+        const next = { ...prev };
+        delete next[activeProject.id];
+        return next;
+      });
     }
-  }, [projectMessages.length, activeTab]);
+  }, [activeProject?.id, activeTab]);
+
+  // Smart scroll to bottom when near bottom or sending own message
+  useEffect(() => {
+    if (activeTab !== 'CHAT') return;
+    const prevCount = lastSeenMsgCountRef.current;
+    lastSeenMsgCountRef.current = projectMessages.length;
+    const container = chatScrollRef.current;
+    if (!container) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const lastMsg = projectMessages[projectMessages.length - 1];
+    const isMine = lastMsg && lastMsg.senderEmail?.toLowerCase() === currentEmail;
+    if (prevCount === 0 || distanceFromBottom < 140 || isMine) {
+      messagesEndRef.current?.scrollIntoView({ behavior: prevCount === 0 ? 'auto' : 'smooth' });
+      setShowNewMsgPill(false);
+    } else if (projectMessages.length > prevCount) {
+      setShowNewMsgPill(true);
+    }
+  }, [projectMessages, activeTab, currentEmail]);
 
   // Synced Pomodoro timer tick derived from activeProject.syncedPomodoroState
   const syncedPomo = activeProject?.syncedPomodoroState;
@@ -268,7 +307,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     const invByDb = new Map<number, WebGroupInvitation[]>();
     const unsubs: (() => void)[] = [];
 
-    targetDbs.forEach((targetDb, dbIdx) => {
+    readDbs.forEach((targetDb, dbIdx) => {
       try {
         const q = query(
           collection(targetDb, 'group_invitations'),
@@ -320,7 +359,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     return () => {
       unsubs.forEach((u) => u());
     };
-  }, [user, currentEmail, targetDbs]);
+  }, [user, currentEmail, readDbs]);
 
   // 2. REAL-TIME FIRESTORE LISTENER FOR GROUP PROJECTS WHERE USER IS A MEMBER, ADMIN, OR CREATOR
   useEffect(() => {
@@ -378,7 +417,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       }));
     };
 
-    targetDbs.forEach((targetDb, dbIdx) => {
+    readDbs.forEach((targetDb, dbIdx) => {
       const registerQuery = (key: string, qRef: ReturnType<typeof query>) => {
         try {
           const unsub = onSnapshot(
@@ -470,7 +509,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     return () => {
       unsubs.forEach((u) => u());
     };
-  }, [user, currentEmail, targetDbs, onUpdateVault]);
+  }, [user, currentEmail, readDbs, onUpdateVault]);
 
   // 3. HANDLE DIRECT JOIN VIA URL PARAMETER (`?join_group=PROJECT_ID`)
   useEffect(() => {
@@ -478,21 +517,17 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     const performDirectJoin = async () => {
       try {
-        for (const targetDb of targetDbs) {
+        for (const targetDb of readDbs) {
           const snap = await getDoc(doc(targetDb, 'group_projects', initialGroupId)).catch(() => null);
           if (snap && snap.exists()) {
             const data = snap.data();
             const members: string[] = Array.isArray(data.memberEmails) ? [...data.memberEmails] : [];
             if (!members.map((e) => e.toLowerCase()).includes(currentEmail)) {
               members.push(currentEmail);
-              await Promise.allSettled(
-                targetDbs.map((tDb) =>
-                  updateDoc(doc(tDb, 'group_projects', initialGroupId), {
-                    memberEmails: arrayUnion(currentEmail),
-                    updatedAt: serverTimestamp()
-                  })
-                )
-              );
+              await updateDoc(doc(db, 'group_projects', initialGroupId), {
+                memberEmails: arrayUnion(currentEmail),
+                updatedAt: serverTimestamp()
+              }).catch(() => {});
             }
 
             const joinedProj: WebGroupProject = {
@@ -537,114 +572,183 @@ export const GroupProjectsView: React.FC<Props> = ({
     };
 
     performDirectJoin();
-  }, [initialGroupId, user, currentEmail, targetDbs, onUpdateVault, onNotify]);
+  }, [initialGroupId, user, currentEmail, readDbs, onUpdateVault, onNotify]);
 
-  // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT (handles polls, docs & message deletion)
-  useEffect(() => {
-    if (!activeProject?.id || !user) return;
-    const unsubs: (() => void)[] = [];
-    targetDbs.forEach((targetDb) => {
-      try {
-        const q = query(
-          collection(targetDb, 'group_projects', activeProject.id, 'messages'),
-          orderBy('createdAt', 'asc')
-        );
-        const unsub = onSnapshot(
-          q,
-          (snap) => {
-            const cloudMsgs: WebGroupChatMessage[] = snap.docs.map((d) => {
-              const data = d.data() as Record<string, any>;
-              // Parse Poll from either Web pollData or Android pollQuestion + pollOptionsCsv + pollVotesJson
-              let parsedPoll = data.pollData;
-              if (!parsedPoll && data.pollQuestion) {
-                const opts = String(data.pollOptionsCsv || '')
-                  .split('|')
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-                let votesObj: Record<string, string[]> = {};
-                if (data.pollVotesJson) {
-                  try {
-                    votesObj = JSON.parse(data.pollVotesJson);
-                  } catch {}
-                }
-                parsedPoll = {
-                  question: data.pollQuestion,
-                  options: opts.map((optText) => ({
-                    text: optText,
-                    votes: Array.isArray(votesObj[optText]) ? votesObj[optText] : []
-                  }))
-                };
-              } else if (parsedPoll && data.pollVotesJson) {
-                try {
-                  const votesObj = JSON.parse(data.pollVotesJson) as Record<string, string[]>;
-                  parsedPoll = {
-                    ...parsedPoll,
-                    options: (parsedPoll.options || []).map((opt: any) => ({
-                      ...opt,
-                      votes: Array.isArray(votesObj[opt.text]) ? votesObj[opt.text] : opt.votes || []
-                    }))
-                  };
-                } catch {}
-              }
+  // Shared helper to map a Firestore message document cleanly (compatible with Web & Android payloads)
+  const mapFirestoreMessageDoc = useCallback(
+    (projectId: string, d: { id: string; data: () => Record<string, any> }, hasPendingWrites = false): WebGroupChatMessage => {
+      const data = (d.data() || {}) as Record<string, any>;
+      let parsedPoll = data.pollData;
+      if (!parsedPoll && data.pollQuestion) {
+        const opts = String(data.pollOptionsCsv || '')
+          .split('|')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        let votesObj: Record<string, string[]> = {};
+        if (data.pollVotesJson) {
+          try {
+            votesObj = JSON.parse(data.pollVotesJson);
+          } catch {}
+        }
+        parsedPoll = {
+          question: data.pollQuestion,
+          options: opts.map((optText) => ({
+            text: optText,
+            votes: Array.isArray(votesObj[optText]) ? votesObj[optText] : []
+          }))
+        };
+      } else if (parsedPoll && data.pollVotesJson) {
+        try {
+          const votesObj = JSON.parse(data.pollVotesJson) as Record<string, string[]>;
+          parsedPoll = {
+            ...parsedPoll,
+            options: (parsedPoll.options || []).map((opt: any) => ({
+              ...opt,
+              votes: Array.isArray(votesObj[opt.text]) ? votesObj[opt.text] : opt.votes || []
+            }))
+          };
+        } catch {}
+      }
 
-              // Parse Doc from either Web docData or Android sharedDocTitle/sharedDocUrl
-              const parsedDoc =
-                data.docData ||
-                (data.sharedDocTitle
-                  ? {
-                      id: d.id,
-                      title: data.sharedDocTitle,
-                      linkOrFileName: data.sharedDocUrl || '',
-                      category: 'DOCUMENT' as const,
-                      addedByEmail: data.senderEmail || '',
-                      addedAt: Date.now()
-                    }
-                  : undefined);
-
-              return {
-                id: d.id,
-                projectId: activeProject.id,
-                senderUid: data.senderUid || '',
-                senderEmail: data.senderEmail || '',
-                senderName: data.senderName || 'Teammate',
-                messageText: data.messageText || '',
-                timestamp: data.createdAt?.toMillis ? data.createdAt.toMillis() : Date.now(),
-                isPinned: Boolean(data.isPinned),
-                messageType: data.messageType || 'TEXT',
-                taggedDeliverableTitle: data.taggedDeliverableTitle || undefined,
-                reactions: data.reactions || {},
-                pollData: parsedPoll,
-                docData: parsedDoc,
-                audioUrl: data.audioUrl,
-                audioDurationSec: data.audioDurationSec,
-                imageUrl: data.imageUrl
-              };
-            });
-
-            const fromServer = !snap.metadata.fromCache;
-            if (fromServer || cloudMsgs.length > 0) {
-              onUpdateVault((prev) => {
-                const other = prev.groupMessages.filter((m) => m.projectId !== activeProject.id);
-                if (fromServer) {
-                  return {
-                    ...prev,
-                    groupMessages: [...other, ...cloudMsgs]
-                  };
-                }
-                const mergedMap = new Map<string, WebGroupChatMessage>();
-                prev.groupMessages
-                  .filter((m) => m.projectId === activeProject.id)
-                  .forEach((m) => mergedMap.set(m.id, m));
-                cloudMsgs.forEach((m) => mergedMap.set(m.id, m));
-                return {
-                  ...prev,
-                  groupMessages: [...other, ...Array.from(mergedMap.values())]
-                };
-              });
+      const parsedDoc =
+        data.docData ||
+        (data.sharedDocTitle
+          ? {
+              id: d.id,
+              title: data.sharedDocTitle,
+              linkOrFileName: data.sharedDocUrl || '',
+              category: 'DOCUMENT' as const,
+              addedByEmail: data.senderEmail || '',
+              addedAt: Date.now()
             }
+          : undefined);
+
+      // Parse reactions from either Web map or Android reactionsCsv
+      let parsedReactions: Record<string, string[] | number> =
+        data.reactions && typeof data.reactions === 'object' ? { ...data.reactions } : {};
+      if (Object.keys(parsedReactions).length === 0 && typeof data.reactionsCsv === 'string' && data.reactionsCsv) {
+        const map: Record<string, string[]> = {};
+        data.reactionsCsv.split('|').forEach((part: string) => {
+          const idx = part.indexOf(':');
+          if (idx > 0) {
+            const emoji = part.slice(0, idx).trim();
+            const voters = part
+              .slice(idx + 1)
+              .split(',')
+              .map((v) => v.trim().toLowerCase())
+              .filter(Boolean);
+            if (emoji && voters.length > 0) map[emoji] = voters;
+          }
+        });
+        parsedReactions = map;
+      }
+
+      const ts =
+        typeof data.createdAt?.toMillis === 'function'
+          ? data.createdAt.toMillis()
+          : Number(data.timestampEpochMillis) || Date.now();
+
+      return {
+        id: d.id,
+        projectId,
+        senderUid: data.senderUid || '',
+        senderEmail: data.senderEmail || '',
+        senderName: data.senderName || 'Teammate',
+        messageText: data.messageText || '',
+        timestamp: ts,
+        isPinned: Boolean(data.isPinned),
+        messageType: data.messageType || 'TEXT',
+        taggedDeliverableTitle: data.taggedDeliverableTitle || undefined,
+        reactions: parsedReactions,
+        pollData: parsedPoll,
+        docData: parsedDoc,
+        audioUrl: data.audioUrl,
+        audioDurationSec: data.audioDurationSec,
+        imageUrl: data.imageUrl || (data.messageType === 'IMAGE_SHARE' ? data.sharedDocUrl : undefined),
+        syncStatus: hasPendingWrites ? 'SENDING' : 'SYNCED'
+      };
+    },
+    []
+  );
+
+  // 4. REAL-TIME CHAT MESSAGES SYNC FOR ACTIVE PROJECT
+  // Uses per-DB buckets so an empty defaultDb NEVER wipes out messages from the primary DB,
+  // removes orderBy('createdAt') so pending serverTimestamp() docs are never dropped,
+  // and subscribes with includeMetadataChanges for instant local-to-server updates.
+  useEffect(() => {
+    const projectId = activeProject?.id;
+    if (!projectId || !user) return;
+    lastSeenMsgCountRef.current = 0;
+
+    const msgsByDb = new Map<number, Map<string, WebGroupChatMessage>>();
+    const serverConfirmedByDb = new Map<number, boolean>();
+    const unsubs: (() => void)[] = [];
+
+    const flushMessages = () => {
+      const merged = new Map<string, WebGroupChatMessage>();
+      // Merge in reverse DB index so primary DB (idx 0) always wins conflicts
+      const indices = Array.from(msgsByDb.keys()).sort((a, b) => b - a);
+      for (const idx of indices) {
+        const bucket = msgsByDb.get(idx);
+        bucket?.forEach((m, id) => merged.set(id, m));
+      }
+
+      // Preserve any locally sent messages that are still in-flight or failed so they never vanish
+      pendingMsgsRef.current.forEach(({ msg }, id) => {
+        if (msg.projectId === projectId) {
+          const existingCloud = merged.get(id);
+          if (!existingCloud) {
+            merged.set(id, msg);
+          } else if (existingCloud.syncStatus === 'SYNCED') {
+            pendingMsgsRef.current.delete(id);
+          }
+        }
+      });
+
+      const primaryConfirmed = serverConfirmedByDb.get(0) === true;
+
+      onUpdateVault((prev) => {
+        const other = prev.groupMessages.filter((m) => m.projectId !== projectId);
+        const finalMap = new Map<string, WebGroupChatMessage>();
+        if (!primaryConfirmed) {
+          // Before primary server confirms, keep cached messages and overlay incoming ones
+          prev.groupMessages
+            .filter((m) => m.projectId === projectId)
+            .forEach((m) => finalMap.set(m.id, m));
+        }
+        merged.forEach((m, id) => finalMap.set(id, m));
+        const sorted = Array.from(finalMap.values()).sort((a, b) => {
+          if (a.timestamp !== b.timestamp) return a.timestamp - b.timestamp;
+          return a.id.localeCompare(b.id);
+        });
+        return {
+          ...prev,
+          groupMessages: [...other, ...sorted]
+        };
+      });
+    };
+
+    readDbs.forEach((targetDb, dbIdx) => {
+      try {
+        const colRef = collection(targetDb, 'group_projects', projectId, 'messages');
+        const unsub = onSnapshot(
+          colRef,
+          { includeMetadataChanges: true },
+          (snap) => {
+            const bucket = new Map<string, WebGroupChatMessage>();
+            snap.docs.forEach((d) => {
+              bucket.set(d.id, mapFirestoreMessageDoc(projectId, d, d.metadata.hasPendingWrites));
+            });
+            msgsByDb.set(dbIdx, bucket);
+            if (!snap.metadata.fromCache) {
+              serverConfirmedByDb.set(dbIdx, true);
+            }
+            flushMessages();
           },
-          () => {
-            // Silent offline fallback
+          (err) => {
+            if (dbIdx === 0) {
+              onNotify(`Chat sync issue: ${(err as Error)?.message || 'Check connection.'}`);
+            }
           }
         );
         unsubs.push(unsub);
@@ -652,15 +756,60 @@ export const GroupProjectsView: React.FC<Props> = ({
         // Offline fallback
       }
     });
+
     return () => {
       unsubs.forEach((u) => u());
     };
-  }, [activeProject?.id, user, targetDbs, onUpdateVault]);
+  }, [activeProject?.id, user, readDbs, onUpdateVault, mapFirestoreMessageDoc, onNotify]);
+
+  // 4B. BACKGROUND MESSAGE NOTIFICATION BADGE LISTENER FOR OTHER TEAMS
+  const projectIdsKey = useMemo(
+    () => vault.groupProjects.map((p) => p.id).sort().join(','),
+    [vault.groupProjects]
+  );
+
+  useEffect(() => {
+    if (!user || !projectIdsKey) return;
+    const otherIds = projectIdsKey
+      .split(',')
+      .filter((id) => id && id !== activeProject?.id);
+    if (otherIds.length === 0) return;
+
+    const baselineCounts = new Map<string, number>();
+    const unsubs: (() => void)[] = [];
+
+    otherIds.forEach((pid) => {
+      try {
+        const unsub = onSnapshot(
+          collection(db, 'group_projects', pid, 'messages'),
+          (snap) => {
+            const count = snap.size;
+            const prevCount = baselineCounts.get(pid);
+            baselineCounts.set(pid, count);
+            if (prevCount !== undefined && count > prevCount) {
+              const delta = count - prevCount;
+              setUnreadCountsByProject((prev) => ({
+                ...prev,
+                [pid]: (prev[pid] || 0) + delta
+              }));
+            }
+          },
+          () => {}
+        );
+        unsubs.push(unsub);
+      } catch {}
+    });
+
+    return () => {
+      unsubs.forEach((u) => u());
+    };
+  }, [user, projectIdsKey, activeProject?.id]);
 
   // ACCEPT PENDING INVITATION
   const handleAcceptInvitation = async (inv: WebGroupInvitation) => {
     try {
       if (user) {
+        const nowMs = Date.now();
         const noticeMsgId = uidGen('gm_notice');
         const noticePayload = {
           projectId: inv.projectId,
@@ -670,24 +819,23 @@ export const GroupProjectsView: React.FC<Props> = ({
           messageText: `🎉 ${user.displayName || currentEmail} accepted the invitation and joined the group!`,
           isPinned: false,
           messageType: 'NOTICE',
+          timestampEpochMillis: nowMs,
           createdAt: serverTimestamp()
         };
-        await Promise.allSettled(
-          targetDbs.flatMap((targetDb) => [
-            updateDoc(doc(targetDb, 'group_invitations', inv.id), {
-              status: 'ACCEPTED',
-              updatedAt: serverTimestamp()
-            }),
-            updateDoc(doc(targetDb, 'group_projects', inv.projectId), {
-              memberEmails: arrayUnion(currentEmail),
-              updatedAt: serverTimestamp()
-            }),
-            setDoc(doc(targetDb, 'group_projects', inv.projectId, 'messages', noticeMsgId), noticePayload)
-          ])
-        );
+        await Promise.allSettled([
+          updateDoc(doc(db, 'group_invitations', inv.id), {
+            status: 'ACCEPTED',
+            updatedAt: serverTimestamp()
+          }),
+          updateDoc(doc(db, 'group_projects', inv.projectId), {
+            memberEmails: arrayUnion(currentEmail),
+            updatedAt: serverTimestamp()
+          }),
+          setDoc(doc(db, 'group_projects', inv.projectId, 'messages', noticeMsgId), noticePayload)
+        ]);
       }
 
-      for (const targetDb of targetDbs) {
+      for (const targetDb of readDbs) {
         const snap = await getDoc(doc(targetDb, 'group_projects', inv.projectId)).catch(() => null);
         if (snap && snap.exists()) {
           const pData = snap.data();
@@ -735,7 +883,7 @@ export const GroupProjectsView: React.FC<Props> = ({
     try {
       if (user) {
         await Promise.allSettled(
-          targetDbs.map((targetDb) =>
+          readDbs.map((targetDb) =>
             updateDoc(doc(targetDb, 'group_invitations', inv.id), {
               status: 'DECLINED',
               updatedAt: serverTimestamp()
@@ -772,7 +920,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       let targetDoc: WebGroupProject | null = null;
       let targetId = '';
 
-      for (const targetDb of targetDbs) {
+      for (const targetDb of readDbs) {
         if (targetDoc) break;
         try {
           for (const docIdCandidate of candidateDocIds) {
@@ -859,11 +1007,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           memberEmails: arrayUnion(currentEmail),
           updatedAt: serverTimestamp()
         };
-        await Promise.allSettled(
-          targetDbs.map((targetDb) =>
-            updateDoc(doc(targetDb, 'group_projects', targetId), updatePayload)
-          )
-        );
+        await updateDoc(doc(db, 'group_projects', targetId), updatePayload);
       }
 
       deletedProjectIdsRef.current.delete(targetDoc.id);
@@ -881,52 +1025,178 @@ export const GroupProjectsView: React.FC<Props> = ({
     }
   };
 
+  // AUTHORITATIVE OPTIMISTIC SEND + SERVER WRITE HELPER
+  const sendPayloadToCloud = useCallback(
+    async (newMsg: WebGroupChatMessage, payload: Record<string, any>) => {
+      const optimistic: WebGroupChatMessage = {
+        ...newMsg,
+        syncStatus: user ? 'SENDING' : 'SYNCED'
+      };
+      if (user) {
+        pendingMsgsRef.current.set(newMsg.id, { msg: optimistic, payload });
+      }
+      onUpdateVault((prev) => ({
+        ...prev,
+        groupMessages: [...prev.groupMessages.filter((m) => m.id !== newMsg.id), optimistic]
+      }));
+
+      if (!user) return;
+
+      try {
+        await setDoc(doc(db, 'group_projects', newMsg.projectId, 'messages', newMsg.id), payload);
+        const syncedMsg: WebGroupChatMessage = { ...optimistic, syncStatus: 'SYNCED', syncError: undefined };
+        pendingMsgsRef.current.delete(newMsg.id);
+        onUpdateVault((prev) => ({
+          ...prev,
+          groupMessages: prev.groupMessages.map((m) => (m.id === newMsg.id ? syncedMsg : m))
+        }));
+      } catch (err) {
+        const errMsg = (err as Error)?.message || 'Failed to sync message';
+        const failedMsg: WebGroupChatMessage = {
+          ...optimistic,
+          syncStatus: 'FAILED',
+          syncError: errMsg
+        };
+        pendingMsgsRef.current.set(newMsg.id, { msg: failedMsg, payload });
+        onUpdateVault((prev) => ({
+          ...prev,
+          groupMessages: prev.groupMessages.map((m) => (m.id === newMsg.id ? failedMsg : m))
+        }));
+        onNotify(`Message not sent to cloud: ${errMsg}. Tap Retry on the message.`);
+      }
+    },
+    [user, onUpdateVault, onNotify]
+  );
+
+  const handleRetryMessage = useCallback(
+    async (msg: WebGroupChatMessage) => {
+      const cached = pendingMsgsRef.current.get(msg.id);
+      const nowMs = msg.timestamp || Date.now();
+      const payload =
+        cached?.payload ||
+        ({
+          projectId: msg.projectId,
+          senderUid: user?.uid || msg.senderUid || '',
+          senderEmail: msg.senderEmail || currentEmail,
+          senderName: msg.senderName || user?.displayName || vault.profile.name || 'Scholar',
+          messageText: msg.messageText,
+          isPinned: msg.isPinned,
+          messageType: msg.messageType,
+          taggedDeliverableTitle: msg.taggedDeliverableTitle || null,
+          audioUrl: msg.audioUrl || null,
+          audioDurationSec: msg.audioDurationSec || null,
+          imageUrl: msg.imageUrl || null,
+          reactions: msg.reactions || {},
+          timestampEpochMillis: nowMs,
+          createdAt: serverTimestamp()
+        } as Record<string, any>);
+      await sendPayloadToCloud(msg, payload);
+    },
+    [sendPayloadToCloud, user, currentEmail, vault.profile.name]
+  );
+
   // SEND TEXT OR DELIVERABLE MESSAGE
   const handleSendMessage = async () => {
     if (!activeProject) return;
     const text = chatInput.trim();
     if (!text && !selectedDeliverableTag) return;
 
+    const nowMs = Date.now();
     const newMsg: WebGroupChatMessage = {
       id: uidGen('gm'),
       projectId: activeProject.id,
+      senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName: user?.displayName || vault.profile.name || 'Scholar',
       messageText: text,
-      timestamp: Date.now(),
+      timestamp: nowMs,
       isPinned: pinChecked,
       messageType: selectedDeliverableTag ? 'DELIVERABLE' : 'TEXT',
       taggedDeliverableTitle: selectedDeliverableTag || undefined,
       reactions: {}
     };
 
-    onUpdateVault((prev) => ({
-      ...prev,
-      groupMessages: [...prev.groupMessages, newMsg]
-    }));
-
     setChatInput('');
     setPinChecked(false);
     setSelectedDeliverableTag('');
 
+    const msgPayload = {
+      projectId: activeProject.id,
+      senderUid: user?.uid || '',
+      senderEmail: currentEmail,
+      senderName: newMsg.senderName,
+      messageText: newMsg.messageText,
+      isPinned: newMsg.isPinned,
+      messageType: newMsg.messageType,
+      taggedDeliverableTitle: newMsg.taggedDeliverableTitle || null,
+      reactions: {},
+      timestampEpochMillis: nowMs,
+      createdAt: serverTimestamp()
+    };
+
+    await sendPayloadToCloud(newMsg, msgPayload);
+  };
+
+  // QUICK EMOJI REACTION TOGGLE (Web <-> Android Synced)
+  const handleToggleReaction = async (msg: WebGroupChatMessage, emoji: string) => {
+    if (!activeProject) return;
+    const currentReactions: Record<string, string[]> = {};
+    Object.entries(msg.reactions || {}).forEach(([k, v]) => {
+      if (Array.isArray(v)) {
+        currentReactions[k] = v.map((e) => String(e).toLowerCase());
+      }
+    });
+
+    const existingVoters = currentReactions[emoji] || [];
+    const hasReacted = existingVoters.includes(currentEmail);
+    const nextVoters = hasReacted
+      ? existingVoters.filter((e) => e !== currentEmail)
+      : [...existingVoters, currentEmail];
+
+    const nextReactions = { ...currentReactions };
+    if (nextVoters.length === 0) {
+      delete nextReactions[emoji];
+    } else {
+      nextReactions[emoji] = nextVoters;
+    }
+
+    const reactionsCsv = Object.entries(nextReactions)
+      .map(([em, list]) => `${em}:${list.join(',')}`)
+      .join('|');
+
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupMessages: prev.groupMessages.map((m) =>
+        m.id === msg.id ? { ...m, reactions: nextReactions } : m
+      )
+    }));
+
     if (user) {
-      const msgPayload = {
-        projectId: activeProject.id,
-        senderUid: user.uid,
-        senderEmail: currentEmail,
-        senderName: newMsg.senderName,
-        messageText: newMsg.messageText,
-        isPinned: newMsg.isPinned,
-        messageType: newMsg.messageType,
-        taggedDeliverableTitle: newMsg.taggedDeliverableTitle || null,
-        reactions: {},
-        createdAt: serverTimestamp()
-      };
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), msgPayload)
-        )
-      );
+      await setDoc(
+        doc(db, 'group_projects', activeProject.id, 'messages', msg.id),
+        {
+          reactions: nextReactions,
+          reactionsCsv
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+  };
+
+  // PIN / UNPIN MESSAGE (Admin)
+  const handleTogglePinMessage = async (msg: WebGroupChatMessage) => {
+    if (!activeProject || !isCurrentUserAdmin) return;
+    const nextPinned = !msg.isPinned;
+    onUpdateVault((prev) => ({
+      ...prev,
+      groupMessages: prev.groupMessages.map((m) =>
+        m.id === msg.id ? { ...m, isPinned: nextPinned } : m
+      )
+    }));
+    if (user) {
+      await updateDoc(doc(db, 'group_projects', activeProject.id, 'messages', msg.id), {
+        isPinned: nextPinned
+      }).catch(() => {});
     }
   };
 
@@ -936,13 +1206,13 @@ export const GroupProjectsView: React.FC<Props> = ({
     const isMe =
       Boolean(currentEmail && msg.senderEmail && msg.senderEmail.toLowerCase() === currentEmail) ||
       Boolean(user?.uid && msg.senderUid && msg.senderUid === user.uid) ||
-      Boolean(msg.senderName && (msg.senderName === user?.displayName || msg.senderName === 'You')) ||
       (!msg.senderEmail && !msg.senderUid);
     const canDelete = isMe || isCurrentUserAdmin || !activeProject.creatorUid || activeProject.creatorUid === user?.uid || !activeProject.adminEmails?.length;
     if (!canDelete) return;
 
     if (!window.confirm(isMe ? 'Unsend this message for everyone?' : 'Delete this message as Admin?')) return;
 
+    pendingMsgsRef.current.delete(msg.id);
     onUpdateVault((prev) => ({
       ...prev,
       groupMessages: prev.groupMessages.filter((m) => m.id !== msg.id)
@@ -950,7 +1220,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     if (user) {
       await Promise.allSettled(
-        targetDbs.map((targetDb) =>
+        readDbs.map((targetDb) =>
           deleteDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', msg.id))
         )
       );
@@ -964,7 +1234,20 @@ export const GroupProjectsView: React.FC<Props> = ({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream);
+      const preferredTypes = [
+        'audio/mp4',
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus'
+      ];
+      const mimeType =
+        typeof MediaRecorder !== 'undefined' && typeof MediaRecorder.isTypeSupported === 'function'
+          ? preferredTypes.find((t) => MediaRecorder.isTypeSupported(t)) || ''
+          : '';
+      const options: MediaRecorderOptions = mimeType
+        ? { mimeType, audioBitsPerSecond: 32000 }
+        : { audioBitsPerSecond: 32000 };
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (e) => {
@@ -980,7 +1263,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       recordingTimerRef.current = window.setInterval(() => {
         setRecordingSeconds((prev) => prev + 1);
       }, 1000);
-    } catch (err) {
+    } catch {
       onNotify('Microphone access is required to record voice notes. Please grant permission in browser.');
     }
   };
@@ -1013,13 +1296,19 @@ export const GroupProjectsView: React.FC<Props> = ({
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Data = reader.result as string;
+        if (!base64Data || base64Data.length > 900_000) {
+          onNotify('Voice note is too long to sync over chat (max ~2 mins). Try a shorter clip.');
+          return;
+        }
+        const nowMs = Date.now();
         const newMsg: WebGroupChatMessage = {
           id: uidGen('vnote'),
           projectId: activeProject.id,
+          senderUid: user?.uid || '',
           senderEmail: currentEmail,
           senderName: user?.displayName || vault.profile.name || 'Scholar',
           messageText: `🎙️ Voice Note (${dur}s)`,
-          timestamp: Date.now(),
+          timestamp: nowMs,
           isPinned: false,
           messageType: 'VOICE_NOTE',
           audioUrl: base64Data,
@@ -1027,31 +1316,21 @@ export const GroupProjectsView: React.FC<Props> = ({
           reactions: {}
         };
 
-        onUpdateVault((prev) => ({
-          ...prev,
-          groupMessages: [...prev.groupMessages, newMsg]
-        }));
-
-        if (user) {
-          const payload = {
-            projectId: activeProject.id,
-            senderUid: user.uid,
-            senderEmail: currentEmail,
-            senderName: newMsg.senderName,
-            messageText: newMsg.messageText,
-            isPinned: false,
-            messageType: 'VOICE_NOTE',
-            audioUrl: newMsg.audioUrl,
-            audioDurationSec: newMsg.audioDurationSec,
-            reactions: {},
-            createdAt: serverTimestamp()
-          };
-          await Promise.allSettled(
-            targetDbs.map((targetDb) =>
-              setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
-            )
-          );
-        }
+        const payload = {
+          projectId: activeProject.id,
+          senderUid: user?.uid || '',
+          senderEmail: currentEmail,
+          senderName: newMsg.senderName,
+          messageText: newMsg.messageText,
+          isPinned: false,
+          messageType: 'VOICE_NOTE',
+          audioUrl: newMsg.audioUrl,
+          audioDurationSec: newMsg.audioDurationSec,
+          reactions: {},
+          timestampEpochMillis: nowMs,
+          createdAt: serverTimestamp()
+        };
+        await sendPayloadToCloud(newMsg, payload);
         onNotify('Voice note sent to team!');
       };
       reader.readAsDataURL(audioBlob);
@@ -1062,59 +1341,68 @@ export const GroupProjectsView: React.FC<Props> = ({
     setRecordingSeconds(0);
   };
 
-  // SEND IMAGE / DIAGRAM
-  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !activeProject) return;
+  // SEND IMAGE / DIAGRAM (compressed below Firestore 1MB limit so it always syncs!)
+  const sendImageFileToGroup = useCallback(
+    async (file: File) => {
+      if (!activeProject) return;
+      if (file.size > 12 * 1024 * 1024) {
+        onNotify('Please select an image smaller than 12MB.');
+        return;
+      }
 
-    if (file.size > 2.5 * 1024 * 1024) {
-      onNotify('Please select an image smaller than 2.5MB.');
-      return;
-    }
+      try {
+        let base64 = await compressGroupPhoto(file, 1080, 0.78);
+        if (base64.length > 680_000) {
+          base64 = await compressGroupPhoto(file, 800, 0.62);
+        }
+        if (base64.length > 820_000) {
+          base64 = await compressGroupPhoto(file, 640, 0.52);
+        }
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      const newMsg: WebGroupChatMessage = {
-        id: uidGen('img'),
-        projectId: activeProject.id,
-        senderEmail: currentEmail,
-        senderName: user?.displayName || vault.profile.name || 'Scholar',
-        messageText: `📸 Photo: ${file.name}`,
-        timestamp: Date.now(),
-        isPinned: false,
-        messageType: 'IMAGE_SHARE',
-        imageUrl: base64,
-        reactions: {}
-      };
+        const nowMs = Date.now();
+        const newMsg: WebGroupChatMessage = {
+          id: uidGen('img'),
+          projectId: activeProject.id,
+          senderUid: user?.uid || '',
+          senderEmail: currentEmail,
+          senderName: user?.displayName || vault.profile.name || 'Scholar',
+          messageText: `📸 Photo: ${file.name || 'image.jpg'}`,
+          timestamp: nowMs,
+          isPinned: false,
+          messageType: 'IMAGE_SHARE',
+          imageUrl: base64,
+          reactions: {}
+        };
 
-      onUpdateVault((prev) => ({
-        ...prev,
-        groupMessages: [...prev.groupMessages, newMsg]
-      }));
-
-      if (user) {
         const payload = {
           projectId: activeProject.id,
-          senderUid: user.uid,
+          senderUid: user?.uid || '',
           senderEmail: currentEmail,
           senderName: newMsg.senderName,
           messageText: newMsg.messageText,
           isPinned: false,
           messageType: 'IMAGE_SHARE',
           imageUrl: newMsg.imageUrl,
+          sharedDocUrl: newMsg.imageUrl,
           reactions: {},
+          timestampEpochMillis: nowMs,
           createdAt: serverTimestamp()
         };
-        await Promise.allSettled(
-          targetDbs.map((targetDb) =>
-            setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
-          )
-        );
+
+        await sendPayloadToCloud(newMsg, payload);
+        onNotify('Photo shared with group!');
+      } catch {
+        onNotify('Could not process selected image.');
       }
-      onNotify('Photo shared with group!');
-    };
-    reader.readAsDataURL(file);
+    },
+    [activeProject, user, currentEmail, vault.profile.name, sendPayloadToCloud, onNotify]
+  );
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      void sendImageFileToGroup(file);
+    }
     e.target.value = '';
   };
 
@@ -1125,13 +1413,15 @@ export const GroupProjectsView: React.FC<Props> = ({
     const opts = [pollOpt1.trim(), pollOpt2.trim(), pollOpt3.trim()].filter(Boolean);
     if (!q || opts.length < 2) return;
 
+    const nowMs = Date.now();
     const newMsg: WebGroupChatMessage = {
       id: uidGen('poll'),
       projectId: activeProject.id,
+      senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName: user?.displayName || vault.profile.name || 'Scholar',
       messageText: `📊 Team Vote: ${q}`,
-      timestamp: Date.now(),
+      timestamp: nowMs,
       isPinned: false,
       messageType: 'POLL',
       pollData: {
@@ -1140,34 +1430,26 @@ export const GroupProjectsView: React.FC<Props> = ({
       }
     };
 
-    onUpdateVault((prev) => ({
-      ...prev,
-      groupMessages: [...prev.groupMessages, newMsg]
-    }));
-
-    if (user) {
-      const payload = {
-        projectId: activeProject.id,
-        senderUid: user.uid,
-        senderEmail: currentEmail,
-        senderName: newMsg.senderName,
-        messageText: newMsg.messageText,
-        isPinned: false,
-        messageType: 'POLL',
-        pollData: newMsg.pollData,
-        pollQuestion: q,
-        pollOptionsCsv: opts.join('|'),
-        createdAt: serverTimestamp()
-      };
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
-        )
-      );
-    }
-
     setShowPollModal(false);
     setPollQuestionInput('');
+
+    const payload = {
+      projectId: activeProject.id,
+      senderUid: user?.uid || '',
+      senderEmail: currentEmail,
+      senderName: newMsg.senderName,
+      messageText: newMsg.messageText,
+      isPinned: false,
+      messageType: 'POLL',
+      pollData: newMsg.pollData,
+      pollQuestion: q,
+      pollOptionsCsv: opts.join('|'),
+      reactions: {},
+      timestampEpochMillis: nowMs,
+      createdAt: serverTimestamp()
+    };
+
+    await sendPayloadToCloud(newMsg, payload);
     onNotify('Team poll posted to chat!');
   };
 
@@ -1204,20 +1486,16 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          setDoc(
-            doc(targetDb, 'group_projects', activeProject.id, 'messages', msg.id),
-            {
-              pollData: nextPollData,
-              pollVotesJson,
-              pollQuestion: nextPollData.question,
-              pollOptionsCsv: updatedOptions.map((o) => o.text).join('|')
-            },
-            { merge: true }
-          )
-        )
-      );
+      await setDoc(
+        doc(db, 'group_projects', activeProject.id, 'messages', msg.id),
+        {
+          pollData: nextPollData,
+          pollVotesJson,
+          pollQuestion: nextPollData.question,
+          pollOptionsCsv: updatedOptions.map((o) => o.text).join('|')
+        },
+        { merge: true }
+      ).catch(() => {});
     }
   };
 
@@ -1228,13 +1506,15 @@ export const GroupProjectsView: React.FC<Props> = ({
     const link = newResourceUrl.trim();
     if (!title) return;
 
+    const nowMs = Date.now();
     const newMsg: WebGroupChatMessage = {
       id: uidGen('doc'),
       projectId: activeProject.id,
+      senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName: user?.displayName || vault.profile.name || 'Scholar',
       messageText: `📎 Shared Document: ${title}`,
-      timestamp: Date.now(),
+      timestamp: nowMs,
       isPinned: false,
       messageType: 'DOC_SHARE',
       docData: {
@@ -1243,39 +1523,31 @@ export const GroupProjectsView: React.FC<Props> = ({
         linkOrFileName: link,
         category: 'DOCUMENT',
         addedByEmail: currentEmail,
-        addedAt: Date.now()
+        addedAt: nowMs
       }
     };
-
-    onUpdateVault((prev) => ({
-      ...prev,
-      groupMessages: [...prev.groupMessages, newMsg]
-    }));
-
-    if (user) {
-      const payload = {
-        projectId: activeProject.id,
-        senderUid: user.uid,
-        senderEmail: currentEmail,
-        senderName: newMsg.senderName,
-        messageText: newMsg.messageText,
-        isPinned: false,
-        messageType: 'DOC_SHARE',
-        docData: newMsg.docData,
-        sharedDocTitle: title,
-        sharedDocUrl: link,
-        createdAt: serverTimestamp()
-      };
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', newMsg.id), payload)
-        )
-      );
-    }
 
     setShowDocModal(false);
     setNewResourceTitle('');
     setNewResourceUrl('');
+
+    const payload = {
+      projectId: activeProject.id,
+      senderUid: user?.uid || '',
+      senderEmail: currentEmail,
+      senderName: newMsg.senderName,
+      messageText: newMsg.messageText,
+      isPinned: false,
+      messageType: 'DOC_SHARE',
+      docData: newMsg.docData,
+      sharedDocTitle: title,
+      sharedDocUrl: link,
+      reactions: {},
+      timestampEpochMillis: nowMs,
+      createdAt: serverTimestamp()
+    };
+
+    await sendPayloadToCloud(newMsg, payload);
     onNotify('Resource shared to group!');
   };
 
@@ -1355,6 +1627,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         createdAt: serverTimestamp()
       };
       const noticeId = uidGen('notice');
+      const nowMs = Date.now();
       const noticePayload = {
         projectId: activeProject.id,
         senderUid: user.uid,
@@ -1363,16 +1636,19 @@ export const GroupProjectsView: React.FC<Props> = ({
         messageText: `🎉 ${clean} was invited to the group!`,
         isPinned: false,
         messageType: 'NOTICE',
+        timestampEpochMillis: nowMs,
         createdAt: serverTimestamp()
       };
 
-      await Promise.allSettled(
-        targetDbs.flatMap((targetDb) => [
-          setDoc(doc(targetDb, 'group_projects', activeProject.id), projectPayload, { merge: true }),
-          setDoc(doc(targetDb, 'group_invitations', inviteDocId), invitePayload),
-          setDoc(doc(targetDb, 'group_projects', activeProject.id, 'messages', noticeId), noticePayload)
-        ])
-      );
+      try {
+        await Promise.all([
+          setDoc(doc(db, 'group_projects', activeProject.id), projectPayload, { merge: true }),
+          setDoc(doc(db, 'group_invitations', inviteDocId), invitePayload),
+          setDoc(doc(db, 'group_projects', activeProject.id, 'messages', noticeId), noticePayload)
+        ]);
+      } catch (err) {
+        onNotify(`Saved locally, cloud invite warning: ${(err as Error)?.message || 'Check connection.'}`);
+      }
     }
 
     setShowAddMemberModal(false);
@@ -1416,14 +1692,10 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            adminEmails: updatedAdmins,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        adminEmails: updatedAdmins,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
 
     onNotify(`Promoted ${clean} to Group Admin.`);
@@ -1442,14 +1714,10 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            adminEmails: updatedAdmins,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        adminEmails: updatedAdmins,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
 
     onNotify(`Demoted ${clean} to Member.`);
@@ -1476,15 +1744,11 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            memberEmails: updatedMembers,
-            adminEmails: updatedAdmins,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        memberEmails: updatedMembers,
+        adminEmails: updatedAdmins,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
 
     onNotify(`Removed ${clean} from ${activeProject.teamName}.`);
@@ -1505,14 +1769,10 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            tasks: updatedTasks,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        tasks: updatedTasks,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
   };
 
@@ -1547,7 +1807,7 @@ export const GroupProjectsView: React.FC<Props> = ({
 
     if (user) {
       await Promise.allSettled(
-        targetDbs.flatMap((targetDb) => [
+        readDbs.flatMap((targetDb) => [
           deleteDoc(doc(targetDb, 'group_projects', projId)),
           setDoc(doc(targetDb, 'deleted_group_projects', projId), {
             deletedAt: serverTimestamp(),
@@ -1597,7 +1857,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         (e) => e.toLowerCase() !== currentEmail
       );
       await Promise.allSettled(
-        targetDbs.map((targetDb) =>
+        readDbs.map((targetDb) =>
           updateDoc(doc(targetDb, 'group_projects', projId), {
             memberEmails: updatedMembers,
             adminEmails: updatedAdmins,
@@ -1632,14 +1892,10 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            resources: updatedResources,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        resources: updatedResources,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
 
     setNewResourceTitle('');
@@ -1661,14 +1917,10 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((targetDb) =>
-          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-            resources: updatedResources,
-            updatedAt: serverTimestamp()
-          })
-        )
-      );
+      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+        resources: updatedResources,
+        updatedAt: serverTimestamp()
+      }).catch(() => {});
     }
 
     onNotify('Resource removed from Vault.');
@@ -1721,18 +1973,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((tDb) =>
-          setDoc(
-            doc(tDb, 'group_projects', activeProject.id),
-            {
-              syncedPomodoroState: nextState,
-              updatedAt: serverTimestamp()
-            },
-            { merge: true }
-          )
-        )
-      );
+      await setDoc(
+        doc(db, 'group_projects', activeProject.id),
+        {
+          syncedPomodoroState: nextState,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      ).catch(() => {});
     }
 
     if (action === 'START') {
@@ -1760,18 +2008,14 @@ export const GroupProjectsView: React.FC<Props> = ({
     }));
 
     if (user) {
-      await Promise.allSettled(
-        targetDbs.map((tDb) =>
-          setDoc(
-            doc(tDb, 'group_projects', activeProject.id),
-            {
-              memberStatuses: nextStatuses,
-              updatedAt: serverTimestamp()
-            },
-            { merge: true }
-          )
-        )
-      );
+      await setDoc(
+        doc(db, 'group_projects', activeProject.id),
+        {
+          memberStatuses: nextStatuses,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      ).catch(() => {});
     }
     onNotify('Live study status synced!');
   };
@@ -1790,47 +2034,40 @@ export const GroupProjectsView: React.FC<Props> = ({
     const senderName = user?.displayName || vault.profile.name || 'Scholar';
     const text = `⚡ Standup Pulse (${statusLabel}) • ${senderName} checked in — Team Readiness ${taskProgressPct}% (${doneTasks}/${tasks.length} deliverables done)`;
     const noticeId = uidGen('pulse');
+    const nowMs = Date.now();
     const newMsg: WebGroupChatMessage = {
       id: noticeId,
       projectId: activeProject.id,
+      senderUid: user?.uid || '',
       senderEmail: currentEmail,
       senderName,
       messageText: text,
-      timestamp: Date.now(),
+      timestamp: nowMs,
       isPinned: false,
       messageType: 'NOTICE'
     };
 
     await handleUpdateMyStatus(myStatus, `${doneTasks}/${tasks.length} tasks done`);
-    onUpdateVault((prev) => ({
-      ...prev,
-      groupMessages: [...prev.groupMessages, newMsg]
-    }));
-
-    if (user) {
-      await Promise.allSettled(
-        targetDbs.map((tDb) =>
-          setDoc(doc(tDb, 'group_projects', activeProject.id, 'messages', noticeId), {
-            projectId: activeProject.id,
-            senderUid: user.uid,
-            senderEmail: currentEmail,
-            senderName,
-            messageText: text,
-            isPinned: false,
-            messageType: 'NOTICE',
-            createdAt: serverTimestamp()
-          })
-        )
-      );
-    }
+    const payload = {
+      projectId: activeProject.id,
+      senderUid: user?.uid || '',
+      senderEmail: currentEmail,
+      senderName,
+      messageText: text,
+      isPinned: false,
+      messageType: 'NOTICE',
+      timestampEpochMillis: nowMs,
+      createdAt: serverTimestamp()
+    };
+    await sendPayloadToCloud(newMsg, payload);
     onNotify('Standup pulse posted & synced!');
   };
 
-  // 1-TAP FORCE CLOUD SYNC (Strict Server Reconciliation)
+  // 1-TAP FORCE CLOUD SYNC (Strict Server Reconciliation + Active Chat Fetch)
   const handleForceSync = async () => {
     setIsSyncing(true);
     try {
-      for (const tDb of targetDbs) {
+      for (const tDb of readDbs) {
         const delSnap = await getDocsFromServer(collection(tDb, 'deleted_group_projects'))
           .catch(() => getDocs(collection(tDb, 'deleted_group_projects')))
           .catch(() => null);
@@ -1842,7 +2079,7 @@ export const GroupProjectsView: React.FC<Props> = ({
       const fetchedMap = new Map<string, WebGroupProject>();
       let anyServerSucceeded = false;
 
-      for (const tDb of targetDbs) {
+      for (const tDb of readDbs) {
         const queries = [
           query(collection(tDb, 'group_projects'), where('memberEmails', 'array-contains', currentEmail)),
           query(collection(tDb, 'group_projects'), where('adminEmails', 'array-contains', currentEmail)),
@@ -1888,6 +2125,21 @@ export const GroupProjectsView: React.FC<Props> = ({
       const persistedDeleted = Array.from(deletedProjectIdsRef.current);
       const fetchedList = Array.from(fetchedMap.values());
 
+      // Also force-fetch active project's server messages immediately
+      const targetProjId = activeProject?.id || fetchedList[0]?.id;
+      let freshMessages: WebGroupChatMessage[] | null = null;
+      if (targetProjId && user) {
+        const msgSnap = await getDocsFromServer(
+          collection(db, 'group_projects', targetProjId, 'messages')
+        ).catch(() => null);
+        if (msgSnap) {
+          anyServerSucceeded = true;
+          freshMessages = msgSnap.docs
+            .map((d) => mapFirestoreMessageDoc(targetProjId, d, false))
+            .sort((a, b) => (a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.id.localeCompare(b.id)));
+        }
+      }
+
       onUpdateVault((prev) => {
         const nextProjects = anyServerSucceeded
           ? fetchedList
@@ -1901,11 +2153,22 @@ export const GroupProjectsView: React.FC<Props> = ({
               });
               return Array.from(map.values());
             })();
+        const cleanedMessages = prev.groupMessages.filter(
+          (m) => !deletedProjectIdsRef.current.has(m.projectId)
+        );
+        let mergedMessages = cleanedMessages;
+        if (freshMessages && targetProjId) {
+          const otherProjMsgs = cleanedMessages.filter((m) => m.projectId !== targetProjId);
+          const pendingForProj = Array.from(pendingMsgsRef.current.values())
+            .map((x) => x.msg)
+            .filter((m) => m.projectId === targetProjId && !freshMessages!.some((fm) => fm.id === m.id));
+          mergedMessages = [...otherProjMsgs, ...freshMessages, ...pendingForProj];
+        }
         return {
           ...prev,
           deletedGroupIds: persistedDeleted,
           groupProjects: nextProjects,
-          groupMessages: prev.groupMessages.filter((m) => !deletedProjectIdsRef.current.has(m.projectId))
+          groupMessages: mergedMessages
         };
       });
 
@@ -1916,7 +2179,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         return prevId;
       });
 
-      onNotify(anyServerSucceeded ? '⚡ Server sync complete! Cloud teams & tasks updated.' : 'Synced with local cache.');
+      onNotify(anyServerSucceeded ? 'Server sync complete! Cloud teams, tasks & messages updated.' : 'Synced with local cache.');
     } catch {
       onNotify('Synced with local cache.');
     } finally {
@@ -2142,6 +2405,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                           <span className="font-bold text-xs text-[#111827] truncate">{p.teamName}</span>
                           {isActive && (
                             <span className="w-1.5 h-1.5 rounded-full bg-[#1E3A8A] shrink-0" />
+                          )}
+                          {!isActive && (unreadCountsByProject[p.id] || 0) > 0 && (
+                            <span className="px-1.5 py-0.2 rounded-full bg-[#DC2626] text-[#FFFFFF] font-mono text-[10px] font-bold shrink-0">
+                              {unreadCountsByProject[p.id]}
+                            </span>
                           )}
                         </div>
                         <div className="text-[10px] font-mono text-[#6B7280] truncate">
@@ -2506,7 +2774,7 @@ export const GroupProjectsView: React.FC<Props> = ({
           {/* Right Column: Tab Content Stage */}
           <div className="lg:col-span-2">
             {activeTab === 'CHAT' && (
-              <div className="rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px]">
+              <div className="relative rounded-xl bg-[#FFFFFF] border border-[#E5E7EB] p-4 sm:p-5 flex flex-col h-[calc(100dvh-270px)] min-h-[520px] max-h-[720px]">
                 {/* Pinned Messages Bar */}
                 {pinnedMessages.length > 0 && (
                   <div className="p-2.5 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] flex items-center gap-2 mb-3 shrink-0">
@@ -2518,7 +2786,16 @@ export const GroupProjectsView: React.FC<Props> = ({
                 )}
 
                 {/* Messages Stream */}
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1.5 no-scrollbar">
+                <div
+                  ref={chatScrollRef}
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
+                      setShowNewMsgPill(false);
+                    }
+                  }}
+                  className="flex-1 overflow-y-auto space-y-3 pr-1.5 no-scrollbar"
+                >
                   {projectMessages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#6B7280]">
                       <MessageSquare className="w-9 h-9 text-[#9CA3AF] mb-2" />
@@ -2529,10 +2806,12 @@ export const GroupProjectsView: React.FC<Props> = ({
                     </div>
                   ) : (
                     projectMessages.map((msg) => {
-                      const isMe = msg.senderEmail.toLowerCase() === currentEmail;
+                      const isMe =
+                        (Boolean(currentEmail) && msg.senderEmail?.toLowerCase() === currentEmail) ||
+                        (Boolean(user?.uid) && msg.senderUid === user?.uid);
                       const isAdmin = (activeProject.adminEmails || [])
                         .map((e) => e.toLowerCase())
-                        .includes(msg.senderEmail.toLowerCase());
+                        .includes((msg.senderEmail || '').toLowerCase());
                       const isNotice = msg.messageType === 'NOTICE' || msg.messageType === 'TARGET_UPDATE';
 
                       if (isNotice) {
@@ -2692,24 +2971,129 @@ export const GroupProjectsView: React.FC<Props> = ({
                               </div>
                             )}
 
-                            {/* Unsend / Delete Message Action */}
-                            {(isMe || isCurrentUserAdmin || !activeProject.creatorUid || activeProject.creatorUid === user?.uid || !activeProject.adminEmails?.length) && (
-                              <div className={`flex items-center justify-end gap-1.5 pt-1.5 mt-1 border-t ${isMe ? 'border-white/20' : 'border-[#E5E7EB]'}`}>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteMessage(msg)}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors duration-150 ${
-                                    isMe
-                                      ? 'bg-white/15 hover:bg-white/25 text-[#FFFFFF]'
-                                      : 'bg-[#FEF2F2] hover:border-[#DC2626] border border-[#FECACA] text-[#DC2626]'
-                                  }`}
-                                  title={isMe ? 'Unsend this message for everyone' : 'Delete message as Group Admin'}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span>{isMe ? 'Unsend' : 'Delete'}</span>
-                                </button>
-                              </div>
-                            )}
+                            {/* Reaction Pills & Quick Actions Bar */}
+                            {(() => {
+                              const reactionEntries = Object.entries(msg.reactions || {}).filter(
+                                ([, voters]) => Array.isArray(voters) && voters.length > 0
+                              );
+                              const quickEmojis = ['👍', '✅', '❤️', '🔥'];
+                              const canModify =
+                                isMe ||
+                                isCurrentUserAdmin ||
+                                !activeProject.creatorUid ||
+                                activeProject.creatorUid === user?.uid ||
+                                !activeProject.adminEmails?.length;
+
+                              return (
+                                <div className="space-y-1.5 pt-1">
+                                  {reactionEntries.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {reactionEntries.map(([emoji, voters]) => {
+                                        const voterList = Array.isArray(voters) ? voters : [];
+                                        const iReacted = voterList.some(
+                                          (e) => String(e).toLowerCase() === currentEmail
+                                        );
+                                        return (
+                                          <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => handleToggleReaction(msg, emoji)}
+                                            className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center gap-1 border transition-colors ${
+                                              isMe
+                                                ? iReacted
+                                                  ? 'bg-white text-[#1E3A8A] border-white'
+                                                  : 'bg-white/15 text-white border-white/25'
+                                                : iReacted
+                                                ? 'bg-[#EFF6FF] text-[#1E3A8A] border-[#1E3A8A]'
+                                                : 'bg-[#FFFFFF] text-[#374151] border-[#E5E7EB]'
+                                            }`}
+                                          >
+                                            <span>{emoji}</span>
+                                            <span className="font-mono">{voterList.length}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+
+                                  <div
+                                    className={`flex items-center justify-between gap-2 pt-1.5 border-t ${
+                                      isMe ? 'border-white/20' : 'border-[#E5E7EB]'
+                                    }`}
+                                  >
+                                    {/* Quick reaction picker */}
+                                    <div className="flex items-center gap-0.5">
+                                      {quickEmojis.map((em) => (
+                                        <button
+                                          key={em}
+                                          type="button"
+                                          onClick={() => handleToggleReaction(msg, em)}
+                                          title={`React ${em}`}
+                                          className={`w-6 h-6 rounded text-xs flex items-center justify-center transition-colors ${
+                                            isMe
+                                              ? 'hover:bg-white/20 text-white'
+                                              : 'hover:bg-[#E5E7EB] text-[#374151]'
+                                          }`}
+                                        >
+                                          {em}
+                                        </button>
+                                      ))}
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5">
+                                      {isMe && msg.syncStatus === 'SENDING' && (
+                                        <span className="text-[10px] font-mono opacity-80">Sending...</span>
+                                      )}
+                                      {isMe && (!msg.syncStatus || msg.syncStatus === 'SYNCED') && (
+                                        <span className="text-[10px] font-mono opacity-80">Sent ✓</span>
+                                      )}
+                                      {isMe && msg.syncStatus === 'FAILED' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRetryMessage(msg)}
+                                          title={msg.syncError || 'Tap to retry sending'}
+                                          className="px-2 py-0.5 rounded bg-[#FEF2F2] text-[#DC2626] border border-[#FECACA] text-[10px] font-bold"
+                                        >
+                                          Failed • Retry
+                                        </button>
+                                      )}
+
+                                      {isCurrentUserAdmin && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleTogglePinMessage(msg)}
+                                          className={`px-1.5 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors duration-150 ${
+                                            isMe
+                                              ? 'bg-white/15 hover:bg-white/25 text-[#FFFFFF]'
+                                              : 'bg-[#FFFFFF] hover:border-[#B45309] border border-[#E5E7EB] text-[#4B5563]'
+                                          }`}
+                                          title={msg.isPinned ? 'Unpin message' : 'Pin message'}
+                                        >
+                                          <Pin className="w-3 h-3" />
+                                          <span>{msg.isPinned ? 'Unpin' : 'Pin'}</span>
+                                        </button>
+                                      )}
+
+                                      {canModify && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteMessage(msg)}
+                                          className={`px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1 transition-colors duration-150 ${
+                                            isMe
+                                              ? 'bg-white/15 hover:bg-white/25 text-[#FFFFFF]'
+                                              : 'bg-[#FEF2F2] hover:border-[#DC2626] border border-[#FECACA] text-[#DC2626]'
+                                          }`}
+                                          title={isMe ? 'Unsend this message for everyone' : 'Delete message as Group Admin'}
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                          <span>{isMe ? 'Unsend' : 'Delete'}</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       );
@@ -2717,6 +3101,20 @@ export const GroupProjectsView: React.FC<Props> = ({
                   )}
                   <div ref={messagesEndRef} />
                 </div>
+
+                {/* Floating Scroll-to-Latest Pill */}
+                {showNewMsgPill && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                      setShowNewMsgPill(false);
+                    }}
+                    className="self-center mb-2 px-3 py-1 rounded-full bg-[#1E3A8A] text-[#FFFFFF] text-[11px] font-semibold shadow-sm hover:bg-[#1E40AF] transition-colors"
+                  >
+                    New messages ↓
+                  </button>
+                )}
 
                 {/* Composer Dock */}
                 <div className="pt-3 border-t border-[#E5E7EB] space-y-2 shrink-0">
@@ -2820,7 +3218,21 @@ export const GroupProjectsView: React.FC<Props> = ({
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        placeholder="Message your team..."
+                        onPaste={(e) => {
+                          const items = e.clipboardData?.items;
+                          if (!items) return;
+                          for (let i = 0; i < items.length; i++) {
+                            if (items[i].type.startsWith('image/')) {
+                              const file = items[i].getAsFile();
+                              if (file) {
+                                e.preventDefault();
+                                void sendImageFileToGroup(file);
+                                break;
+                              }
+                            }
+                          }
+                        }}
+                        placeholder="Message your team (or paste an image)..."
                         className="aura-input flex-1 px-4 py-2 rounded-lg text-xs sm:text-sm min-w-[140px]"
                       />
 
@@ -3588,11 +4000,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                   createdAt: serverTimestamp(),
                   updatedAt: serverTimestamp()
                 };
-                await Promise.allSettled(
-                  targetDbs.map((targetDb) =>
-                    setDoc(doc(targetDb, 'group_projects', newProj.id), payload)
-                  )
-                );
+                await setDoc(doc(db, 'group_projects', newProj.id), payload);
 
                 for (const memberEmail of newProj.memberEmails) {
                   if (memberEmail.toLowerCase() !== currentEmail) {
@@ -3614,15 +4022,11 @@ export const GroupProjectsView: React.FC<Props> = ({
                       joinCode: newProj.joinCode,
                       createdAt: serverTimestamp()
                     };
-                    await Promise.allSettled(
-                      targetDbs.map((targetDb) =>
-                        setDoc(doc(targetDb, 'group_invitations', invId), invPayload)
-                      )
-                    );
+                    await setDoc(doc(db, 'group_invitations', invId), invPayload);
                   }
                 }
-              } catch {
-                // Offline fallback
+              } catch (err) {
+                onNotify(`Saved locally; cloud sync warning: ${(err as Error)?.message || 'Check connection.'}`);
               }
             }
 
@@ -3693,19 +4097,15 @@ export const GroupProjectsView: React.FC<Props> = ({
               groupProjects: prev.groupProjects.map((p) => (p.id === updated.id ? updated : p))
             }));
             if (user) {
-              await Promise.allSettled(
-                targetDbs.map((targetDb) =>
-                  updateDoc(doc(targetDb, 'group_projects', updated.id), {
-                    teamName: updated.teamName,
-                    projectTitle: updated.projectTitle,
-                    groupTarget: updated.groupTarget,
-                    avatarEmoji: updated.avatarEmoji,
-                    avatarEmojiOrUrl: updated.avatarEmojiOrUrl || updated.avatarEmoji || '',
-                    avatarColorHex: updated.avatarColorHex,
-                    updatedAt: serverTimestamp()
-                  })
-                )
-              );
+              await updateDoc(doc(db, 'group_projects', updated.id), {
+                teamName: updated.teamName,
+                projectTitle: updated.projectTitle,
+                groupTarget: updated.groupTarget,
+                avatarEmoji: updated.avatarEmoji,
+                avatarEmojiOrUrl: updated.avatarEmojiOrUrl || updated.avatarEmoji || '',
+                avatarColorHex: updated.avatarColorHex,
+                updatedAt: serverTimestamp()
+              }).catch(() => {});
             }
             setShowSettingsModal(false);
             onNotify('Saved group settings and target!');
@@ -3939,14 +4339,10 @@ export const GroupProjectsView: React.FC<Props> = ({
                     }));
 
                     if (user) {
-                      await Promise.allSettled(
-                        targetDbs.map((targetDb) =>
-                          updateDoc(doc(targetDb, 'group_projects', activeProject.id), {
-                            tasks: updatedTasks,
-                            updatedAt: serverTimestamp()
-                          })
-                        )
-                      );
+                      await updateDoc(doc(db, 'group_projects', activeProject.id), {
+                        tasks: updatedTasks,
+                        updatedAt: serverTimestamp()
+                      }).catch(() => {});
                     }
 
                     setShowAddTaskModal(false);
@@ -4141,6 +4537,7 @@ const VoiceNotePlayer: React.FC<{
 }> = ({ audioUrl, durationSec, isMe }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -4152,32 +4549,43 @@ const VoiceNotePlayer: React.FC<{
       setIsPlaying(false);
       setCurrentTime(0);
     };
+    const handleError = () => {
+      setIsPlaying(false);
+      setPlaybackError('Audio format unsupported in this browser.');
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
     };
   }, []);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
+    setPlaybackError(null);
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setPlaybackError('Unable to play audio clip.'));
     }
   };
 
   return (
-    <div
-      className={`p-2.5 rounded-lg flex items-center gap-3 mt-1 min-w-[200px] sm:min-w-[240px] border ${
-        isMe ? 'bg-white/10 border-white/20' : 'bg-[#FFFFFF] border-[#E5E7EB]'
-      }`}
-    >
-      <audio ref={audioRef} src={audioUrl} preload="metadata" />
+    <div className="space-y-1">
+      <div
+        className={`p-2.5 rounded-lg flex items-center gap-3 mt-1 min-w-[200px] sm:min-w-[240px] border ${
+          isMe ? 'bg-white/10 border-white/20' : 'bg-[#FFFFFF] border-[#E5E7EB]'
+        }`}
+      >
+        <audio ref={audioRef} src={audioUrl} preload="metadata" />
 
       <button
         type="button"
@@ -4225,6 +4633,12 @@ const VoiceNotePlayer: React.FC<{
           </span>
         </div>
       </div>
+      </div>
+      {playbackError && (
+        <div className={`text-[10px] font-medium ${isMe ? 'text-[#FECACA]' : 'text-[#DC2626]'}`}>
+          {playbackError}
+        </div>
+      )}
     </div>
   );
 };

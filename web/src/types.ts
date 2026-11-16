@@ -126,12 +126,14 @@ export interface WebGroupChatMessage {
   isPinned: boolean;
   messageType: 'TEXT' | 'DELIVERABLE' | 'TARGET_UPDATE' | 'NOTICE' | 'POLL' | 'DOC_SHARE' | 'POMODORO_SYNC' | 'VOICE_NOTE' | 'IMAGE_SHARE';
   taggedDeliverableTitle?: string;
-  reactions?: Record<string, number>;
+  reactions?: Record<string, string[] | number>;
   pollData?: WebGroupPoll;
   docData?: WebGroupResourceDoc;
   audioUrl?: string;
   audioDurationSec?: number;
   imageUrl?: string;
+  syncStatus?: 'SENDING' | 'SYNCED' | 'FAILED';
+  syncError?: string;
 }
 
 export interface WebGroupProject {
