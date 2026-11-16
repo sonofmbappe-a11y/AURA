@@ -33,7 +33,8 @@ const firebaseConfig = {
 };
 
 export const FIRESTORE_DATABASE_ID =
-  import.meta.env.VITE_FIRESTORE_DATABASE_ID || '(default)';
+  import.meta.env.VITE_FIRESTORE_DATABASE_ID ||
+  'ai-studio-android-aura-63829403-a9de-4f28-9da2-e7be3968b280';
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -53,14 +54,11 @@ function initResilientFirestore(databaseId?: string): Firestore {
 }
 
 export const defaultDb = initResilientFirestore();
-enableNetwork(defaultDb).catch(() => {
-  // Ignore if offline at startup
-});
 
-// Connect to provisioned named database with automatic fallback
+// Connect to the provisioned named Firestore database shared with AURA Android
 export const namedDb = (() => {
   const targetId = FIRESTORE_DATABASE_ID;
-  if (targetId && targetId !== '(default)' && !targetId.startsWith('ai-studio-android-aura-')) {
+  if (targetId && targetId !== '(default)') {
     try {
       return initResilientFirestore(targetId);
     } catch {
@@ -70,7 +68,10 @@ export const namedDb = (() => {
   return defaultDb;
 })();
 
-export const db = defaultDb;
+export const db = namedDb;
+enableNetwork(db).catch(() => {
+  // Ignore if offline at startup
+});
 
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });

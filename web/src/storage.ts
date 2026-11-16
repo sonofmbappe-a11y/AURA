@@ -239,32 +239,32 @@ export function createDefaultVault(): AuraLocalVault {
 export function loadLocalVault(): AuraLocalVault {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return createDefaultVault();
+    if (!raw) return createSignedOutVault();
     const parsed = JSON.parse(raw) as Partial<AuraLocalVault>;
-    const def = createDefaultVault();
+    const def = createSignedOutVault();
     return {
       profile: {
         ...def.profile,
         ...(parsed.profile || {}),
         isDarkTheme: Boolean(parsed.profile?.isDarkTheme)
       },
-      courses: Array.isArray(parsed.courses) ? parsed.courses : def.courses,
-      lectures: Array.isArray(parsed.lectures) ? parsed.lectures : def.lectures,
-      assessments: Array.isArray(parsed.assessments) ? parsed.assessments : def.assessments,
-      flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards : def.flashcards,
-      notes: Array.isArray(parsed.notes) ? parsed.notes : def.notes,
-      grades: Array.isArray(parsed.grades) ? parsed.grades : def.grades,
+      courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+      lectures: Array.isArray(parsed.lectures) ? parsed.lectures : [],
+      assessments: Array.isArray(parsed.assessments) ? parsed.assessments : [],
+      flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards : [],
+      notes: Array.isArray(parsed.notes) ? parsed.notes : [],
+      grades: Array.isArray(parsed.grades) ? parsed.grades : [],
       focusSessions: Array.isArray(parsed.focusSessions) ? parsed.focusSessions : [],
       distractions: Array.isArray(parsed.distractions) ? parsed.distractions : [],
       groupProjects: Array.isArray(parsed.groupProjects) ? parsed.groupProjects : [],
       groupMessages: Array.isArray(parsed.groupMessages) ? parsed.groupMessages : [],
       deletedGroupIds: Array.isArray(parsed.deletedGroupIds) ? parsed.deletedGroupIds : [],
-      citations: Array.isArray(parsed.citations) ? parsed.citations : def.citations,
+      citations: Array.isArray(parsed.citations) ? parsed.citations : [],
       lastAutoRestoredUid: parsed.lastAutoRestoredUid || '',
       lastBackupUpdatedAtMs: Number(parsed.lastBackupUpdatedAtMs) || 0
     };
   } catch {
-    return createDefaultVault();
+    return createSignedOutVault();
   }
 }
 
@@ -346,7 +346,11 @@ export async function saveCloudBackupFromWeb(
   vault: AuraLocalVault
 ): Promise<number> {
   const ref = doc(db, 'user_backups', uid);
-  const existingSnap = await getDocServerFirst(ref);
+  const existingRes = await tryGetDocServerFirst(ref);
+  if (!existingRes.snap && existingRes.error) {
+    throw existingRes.error;
+  }
+  const existingSnap = existingRes.snap;
 
   const p = vault.profile;
   const effectiveEmail = accountEmail || p.email;
@@ -493,34 +497,6 @@ export async function saveCloudBackupFromWeb(
     });
   }
 
-  // Secondary DB sync if distinct
-  if (db !== defaultDb) {
-    try {
-      const defaultRef = doc(defaultDb, 'user_backups', uid);
-      const defaultSnap = await getDocServerFirst(defaultRef);
-      const defaultExpenses =
-        defaultSnap?.exists() && Array.isArray(defaultSnap.data()?.expenseRecords)
-          ? defaultSnap.data()?.expenseRecords
-          : mutableFields.expenseRecords;
-      if (defaultSnap?.exists()) {
-        await updateDoc(defaultRef, {
-          ...mutableFields,
-          expenseRecords: defaultExpenses,
-          updatedAt: serverTimestamp()
-        });
-      } else {
-        await setDoc(defaultRef, {
-          ...mutableFields,
-          expenseRecords: defaultExpenses,
-          userId: uid,
-          createdAt: serverTimestamp()
-        });
-      }
-    } catch {
-      // Secondary fallback DB best-effort sync
-    }
-  }
-
   // Best-effort email mirror for cross-provider account recovery
   const eKey = emailBackupKey(effectiveEmail);
   if (eKey) {
@@ -568,14 +544,14 @@ export async function fetchAndMergeCloudBackupToWeb(
   accountEmail = '',
   replaceLocal = true
 ): Promise<{ updatedVault: AuraLocalVault; summary: string; serverUpdatedAtMs: number } | null> {
-  const refs: DocumentReference<DocumentData>[] =
-    db !== defaultDb
-      ? [doc(defaultDb, 'user_backups', uid), doc(db, 'user_backups', uid)]
-      : [doc(defaultDb, 'user_backups', uid)];
+  const refs: DocumentReference<DocumentData>[] = [doc(db, 'user_backups', uid)];
 
   const eKey = emailBackupKey(accountEmail || current.profile.email);
   if (eKey) {
-    refs.push(doc(defaultDb, 'user_backups_by_email', eKey));
+    refs.push(doc(db, 'user_backups_by_email', eKey));
+  }
+  if (defaultDb !== db) {
+    refs.push(doc(defaultDb, 'user_backups', uid));
   }
 
   const results = await Promise.allSettled(refs.map((r) => tryGetDocServerFirst(r)));

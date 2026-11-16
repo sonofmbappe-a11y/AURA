@@ -34,6 +34,7 @@ interface Props {
   vault: AuraLocalVault;
   onUpdateVault: (updater: (prev: AuraLocalVault) => AuraLocalVault) => void;
   onNotify: (msg: string) => void;
+  onSignOut?: () => void | Promise<void>;
 }
 
 const GRADE_SCALE: Record<string, number> = {
@@ -50,7 +51,8 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   user,
   vault,
   onUpdateVault,
-  onNotify
+  onNotify,
+  onSignOut
 }) => {
   const [busySync, setBusySync] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
@@ -239,7 +241,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
           </div>
           {user && (
             <button
-              onClick={() => signOutBrowser()}
+              onClick={() => (onSignOut ? onSignOut() : signOutBrowser())}
               className="p-2 rounded-md border border-[#E5E7EB] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#6B7280] hover:text-[#DC2626] transition-colors duration-150"
               title="Sign Out"
             >

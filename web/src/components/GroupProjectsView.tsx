@@ -112,7 +112,7 @@ export const GroupProjectsView: React.FC<Props> = ({
   const deletedProjectIdsRef = useRef<Set<string>>(new Set(vault.deletedGroupIds || []));
   const groupProjectsRef = useRef<WebGroupProject[]>(vault.groupProjects);
   groupProjectsRef.current = vault.groupProjects;
-  const targetDbs = useMemo(() => (defaultDb !== db ? [defaultDb, db] : [defaultDb]), []);
+  const targetDbs = useMemo(() => [db], []);
 
   useEffect(() => {
     const next = new Set(vault.deletedGroupIds || []);

@@ -14,7 +14,7 @@ import {
   Video,
   X
 } from 'lucide-react';
-import { auth, normalizeJoinCode } from './firebase';
+import { auth, normalizeJoinCode, signOutBrowser } from './firebase';
 import {
   computeCloudVaultSignature,
   createSignedOutVault,
@@ -35,6 +35,8 @@ import { CitationGeneratorView } from './components/CitationGeneratorView';
 import { WebAuthModal } from './components/WebAuthModal';
 
 type MainTab = 'TIMETABLE' | 'FOCUS' | 'STUDY' | 'GROUPS' | 'CITATIONS' | 'LIVE_STAGE' | 'TOOLS';
+
+const SESSION_MARKER_KEY = 'aura_web_had_session_v1';
 
 export const App: React.FC = () => {
   const initialRoomFromUrl = useMemo(() => {
@@ -60,6 +62,7 @@ export const App: React.FC = () => {
   const [cloudStatus, setCloudStatus] = useState<'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR'>('IDLE');
 
   const cloudHydratedUidRef = useRef<string | null>(null);
+  const hadSignedInRef = useRef<boolean>(false);
   const lastSyncedSigRef = useRef<string>('');
   const vaultRef = useRef<AuraLocalVault>(vault);
   vaultRef.current = vault;
@@ -131,16 +134,24 @@ export const App: React.FC = () => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
+        hadSignedInRef.current = true;
+        try {
+          localStorage.setItem(SESSION_MARKER_KEY, '1');
+        } catch {
+          // Ignore storage error
+        }
         cloudHydratedUidRef.current = null;
         setCloudStatus('SYNCING');
         const current = loadLocalVault();
         const switchedAccount =
           Boolean(current.lastAutoRestoredUid) && current.lastAutoRestoredUid !== u.uid;
-        // Always isolate accounts: when switching accounts, wipe previous account's data first
-        const baseVault: AuraLocalVault = switchedAccount
+        const starterSample = isDefaultStarterVault(current);
+        // Always isolate accounts: wipe previous user's or starter data immediately before fetching
+        const shouldPreWipe = switchedAccount || starterSample;
+        const baseVault: AuraLocalVault = shouldPreWipe
           ? createSignedOutVault(current.profile.isDarkTheme)
           : current;
-        if (switchedAccount) {
+        if (shouldPreWipe) {
           setVault(baseVault);
           saveLocalVault(baseVault);
         }
@@ -154,9 +165,8 @@ export const App: React.FC = () => {
           );
           if (res) {
             const shouldApplyCloud =
-              switchedAccount ||
+              shouldPreWipe ||
               !baseVault.lastAutoRestoredUid ||
-              isDefaultStarterVault(baseVault) ||
               res.serverUpdatedAtMs >= (baseVault.lastBackupUpdatedAtMs || 0);
 
             const nextVault = shouldApplyCloud
@@ -176,10 +186,9 @@ export const App: React.FC = () => {
               notify(`Cloud Vault synced (${res.summary})`);
             }
           } else {
-            // Verified on server: no backup exists yet for this account.
-            // Start clean unless user just edited offline as guest (never restored another uid)
+            // Verified on server: no backup exists yet for this account -> clean empty workspace
             const freshEmpty =
-              switchedAccount || Boolean(current.lastAutoRestoredUid) || isDefaultStarterVault(baseVault);
+              shouldPreWipe || Boolean(current.lastAutoRestoredUid);
             const targetBase = freshEmpty
               ? createSignedOutVault(current.profile.isDarkTheme)
               : baseVault;
@@ -195,7 +204,7 @@ export const App: React.FC = () => {
               },
               lastAutoRestoredUid: u.uid
             };
-            if (!freshEmpty && !isDefaultStarterVault(seeded)) {
+            if (!freshEmpty && seeded.courses.length > 0) {
               const savedAt = await saveCloudBackupFromWeb(u.uid, u.email || '', seeded);
               seeded.lastBackupUpdatedAtMs = savedAt;
             }
@@ -217,8 +226,21 @@ export const App: React.FC = () => {
         lastSyncedSigRef.current = '';
         setCloudStatus('IDLE');
         const current = loadLocalVault();
-        // On logout (previously signed into an account), clear all user courses, timetable & vault data
-        if (current.lastAutoRestoredUid) {
+        let hadSessionMarker = false;
+        try {
+          hadSessionMarker = localStorage.getItem(SESSION_MARKER_KEY) === '1';
+          localStorage.removeItem(SESSION_MARKER_KEY);
+        } catch {
+          // Ignore storage error
+        }
+        // Always wipe courses, timetable & vault on logout or when stale starter/signed-in data exists
+        if (
+          hadSignedInRef.current ||
+          hadSessionMarker ||
+          Boolean(current.lastAutoRestoredUid) ||
+          isDefaultStarterVault(current)
+        ) {
+          hadSignedInRef.current = false;
           const cleared = createSignedOutVault(current.profile.isDarkTheme);
           setVault(cleared);
           saveLocalVault(cleared);
@@ -227,6 +249,27 @@ export const App: React.FC = () => {
     });
     return () => unsub();
   }, [notify]);
+
+  const handleSignOut = useCallback(async () => {
+    cloudHydratedUidRef.current = null;
+    hadSignedInRef.current = false;
+    lastSyncedSigRef.current = '';
+    setCloudStatus('IDLE');
+    try {
+      localStorage.removeItem(SESSION_MARKER_KEY);
+    } catch {
+      // Ignore storage error
+    }
+    const cleared = createSignedOutVault(isDarkMode);
+    setVault(cleared);
+    saveLocalVault(cleared);
+    try {
+      await signOutBrowser();
+      notify('Signed out. Local workspace cleared.');
+    } catch (err) {
+      notify((err as Error)?.message || 'Signed out locally.');
+    }
+  }, [isDarkMode, notify]);
 
   // Debounced automatic Cloud Backup whenever authenticated user edits their vault
   const currentSig = useMemo(() => computeCloudVaultSignature(vault), [vault]);
@@ -432,6 +475,7 @@ export const App: React.FC = () => {
             vault={vault}
             onUpdateVault={updateVault}
             onNotify={notify}
+            onSignOut={handleSignOut}
           />
         )}
       </main>
