@@ -60,6 +60,7 @@ export const App: React.FC = () => {
   const [toast, setToast] = useState<string>('');
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [cloudStatus, setCloudStatus] = useState<'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR'>('IDLE');
+  const [logoFailed, setLogoFailed] = useState<boolean>(false);
 
   const cloudHydratedUidRef = useRef<string | null>(null);
   const hadSignedInRef = useRef<boolean>(false);
@@ -343,15 +344,16 @@ export const App: React.FC = () => {
       <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg px-4 py-2.5 mb-4 flex items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-md overflow-hidden border border-[#E5E7EB] shrink-0 bg-[#1E3A8A] flex items-center justify-center shadow-xs">
-            <img
-              src="/app_logo.jpg"
-              alt="AURA Logo"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-            <span className="font-mono font-bold text-xs text-[#FFFFFF] select-none">AU</span>
+            {!logoFailed ? (
+              <img
+                src="/app_logo.jpg"
+                alt="AURA Logo"
+                className="w-full h-full object-cover"
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <span className="font-mono font-bold text-xs text-[#FFFFFF] select-none">AU</span>
+            )}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">

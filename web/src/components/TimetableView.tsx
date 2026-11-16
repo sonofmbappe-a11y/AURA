@@ -368,8 +368,9 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               )}
             </div>
 
-            {/* Timeline Bar Track */}
-            <div className="relative h-12 bg-[#F3F4F6] rounded-md border border-[#E5E7EB] overflow-hidden">
+            {/* Timeline Bar Track (Horizontally scrollable on mobile to prevent overlap) */}
+            <div className="overflow-x-auto no-scrollbar pb-1">
+              <div className="relative min-w-[540px] h-12 bg-[#F3F4F6] rounded-md border border-[#E5E7EB] overflow-hidden">
               {/* Hour Grid Markers */}
               {[8, 10, 12, 14, 16, 18, 20].map((hour) => {
                 const pct = ((hour * 60 - 480) / 720) * 100;
@@ -435,6 +436,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               )}
             </div>
           </div>
+        </div>
 
           {dayLectures.length === 0 ? (
             <div className="aura-glass rounded-lg p-8 text-center space-y-1.5">
