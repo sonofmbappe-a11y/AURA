@@ -422,7 +422,7 @@ export const App: React.FC = () => {
         onNotify={notify}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full flex flex-col md:flex-row gap-5 px-3 sm:px-5 lg:px-8 pt-3 md:pt-5 pb-24 md:pb-8">
+      <div className="w-full min-h-dvh flex flex-col md:flex-row gap-4 lg:gap-5 px-3 sm:px-4 md:px-5 lg:px-6 xl:px-8 pt-3 md:pt-4 pb-24 md:pb-6">
         {/* Mobile & Tablet Compact Header (Hidden on Desktop where Sidebar owns branding) */}
         <header className="md:hidden sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 aura-glass rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -483,7 +483,7 @@ export const App: React.FC = () => {
         </header>
 
         {/* Desktop Persistent Left Studio Sidebar */}
-        <aside className="hidden md:flex md:flex-col w-60 lg:w-64 shrink-0 sticky top-5 h-[calc(100dvh-2.5rem)] aura-glass rounded-2xl p-4 justify-between gap-4">
+        <aside className="hidden md:flex md:flex-col w-60 lg:w-64 xl:w-72 shrink-0 sticky top-4 lg:top-5 h-[calc(100dvh-2rem)] lg:h-[calc(100dvh-2.5rem)] aura-glass rounded-2xl p-4 justify-between gap-4">
           <div className="space-y-5 min-h-0 flex flex-col">
             {/* Brand Header */}
             <div className="flex items-center gap-3 px-1">

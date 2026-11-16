@@ -863,7 +863,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
       {/* SUBTAB 3: QUIZ SIMULATOR */}
       {subTab === 'QUIZ_SIM' && (
-        <div className="aura-glass rounded-2xl p-5 sm:p-7 space-y-5 max-w-3xl mx-auto">
+        <div className="aura-glass rounded-2xl p-5 sm:p-7 space-y-5 w-full">
           <div className="flex items-center justify-between pb-3 border-b border-[#E4E0D8]">
             <div>
               <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#1D3B8B] flex items-center gap-1.5">
@@ -1183,7 +1183,7 @@ export const StudyHubView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
       {/* SUBTAB 5: LOCAL SLIDE PARSER */}
       {subTab === 'SLIDE_PARSER' && (
-        <div className="aura-glass rounded-2xl p-5 sm:p-7 space-y-4 max-w-4xl mx-auto">
+        <div className="aura-glass rounded-2xl p-5 sm:p-7 space-y-4 w-full">
           <div className="space-y-1 pb-3 border-b border-[#E4E0D8]">
             <span className="font-mono text-xs font-bold text-[#1D3B8B] uppercase tracking-wider">
               Lecture Slide &amp; Outline Extractor
