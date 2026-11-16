@@ -1,14 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Activity,
+  Flame,
   Headphones,
   Pause,
   Play,
   RotateCcw,
   Sliders,
+  Sparkles,
   Volume2,
   VolumeX,
+  Wind,
   Plus,
-  Flame
+  X
 } from 'lucide-react';
 import type { AuraLocalVault } from '../types';
 import { uidGen } from '../storage';
@@ -19,7 +23,7 @@ interface Props {
   onUpdateVault: (updater: (prev: AuraLocalVault) => AuraLocalVault) => void;
 }
 
-type SoundMode = 'OFF' | 'BROWN' | 'RAIN' | 'GAMMA';
+type SoundMode = 'OFF' | 'RAIN' | 'LIBRARY' | 'COFFEE' | 'BROWN' | 'GAMMA';
 
 export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   const [totalSeconds, setTotalSeconds] = useState(25 * 60);
@@ -34,9 +38,36 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
   const [distractionInput, setDistractionInput] = useState('');
 
+  // Audio Soundscape Synthesis State
   const [soundMode, setSoundMode] = useState<SoundMode>('OFF');
+  const [soundVolume, setSoundVolume] = useState<number>(0.65);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
   const cleanupSoundRef = useRef<(() => void) | null>(null);
+
+  // Box Breathing Reset Modal State
+  const [showBreathingModal, setShowBreathingModal] = useState(false);
+  const [breathingPhase, setBreathingPhase] = useState<'INHALE' | 'HOLD' | 'EXHALE'>('INHALE');
+  const [breathingSecondsLeft, setBreathingSecondsLeft] = useState(4);
+
+  // Breathing cycle timer
+  useEffect(() => {
+    if (!showBreathingModal) return;
+    const interval = window.setInterval(() => {
+      setBreathingSecondsLeft((prev) => {
+        if (prev <= 1) {
+          setBreathingPhase((cur) => {
+            if (cur === 'INHALE') return 'HOLD';
+            if (cur === 'HOLD') return 'EXHALE';
+            return 'INHALE';
+          });
+          return breathingPhase === 'INHALE' ? 7 : breathingPhase === 'HOLD' ? 8 : 4;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [showBreathingModal, breathingPhase]);
 
   useEffect(() => {
     if (!isRunning) {
@@ -81,6 +112,22 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       cleanupSoundRef.current();
       cleanupSoundRef.current = null;
     }
+    gainNodeRef.current = null;
+  };
+
+  const handleVolumeChange = (newVol: number) => {
+    setSoundVolume(newVol);
+    if (gainNodeRef.current && audioCtxRef.current) {
+      const mult =
+        soundMode === 'GAMMA'
+          ? 0.04
+          : soundMode === 'BROWN'
+          ? 0.1
+          : soundMode === 'LIBRARY'
+          ? 0.08
+          : 0.06;
+      gainNodeRef.current.gain.setValueAtTime(newVol * mult, audioCtxRef.current.currentTime);
+    }
   };
 
   const applySoundscape = (mode: SoundMode) => {
@@ -105,7 +152,8 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
       const right = ctx.createOscillator();
       const merger = ctx.createChannelMerger(2);
       const gain = ctx.createGain();
-      gain.gain.value = 0.04;
+      gain.gain.value = soundVolume * 0.04;
+      gainNodeRef.current = gain;
       left.frequency.value = 200;
       right.frequency.value = 240;
       left.connect(merger, 0, 0);
@@ -132,10 +180,14 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     let lastOut = 0;
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
-      if (mode === 'BROWN') {
+      if (mode === 'BROWN' || mode === 'LIBRARY') {
         output[i] = (lastOut + 0.02 * white) / 1.02;
         lastOut = output[i];
         output[i] *= 3.2;
+      } else if (mode === 'COFFEE') {
+        output[i] = (lastOut + 0.05 * white) / 1.05;
+        lastOut = output[i];
+        output[i] = output[i] * 2.2 + white * 0.15;
       } else {
         output[i] = white * 0.5;
       }
@@ -146,11 +198,16 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     noise.loop = true;
 
     const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = mode === 'RAIN' ? 950 : 380;
+    filter.type = mode === 'LIBRARY' ? 'bandpass' : 'lowpass';
+    filter.frequency.value =
+      mode === 'RAIN' ? 950 : mode === 'LIBRARY' ? 240 : mode === 'COFFEE' ? 620 : 380;
+    if (mode === 'LIBRARY') filter.Q.value = 1.2;
 
     const gain = ctx.createGain();
-    gain.gain.value = mode === 'RAIN' ? 0.06 : 0.09;
+    const mult =
+      mode === 'BROWN' ? 0.1 : mode === 'LIBRARY' ? 0.08 : mode === 'COFFEE' ? 0.07 : 0.06;
+    gain.gain.value = soundVolume * mult;
+    gainNodeRef.current = gain;
 
     noise.connect(filter);
     filter.connect(gain);
@@ -210,6 +267,57 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     if (totalLoggedMins >= 60) return 'Focused Scholar';
     return 'Initiated Scholar';
   }, [totalLoggedMins]);
+
+  // Academic Energy & Burnout Sentinel Computations
+  const todayFocusMinutes = useMemo(() => {
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    return vault.focusSessions
+      .filter((s) => s.completedAt >= todayStart)
+      .reduce((acc, s) => acc + s.durationMinutes, 0);
+  }, [vault.focusSessions]);
+
+  const upcomingDueIn48h = useMemo(() => {
+    const now = Date.now();
+    const in48h = now + 48 * 3600 * 1000;
+    return vault.assessments.filter(
+      (a) => a.status !== 'COMPLETED' && a.dueEpochMillis >= now && a.dueEpochMillis <= in48h
+    ).length;
+  }, [vault.assessments]);
+
+  const energyScore = useMemo(() => {
+    let score = 88;
+    if (todayFocusMinutes > 240) score -= Math.round((todayFocusMinutes - 240) / 10);
+    if (upcomingDueIn48h > 1) score -= upcomingDueIn48h * 5;
+    return Math.max(15, Math.min(100, score));
+  }, [todayFocusMinutes, upcomingDueIn48h]);
+
+  const sentinelStatus = useMemo(() => {
+    if (energyScore >= 75) {
+      return {
+        label: 'OPTIMAL FLOW',
+        color: '#059669',
+        bg: '#ECFDF5',
+        border: '#A7F3D0',
+        advice: 'Cognitive faculties are sharp. Prime time for deep problem-solving and rigorous exam revision.'
+      };
+    }
+    if (energyScore >= 50) {
+      return {
+        label: 'MODERATE COGNITIVE LOAD',
+        color: '#D97706',
+        bg: '#FFFBEB',
+        border: '#FDE68A',
+        advice: 'Pacing well. Consider taking a 5-minute hydration stretch before your next study block.'
+      };
+    }
+    return {
+      label: 'FATIGUE RISK · BREAK RECOMMENDED',
+      color: '#DC2626',
+      bg: '#FEF2F2',
+      border: '#FECACA',
+      advice: 'Cognitive saturation reached. 4-7-8 Academic Reset breathing recommended to lower cortical fatigue.'
+    };
+  }, [energyScore]);
 
   const addDistraction = () => {
     const text = distractionInput.trim();
@@ -361,21 +469,47 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
       {/* Acoustic Focus Soundscapes */}
       <div className="aura-glass rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
             <Headphones className="w-4 h-4 text-[#1E3A8A]" /> Acoustic Focus Synthesis
+            {soundMode !== 'OFF' && (
+              <span className="flex items-center gap-0.5 ml-1">
+                <span className="w-1 h-3 bg-[#1E3A8A] rounded-full animate-pulse" />
+                <span className="w-1 h-4 bg-[#1E3A8A] rounded-full animate-bounce" />
+                <span className="w-1 h-2 bg-[#1E3A8A] rounded-full animate-pulse" />
+              </span>
+            )}
           </div>
-          {soundMode !== 'OFF' ? (
-            <Volume2 className="w-4 h-4 text-[#1E3A8A]" />
-          ) : (
-            <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
-          )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
+              <Volume2 className="w-3.5 h-3.5" />
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.05"
+                value={soundVolume}
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                className="w-16 h-1 bg-[#E5E7EB] rounded-lg accent-[#1E3A8A] cursor-pointer"
+                title={`Volume: ${Math.round(soundVolume * 100)}%`}
+              />
+              <span className="font-mono text-[10px] w-7">{Math.round(soundVolume * 100)}%</span>
+            </div>
+            {soundMode !== 'OFF' ? (
+              <Volume2 className="w-4 h-4 text-[#1E3A8A]" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
+            )}
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {(
             [
               ['OFF', 'Silent'],
-              ['RAIN', 'Soft Rain'],
+              ['RAIN', 'Quad Rain'],
+              ['LIBRARY', 'Old Library'],
+              ['COFFEE', 'Campus Cafe'],
               ['BROWN', 'Brown Noise'],
               ['GAMMA', '40Hz Gamma']
             ] as const
@@ -383,7 +517,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             <button
               key={mode}
               onClick={() => applySoundscape(mode)}
-              className={`py-2 px-3 rounded-md text-xs font-semibold border transition-colors duration-150 ${
+              className={`py-2 px-2.5 rounded-md text-xs font-semibold border transition-colors duration-150 ${
                 soundMode === mode
                   ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
                   : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
@@ -392,6 +526,82 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               {label}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Academic Burnout Sentinel & Energy Meter Card */}
+      <div className="aura-glass rounded-lg p-4 sm:p-5 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-[#1E3A8A]" />
+            <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
+              Academic Burnout Sentinel & Cognitive Meter
+            </h3>
+          </div>
+          <span
+            className="px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider border"
+            style={{
+              backgroundColor: sentinelStatus.bg,
+              borderColor: sentinelStatus.border,
+              color: sentinelStatus.color
+            }}
+          >
+            {sentinelStatus.label}
+          </span>
+        </div>
+
+        {/* Cognitive Energy Meter Gauge */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-[#4B5563]">Cognitive Energy Reserve</span>
+            <span className="font-mono font-bold" style={{ color: sentinelStatus.color }}>
+              {energyScore}%
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-[#E5E7EB] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${energyScore}%`,
+                backgroundColor: sentinelStatus.color
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Academic Vitals Grid */}
+        <div className="grid grid-cols-3 gap-2.5 pt-1">
+          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
+            <div className="font-mono font-bold text-sm text-[#111827]">{todayFocusMinutes}m</div>
+            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">Today's Focus</div>
+          </div>
+          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
+            <div className="font-mono font-bold text-sm text-[#111827]">{upcomingDueIn48h}</div>
+            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">48h Deadlines</div>
+          </div>
+          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
+            <div className="font-mono font-bold text-sm text-[#1E3A8A]">{scholarStreakDays}d</div>
+            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">Study Streak</div>
+          </div>
+        </div>
+
+        {/* Sentinel Physiological Guidance & Action */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#E5E7EB]">
+          <p className="text-xs text-[#6B7280] flex-1 min-w-[220px]">
+            {sentinelStatus.advice}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setBreathingPhase('INHALE');
+              setBreathingSecondsLeft(4);
+              setShowBreathingModal(true);
+            }}
+            className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150 shrink-0"
+          >
+            <Wind className="w-3.5 h-3.5 text-[#1E3A8A]" />
+            4-7-8 Academic Reset
+          </button>
         </div>
       </div>
 
@@ -494,6 +704,73 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             className="flex-1 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold"
           >
             Apply Duration
+          </button>
+        </div>
+      </AuraModal>
+
+      {/* 4-7-8 Academic Reset Breathing Modal */}
+      <AuraModal
+        open={showBreathingModal}
+        onClose={() => setShowBreathingModal(false)}
+        badge="Autonomic Regulation"
+        title="4-7-8 Academic Reset"
+        subtitle="Physiological reset technique to clear cognitive fog, lower cortisol, and restore deep focus."
+        accentColor="sky"
+        maxWidthClass="max-w-md"
+      >
+        <div className="py-6 flex flex-col items-center justify-center space-y-5">
+          <div className="relative w-44 h-44 flex items-center justify-center">
+            {/* Visual pulsing breath guide */}
+            <div
+              className={`absolute rounded-full transition-all duration-1000 border-2 ${
+                breathingPhase === 'INHALE'
+                  ? 'w-40 h-40 bg-[#EFF6FF] border-[#1E3A8A]'
+                  : breathingPhase === 'HOLD'
+                  ? 'w-44 h-44 bg-[#FEF3C7] border-[#D97706]'
+                  : 'w-24 h-24 bg-[#ECFDF5] border-[#059669]'
+              }`}
+            />
+            <div className="relative z-10 text-center">
+              <div
+                className="font-mono text-3xl font-extrabold"
+                style={{
+                  color:
+                    breathingPhase === 'INHALE'
+                      ? '#1E3A8A'
+                      : breathingPhase === 'HOLD'
+                      ? '#D97706'
+                      : '#059669'
+                }}
+              >
+                {breathingSecondsLeft}s
+              </div>
+              <div className="font-mono text-xs uppercase tracking-widest font-bold text-[#111827] mt-1">
+                {breathingPhase === 'INHALE'
+                  ? 'Inhale (Nose)'
+                  : breathingPhase === 'HOLD'
+                  ? 'Hold Breath'
+                  : 'Exhale (Mouth)'}
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center space-y-1 max-w-xs">
+            <p className="text-xs text-[#4B5563]">
+              {breathingPhase === 'INHALE' && 'Inhale quietly through your nose for 4 seconds.'}
+              {breathingPhase === 'HOLD' && 'Hold your breath gently for 7 seconds.'}
+              {breathingPhase === 'EXHALE' && 'Exhale completely through your mouth with a steady release for 8 seconds.'}
+            </p>
+            <p className="text-[10px] font-mono text-[#9CA3AF]">
+              Stimulates the vagus nerve to reduce test anxiety and restore clarity within 2–3 cycles.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowBreathingModal(false)}
+            className="px-6 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"
+          >
+            End Breathing Exercise
           </button>
         </div>
       </AuraModal>

@@ -4,8 +4,10 @@ import {
   Award,
   BarChart3,
   Calculator,
+  Camera,
   CloudDownload,
   CloudUpload,
+  Image as ImageIcon,
   LogIn,
   LogOut,
   Moon,
@@ -14,6 +16,7 @@ import {
   Smartphone,
   Target,
   Trash2,
+  Upload,
   UserCircle
 } from 'lucide-react';
 import {
@@ -47,6 +50,44 @@ const GRADE_SCALE: Record<string, number> = {
   F: 0.0
 };
 
+function compressImageToDataUrl(file: File, maxDim = 240, quality = 0.82): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > maxDim) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          }
+        } else {
+          if (h > maxDim) {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export const ToolsAndProfileView: React.FC<Props> = ({
   user,
   vault,
@@ -54,6 +95,7 @@ export const ToolsAndProfileView: React.FC<Props> = ({
   onNotify,
   onSignOut
 }) => {
+  const avatarFileRef = React.useRef<HTMLInputElement>(null);
   const [busySync, setBusySync] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -226,18 +268,27 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       {/* Cross-Platform Cloud Backup & Restore Card */}
       <div className="aura-glass rounded-lg p-4 space-y-3.5">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider">
-              Cross-Platform Cloud Vault
-            </span>
-            <h3 className="font-bold text-base text-[#111827] mt-1.5">
-              {user ? user.displayName || user.email : 'Sign In to Sync Timetable & Profile'}
-            </h3>
-            {user && (
-              <div className="font-mono text-[11px] text-[#6B7280] mt-0.5">
-                {user.email} · Last Sync: {lastSyncedLabel}
-              </div>
-            )}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#BFDBFE] bg-[#EFF6FF] shrink-0 shadow-xs">
+              {vault.profile.photoUrl ? (
+                <img src={vault.profile.photoUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <img src="/app_logo.jpg" alt="AURA Logo" className="w-full h-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-semibold uppercase tracking-wider">
+                Cross-Platform Cloud Vault
+              </span>
+              <h3 className="font-bold text-base text-[#111827] mt-1 truncate">
+                {user ? user.displayName || user.email : 'Sign In to Sync Timetable & Profile'}
+              </h3>
+              {user && (
+                <div className="font-mono text-[11px] text-[#6B7280] mt-0.5 truncate">
+                  {user.email} · Last Sync: {lastSyncedLabel}
+                </div>
+              )}
+            </div>
           </div>
           {user && (
             <button
@@ -355,12 +406,111 @@ export const ToolsAndProfileView: React.FC<Props> = ({
       </div>
 
       {/* Student Profile */}
-      <div className="aura-glass rounded-lg p-4 space-y-3">
+      <div className="aura-glass rounded-lg p-4 space-y-3.5">
         <div className="flex items-center justify-between">
           <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#1E3A8A] flex items-center gap-1.5">
             <UserCircle className="w-4 h-4" /> Scholar Profile
           </span>
           <span className="font-mono text-[11px] text-[#6B7280]">{vault.profile.academicLevel}</span>
+        </div>
+
+        {/* Profile Avatar & Photo Uploader */}
+        <div className="p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB] flex flex-col sm:flex-row items-center gap-3.5">
+          <div
+            className="relative group cursor-pointer shrink-0"
+            onClick={() => avatarFileRef.current?.click()}
+            title="Click to Upload Profile Photo"
+          >
+            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#1E3A8A] bg-[#EFF6FF] flex items-center justify-center shadow-xs">
+              {vault.profile.photoUrl ? (
+                <img
+                  src={vault.profile.photoUrl}
+                  alt={vault.profile.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src="/app_logo.jpg"
+                  alt="AURA Emblem"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
+            </div>
+            <div className="absolute inset-0 rounded-full bg-[#111827]/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[#FFFFFF]">
+              <Camera className="w-5 h-5" />
+            </div>
+            <input
+              type="file"
+              ref={avatarFileRef}
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  const compressed = await compressImageToDataUrl(file);
+                  onUpdateVault((prev) => ({
+                    ...prev,
+                    profile: { ...prev.profile, photoUrl: compressed }
+                  }));
+                  onNotify('Profile picture updated and ready to sync!');
+                } catch {
+                  onNotify('Could not load image.');
+                }
+              }}
+            />
+          </div>
+
+          <div className="flex-1 text-center sm:text-left min-w-0">
+            <h4 className="font-bold text-sm text-[#111827] truncate">
+              {vault.profile.name || 'Scholar Profile'}
+            </h4>
+            <p className="text-xs text-[#6B7280] truncate">
+              {vault.profile.email || user?.email || 'Set your profile picture and campus details.'}
+            </p>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => avatarFileRef.current?.click()}
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#D1D5DB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] inline-flex items-center gap-1.5 transition-colors duration-150"
+              >
+                <Camera className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                <span>Upload Picture</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdateVault((prev) => ({
+                    ...prev,
+                    profile: { ...prev.profile, photoUrl: '/app_logo.jpg' }
+                  }));
+                  onNotify('Set AURA app emblem as profile picture.');
+                }}
+                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-xs font-medium text-[#4B5563] inline-flex items-center gap-1.5 transition-colors duration-150"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-[#059669]" />
+                <span>Use App Emblem</span>
+              </button>
+              {vault.profile.photoUrl && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateVault((prev) => ({
+                      ...prev,
+                      profile: { ...prev.profile, photoUrl: '' }
+                    }));
+                    onNotify('Removed custom profile picture.');
+                  }}
+                  className="px-2 py-1 rounded-md text-xs font-medium text-[#DC2626] hover:bg-[#FEF2F2] transition-colors duration-150"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

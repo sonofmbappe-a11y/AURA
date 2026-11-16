@@ -297,7 +297,7 @@ export const App: React.FC = () => {
       } catch {
         setCloudStatus('ERROR');
       }
-    }, 2000);
+    }, 1000);
 
     return () => window.clearTimeout(timer);
   }, [user, currentSig]);
@@ -322,7 +322,7 @@ export const App: React.FC = () => {
       {/* Floating Z-[100] Editorial Toast */}
       {toast && (
         <div className="fixed top-3 left-3 right-3 max-w-lg mx-auto z-[100] pointer-events-auto">
-          <div className="bg-[#FFFFFF] rounded-lg px-3.5 py-2.5 border border-[#1E3A8A] flex items-center justify-between gap-3">
+          <div className="bg-[#FFFFFF] rounded-lg px-3.5 py-2.5 border border-[#1E3A8A] flex items-center justify-between gap-3 shadow-md">
             <div className="flex items-center gap-2 min-w-0">
               <CheckCircle2 className="w-4 h-4 text-[#1E3A8A] shrink-0" />
               <span className="text-xs font-medium text-[#111827] leading-snug">{toast}</span>
@@ -340,10 +340,18 @@ export const App: React.FC = () => {
       )}
 
       {/* Sticky Editorial Top Bar */}
-      <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg px-4 py-2.5 mb-4 flex items-center justify-between gap-3">
+      <header className="sticky top-[max(0.5rem,env(safe-area-inset-top))] z-30 bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg px-4 py-2.5 mb-4 flex items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-md bg-[#1E3A8A] text-[#FFFFFF] flex items-center justify-center font-mono font-bold text-xs shrink-0">
-            AU
+          <div className="w-8 h-8 rounded-md overflow-hidden border border-[#E5E7EB] shrink-0 bg-[#1E3A8A] flex items-center justify-center shadow-xs">
+            <img
+              src="/app_logo.jpg"
+              alt="AURA Logo"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <span className="font-mono font-bold text-xs text-[#FFFFFF] select-none">AU</span>
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -366,7 +374,7 @@ export const App: React.FC = () => {
               <RefreshCw
                 className={`w-3 h-3 ${
                   cloudStatus === 'SYNCING'
-                    ? 'text-[#1E3A8A]'
+                    ? 'text-[#1E3A8A] animate-spin'
                     : cloudStatus === 'ERROR'
                     ? 'text-[#DC2626]'
                     : 'text-[#059669]'
@@ -407,9 +415,17 @@ export const App: React.FC = () => {
           >
             {user ? (
               <>
-                <span className="w-5 h-5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-bold flex items-center justify-center">
-                  {userInitial}
-                </span>
+                {vault.profile.photoUrl ? (
+                  <img
+                    src={vault.profile.photoUrl}
+                    alt={vault.profile.name}
+                    className="w-5 h-5 rounded-full object-cover border border-[#1E3A8A]"
+                  />
+                ) : (
+                  <span className="w-5 h-5 rounded bg-[#EFF6FF] text-[#1E3A8A] border border-[#BFDBFE] font-mono text-[10px] font-bold flex items-center justify-center">
+                    {userInitial}
+                  </span>
+                )}
                 <span className="hidden xs:inline truncate max-w-[120px]">
                   {user.displayName || user.email?.split('@')[0] || 'Account'}
                 </span>

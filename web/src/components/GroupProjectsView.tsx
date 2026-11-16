@@ -20,6 +20,7 @@ import {
 import {
   BarChart3,
   BookOpen,
+  Camera,
   Check,
   CheckCircle2,
   Clock,
@@ -343,6 +344,7 @@ export const GroupProjectsView: React.FC<Props> = ({
         objective: data.objective || data.groupTarget || '',
         groupTarget: data.groupTarget || 'Grade A',
         avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
+        avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
         avatarColorHex: data.avatarColorHex || '#06B6D4',
         creatorUid: data.creatorUid || '',
         creatorEmail: data.creatorEmail || '',
@@ -501,6 +503,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               objective: data.objective || data.groupTarget || '',
               groupTarget: data.groupTarget || 'Grade A',
               avatarEmoji: data.avatarEmoji || '👥',
+              avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
               avatarColorHex: data.avatarColorHex || '#10B981',
               creatorUid: data.creatorUid || '',
               creatorEmail: data.creatorEmail || '',
@@ -785,6 +788,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                 objective: d.objective || '',
                 groupTarget: d.groupTarget || 'Grade A',
                 avatarEmoji: d.avatarEmoji || '👥',
+                avatarEmojiOrUrl: d.avatarEmojiOrUrl || d.avatarEmoji || '',
                 avatarColorHex: d.avatarColorHex || '#10B981',
                 creatorUid: d.creatorUid || '',
                 creatorEmail: d.creatorEmail || '',
@@ -820,6 +824,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                 objective: d.objective || '',
                 groupTarget: d.groupTarget || 'Grade A',
                 avatarEmoji: d.avatarEmoji || '👥',
+                avatarEmojiOrUrl: d.avatarEmojiOrUrl || d.avatarEmoji || '',
                 avatarColorHex: d.avatarColorHex || '#10B981',
                 creatorUid: d.creatorUid || '',
                 creatorEmail: d.creatorEmail || '',
@@ -1866,6 +1871,7 @@ export const GroupProjectsView: React.FC<Props> = ({
               creatorUid: data.creatorUid || '',
               avatarColorHex: data.avatarColorHex || '#06B6D4',
               avatarEmoji: data.avatarEmoji || data.courseCode?.slice(0, 3) || '👥',
+              avatarEmojiOrUrl: data.avatarEmojiOrUrl || data.avatarEmoji || '',
               memberEmails: Array.isArray(data.memberEmails) ? data.memberEmails : [],
               adminEmails: Array.isArray(data.adminEmails) ? data.adminEmails : [],
               joinCode: data.joinCode || d.id.slice(0, 6).toUpperCase(),
@@ -2116,14 +2122,20 @@ export const GroupProjectsView: React.FC<Props> = ({
                   >
                     <div className="min-w-0 flex items-center gap-2.5">
                       <div
-                        className="w-8 h-8 rounded-md flex items-center justify-center font-mono font-bold text-xs shrink-0 border"
+                        className="w-8 h-8 rounded-md flex items-center justify-center font-mono font-bold text-xs shrink-0 border overflow-hidden"
                         style={{
                           backgroundColor: `${accent}12`,
                           borderColor: `${accent}45`,
                           color: accent
                         }}
                       >
-                        {p.courseCode.slice(0, 3)}
+                        {p.avatarEmojiOrUrl && (p.avatarEmojiOrUrl.startsWith('data:') || p.avatarEmojiOrUrl.startsWith('http') || p.avatarEmojiOrUrl.startsWith('/')) ? (
+                          <img src={p.avatarEmojiOrUrl} alt={p.teamName} className="w-full h-full object-cover" />
+                        ) : p.avatarEmoji && p.avatarEmoji.length <= 4 ? (
+                          <span>{p.avatarEmoji}</span>
+                        ) : (
+                          p.courseCode.slice(0, 3)
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -2176,14 +2188,20 @@ export const GroupProjectsView: React.FC<Props> = ({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="w-11 h-11 rounded-lg flex items-center justify-center text-xs font-mono font-bold border shrink-0"
+                    className="w-11 h-11 rounded-lg flex items-center justify-center text-xs font-mono font-bold border shrink-0 overflow-hidden"
                     style={{
                       backgroundColor: `${activeProject.avatarColorHex || '#1E3A8A'}12`,
                       borderColor: activeProject.avatarColorHex || '#1E3A8A',
                       color: activeProject.avatarColorHex || '#1E3A8A'
                     }}
                   >
-                    {activeProject.courseCode.slice(0, 3)}
+                    {activeProject.avatarEmojiOrUrl && (activeProject.avatarEmojiOrUrl.startsWith('data:') || activeProject.avatarEmojiOrUrl.startsWith('http') || activeProject.avatarEmojiOrUrl.startsWith('/')) ? (
+                      <img src={activeProject.avatarEmojiOrUrl} alt={activeProject.teamName} className="w-full h-full object-cover" />
+                    ) : activeProject.avatarEmoji && activeProject.avatarEmoji.length <= 4 ? (
+                      <span className="text-base">{activeProject.avatarEmoji}</span>
+                    ) : (
+                      activeProject.courseCode.slice(0, 3)
+                    )}
                   </div>
                   <div className="min-w-0">
                     <h3 className="font-bold text-[#111827] text-base leading-tight truncate">
@@ -3682,6 +3700,7 @@ export const GroupProjectsView: React.FC<Props> = ({
                     projectTitle: updated.projectTitle,
                     groupTarget: updated.groupTarget,
                     avatarEmoji: updated.avatarEmoji,
+                    avatarEmojiOrUrl: updated.avatarEmojiOrUrl || updated.avatarEmoji || '',
                     avatarColorHex: updated.avatarColorHex,
                     updatedAt: serverTimestamp()
                   })
@@ -4397,6 +4416,44 @@ const CreateTeamModal: React.FC<{
   );
 };
 
+function compressGroupPhoto(file: File, maxDim = 200, quality = 0.8): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > maxDim) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          }
+        } else {
+          if (h > maxDim) {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 // Modal for Admin Group Settings
 const GroupSettingsModal: React.FC<{
   project: WebGroupProject;
@@ -4407,6 +4464,30 @@ const GroupSettingsModal: React.FC<{
   const [title, setTitle] = useState(project.projectTitle);
   const [target, setTarget] = useState(project.groupTarget);
   const [colorHex, setColorHex] = useState(project.avatarColorHex || '#1E3A8A');
+  const [avatarEmojiOrUrl, setAvatarEmojiOrUrl] = useState(
+    project.avatarEmojiOrUrl || project.avatarEmoji || ''
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const dataUrl = await compressGroupPhoto(file, 200, 0.8);
+      setAvatarEmojiOrUrl(dataUrl);
+    } catch {
+      // ignore
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const isImageAvatar =
+    avatarEmojiOrUrl.startsWith('data:') ||
+    avatarEmojiOrUrl.startsWith('http') ||
+    avatarEmojiOrUrl.startsWith('/');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/45">
@@ -4422,7 +4503,71 @@ const GroupSettingsModal: React.FC<{
           </button>
         </div>
 
-        <div className="space-y-3 text-xs">
+        <div className="space-y-3.5 text-xs">
+          {/* Group Picture / Emblem Upload */}
+          <div>
+            <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px] block mb-1.5">
+              Team Profile Picture & Emblem
+            </label>
+            <input
+              type="file"
+              ref={photoInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div
+                className="w-14 h-14 rounded-lg border-2 border-[#E5E7EB] overflow-hidden flex items-center justify-center bg-[#FFFFFF] shrink-0 font-mono font-bold text-base"
+                style={{ color: colorHex }}
+              >
+                {isImageAvatar ? (
+                  <img
+                    src={avatarEmojiOrUrl}
+                    alt={teamName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : avatarEmojiOrUrl && avatarEmojiOrUrl.length <= 4 ? (
+                  <span>{avatarEmojiOrUrl}</span>
+                ) : (
+                  <span>{project.courseCode.slice(0, 3)}</span>
+                )}
+              </div>
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="px-2.5 py-1 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-[11px] font-semibold flex items-center gap-1.5 transition-colors duration-150"
+                  >
+                    <Camera className="w-3 h-3" />
+                    {isUploading ? 'Compressing...' : 'Upload Picture'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAvatarEmojiOrUrl('/app_logo.jpg')}
+                    className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-[11px] font-semibold transition-colors duration-150"
+                  >
+                    Use App Emblem
+                  </button>
+                  {avatarEmojiOrUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarEmojiOrUrl('')}
+                      className="px-2 py-1 rounded-md text-[11px] text-[#DC2626] hover:bg-[#FEF2F2] font-semibold transition-colors duration-150"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-[#6B7280]">
+                  JPG or PNG, optimized locally and synced in real time with Android team members.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="font-semibold text-[#374151] uppercase tracking-wider text-[11px]">
               Team Name
@@ -4492,7 +4637,8 @@ const GroupSettingsModal: React.FC<{
                 teamName: teamName.trim() || project.teamName,
                 projectTitle: title.trim() || project.projectTitle,
                 groupTarget: target.trim() || project.groupTarget,
-                avatarColorHex: colorHex
+                avatarColorHex: colorHex,
+                avatarEmojiOrUrl: avatarEmojiOrUrl.trim() || project.avatarEmoji || ''
               });
             }}
             className="px-4 py-2 rounded-lg bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold transition-colors duration-150"

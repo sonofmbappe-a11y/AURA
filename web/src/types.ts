@@ -1,6 +1,7 @@
 export interface WebUserProfile {
   name: string;
   email: string;
+  photoUrl?: string;
   institution: string;
   programme: string;
   academicLevel: string;
@@ -142,6 +143,7 @@ export interface WebGroupProject {
   groupTarget: string;
   avatarEmoji: string;
   avatarColorHex: string;
+  avatarEmojiOrUrl?: string;
   creatorUid?: string;
   creatorEmail: string;
   adminEmails: string[];

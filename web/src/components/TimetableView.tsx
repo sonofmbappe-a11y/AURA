@@ -348,6 +348,94 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             })}
           </div>
 
+          {/* Live Schedule Timeline Ribbon */}
+          <div className="rounded-lg bg-[#FFFFFF] border border-[#E5E7EB] p-3 sm:p-4 space-y-2.5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-[#1E3A8A]" />
+                <span className="font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider">
+                  {DAYS.find((d) => d.num === selectedDay)?.full} Schedule Timeline (08:00 – 20:00)
+                </span>
+              </div>
+              {selectedDay === todayIso && (
+                <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#1E3A8A] font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-[#1E3A8A] animate-pulse" />
+                  <span>
+                    {String(Math.floor(nowMinutes / 60)).padStart(2, '0')}:
+                    {String(nowMinutes % 60).padStart(2, '0')} Campus Time
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Timeline Bar Track */}
+            <div className="relative h-12 bg-[#F3F4F6] rounded-md border border-[#E5E7EB] overflow-hidden">
+              {/* Hour Grid Markers */}
+              {[8, 10, 12, 14, 16, 18, 20].map((hour) => {
+                const pct = ((hour * 60 - 480) / 720) * 100;
+                return (
+                  <div
+                    key={hour}
+                    className="absolute top-0 bottom-0 border-l border-[#E5E7EB] flex flex-col justify-end pb-1 pl-1 pointer-events-none"
+                    style={{ left: `${pct}%` }}
+                  >
+                    <span className="text-[9px] font-mono text-[#9CA3AF] select-none">
+                      {hour}:00
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Class Blocks */}
+              {dayLectures.map((lec) => {
+                const sMin = parseMinutes(lec.startTime);
+                const eMin = parseMinutes(lec.endTime);
+                const left = Math.max(0, Math.min(100, ((sMin - 480) / 720) * 100));
+                const width = Math.max(3, Math.min(100 - left, ((eMin - sMin) / 720) * 100));
+                const isNow =
+                  selectedDay === todayIso && nowMinutes >= sMin && nowMinutes < eMin;
+
+                return (
+                  <div
+                    key={lec.id}
+                    onClick={() => openEditLecture(lec)}
+                    title={`${lec.courseCode} (${lec.startTime}-${lec.endTime}) @ ${lec.venue || 'TBA'}`}
+                    className={`absolute top-1 bottom-1 rounded cursor-pointer px-1.5 py-0.5 flex flex-col justify-center overflow-hidden border transition-transform duration-150 hover:scale-[1.02] shadow-xs ${
+                      isNow ? 'ring-2 ring-[#1E3A8A] ring-offset-1 z-10' : 'z-5'
+                    }`}
+                    style={{
+                      left: `${left}%`,
+                      width: `${width}%`,
+                      backgroundColor: `${lec.colorHex || '#1E3A8A'}22`,
+                      borderColor: lec.colorHex || '#1E3A8A'
+                    }}
+                  >
+                    <span
+                      className="font-mono font-bold text-[10px] leading-tight truncate"
+                      style={{ color: lec.colorHex || '#1E3A8A' }}
+                    >
+                      {lec.courseCode}
+                    </span>
+                    <span className="text-[9px] text-[#4B5563] truncate hidden sm:block">
+                      {lec.venue || lec.startTime}
+                    </span>
+                  </div>
+                );
+              })}
+
+              {/* Real-time Indicator Needle */}
+              {selectedDay === todayIso && nowMinutes >= 480 && nowMinutes <= 1200 && (
+                <div
+                  className="absolute top-0 bottom-0 z-20 pointer-events-none flex flex-col items-center"
+                  style={{ left: `${((nowMinutes - 480) / 720) * 100}%` }}
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#DC2626] -mt-1 shadow-xs" />
+                  <div className="w-[2px] h-full bg-[#DC2626]" />
+                </div>
+              )}
+            </div>
+          </div>
+
           {dayLectures.length === 0 ? (
             <div className="aura-glass rounded-lg p-8 text-center space-y-1.5">
               <Calendar className="w-7 h-7 text-[#6B7280] mx-auto" />

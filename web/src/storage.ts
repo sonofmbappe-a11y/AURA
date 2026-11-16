@@ -62,6 +62,7 @@ export function createSignedOutVault(isDarkTheme = false): AuraLocalVault {
     profile: {
       name: 'Scholar',
       email: '',
+      photoUrl: '',
       institution: 'University Campus',
       programme: 'General Studies',
       academicLevel: 'Level 300',
@@ -95,6 +96,7 @@ export function createDefaultVault(): AuraLocalVault {
     profile: {
       name: 'Scholar',
       email: '',
+      photoUrl: '',
       institution: 'University Campus',
       programme: 'BSc. Computer Science',
       academicLevel: 'Level 300',
@@ -246,6 +248,7 @@ export function loadLocalVault(): AuraLocalVault {
       profile: {
         ...def.profile,
         ...(parsed.profile || {}),
+        photoUrl: parsed.profile?.photoUrl || '',
         isDarkTheme: Boolean(parsed.profile?.isDarkTheme)
       },
       courses: Array.isArray(parsed.courses) ? parsed.courses : [],
@@ -300,6 +303,8 @@ export function computeCloudVaultSignature(v: AuraLocalVault): string {
   return JSON.stringify({
     p: [
       v.profile.name,
+      v.profile.email,
+      v.profile.photoUrl || '',
       v.profile.institution,
       v.profile.programme,
       v.profile.academicLevel,
@@ -370,8 +375,9 @@ export async function saveCloudBackupFromWeb(
     `studyGoalHoursPerWeek=${p.studyGoalHoursPerWeek}`,
     `semesterBudgetLimit=${p.semesterBudgetLimit}`,
     `currencySymbol=${p.currencySymbol}`,
-    `webPortalUrl=${webPortalOrigin}`
-  ].map((s) => s.replace(/\n/g, ' ').slice(0, 190));
+    `webPortalUrl=${webPortalOrigin}`,
+    `photoUrl=${(p.photoUrl || '').startsWith('data:') ? 'LOCAL_UPLOAD' : (p.photoUrl || '').slice(0, 300)}`
+  ].map((s) => s.replace(/\n/g, ' ').slice(0, 480));
 
   const courseRecords = vault.courses.slice(0, 50).map((c) =>
     [c.code, c.name, c.creditHours, c.lecturer, c.venue, c.colorHex]
@@ -602,6 +608,10 @@ export async function fetchAndMergeCloudBackupToWeb(
     ...current.profile,
     name: settingsMap.name || data.studentName || current.profile.name,
     email: settingsMap.email || accountEmail || current.profile.email,
+    photoUrl:
+      settingsMap.photoUrl && settingsMap.photoUrl !== 'LOCAL_UPLOAD'
+        ? settingsMap.photoUrl
+        : current.profile.photoUrl || '',
     institution: settingsMap.institution || data.institution || current.profile.institution,
     programme: settingsMap.programme || data.department || current.profile.programme,
     academicLevel: settingsMap.academicLevel || current.profile.academicLevel,
