@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="116" fill="#1D3B8B" />
-  <rect x="34" y="34" width="444" height="444" rx="92" fill="none" stroke="#F6F4EF" stroke-opacity="0.18" stroke-width="6" />
-  <path d="M126 154 C126 142 136 134 148 136 L244 156 L244 374 L144 352 C134 350 126 340 126 329 Z" fill="#F6F4EF" />
-  <path d="M386 154 C386 142 376 134 364 136 L268 156 L268 374 L368 352 C378 350 386 340 386 329 Z" fill="#E6ECFA" />
-  <line x1="158" y1="204" x2="216" y2="216" stroke="#1D3B8B" stroke-width="14" stroke-linecap="round" stroke-opacity="0.55" />
-  <line x1="158" y1="252" x2="216" y2="264" stroke="#1D3B8B" stroke-width="14" stroke-linecap="round" stroke-opacity="0.35" />
-  <line x1="354" y1="204" x2="296" y2="216" stroke="#1D3B8B" stroke-width="14" stroke-linecap="round" stroke-opacity="0.55" />
-  <line x1="354" y1="252" x2="296" y2="264" stroke="#1D3B8B" stroke-width="14" stroke-linecap="round" stroke-opacity="0.35" />
-  <circle cx="384" cy="128" r="26" fill="#10B981" stroke="#1D3B8B" stroke-width="10" />
+  <defs>
+    <clipPath id="aura-rounded">
+      <rect width="512" height="512" rx="112" />
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0B1020" />
+  <image href="/app_icon.png" width="512" height="512" clip-path="url(#aura-rounded)" preserveAspectRatio="xMidYMid slice" />
 </svg>

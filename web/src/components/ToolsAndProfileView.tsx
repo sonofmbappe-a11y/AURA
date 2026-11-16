@@ -479,14 +479,14 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 onClick={() => {
                   onUpdateVault((prev) => ({
                     ...prev,
-                    profile: { ...prev.profile, photoUrl: '/icon.svg' }
+                    profile: { ...prev.profile, photoUrl: '/app_icon.png' }
                   }));
-                  onNotify('Set AURA emblem as profile picture.');
+                  onNotify('Set official AURA emblem as profile picture.');
                 }}
-                className="px-2.5 py-1 rounded-md bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-xs font-medium text-[#4B5563] inline-flex items-center gap-1.5 transition-colors duration-150"
+                className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-xs font-medium text-[#4B5563] inline-flex items-center gap-1.5 transition-colors duration-150"
               >
                 <ImageIcon className="w-3.5 h-3.5 text-[#0F766E]" />
-                <span>Use App Emblem</span>
+                <span>Use AURA Logo</span>
               </button>
               {vault.profile.photoUrl && (
                 <button
@@ -557,12 +557,12 @@ export const ToolsAndProfileView: React.FC<Props> = ({
 
       {/* Cumulative GPA Calculator + Honors Simulator Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="aura-glass rounded-lg p-4 space-y-3">
+        <div className="aura-glass rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
-              <Calculator className="w-4 h-4 text-[#1E3A8A]" /> GPA &amp; Grade Ledger
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#141923] flex items-center gap-1.5">
+              <Calculator className="w-4 h-4 text-[#1D3B8B]" /> GPA &amp; Grade Ledger
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#EFF6FF] border border-[#BFDBFE] font-mono text-xs font-bold text-[#1E3A8A]">
+            <span className="px-2.5 py-1 rounded-md bg-[#EEF2FA] border border-[#C7D4F0] font-mono text-xs font-bold text-[#1D3B8B]">
               {gpaStats.gpa} GPA · {gpaStats.totalCredits} Cr
             </span>
           </div>
@@ -572,19 +572,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               value={gCode}
               onChange={(e) => setGCode(e.target.value)}
               placeholder="CS301"
-              className="col-span-2 px-3 py-2 rounded-md aura-input text-xs font-mono font-bold uppercase"
+              className="col-span-2 px-3 py-2 rounded-lg aura-input text-xs font-mono font-bold uppercase"
             />
             <input
               type="number"
               value={gCredits}
               onChange={(e) => setGCredits(e.target.value)}
               placeholder="Cr"
-              className="px-2 py-2 rounded-md aura-input text-xs font-mono text-center"
+              className="px-2 py-2 rounded-lg aura-input text-xs font-mono text-center"
             />
             <select
               value={gLetter}
               onChange={(e) => setGLetter(e.target.value)}
-              className="px-2 py-2 rounded-md aura-input text-xs font-mono font-bold"
+              className="px-2 py-2 rounded-lg aura-input text-xs font-mono font-bold"
             >
               {Object.keys(GRADE_SCALE).map((k) => (
                 <option key={k} value={k}>
@@ -614,16 +614,16 @@ export const ToolsAndProfileView: React.FC<Props> = ({
               }));
               setGCode('');
             }}
-            className="w-full py-2 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] hover:border-[#1E3A8A] text-xs font-semibold text-[#111827] inline-flex items-center justify-center gap-1 transition-colors duration-150"
+            className="w-full py-2.5 rounded-lg bg-[#FAF8F5] border border-[#E4E0D8] hover:border-[#1D3B8B] text-xs font-semibold text-[#141923] inline-flex items-center justify-center gap-1 transition-colors duration-150"
           >
-            <Plus className="w-3.5 h-3.5 text-[#1E3A8A]" /> Record Grade
+            <Plus className="w-3.5 h-3.5 text-[#1D3B8B]" /> Record Grade
           </button>
 
           {vault.grades.length > 0 && (
-            <div className="border border-[#E5E7EB] rounded-md divide-y divide-[#E5E7EB]">
+            <div className="border border-[#E4E0D8] rounded-xl divide-y divide-[#E4E0D8] overflow-hidden">
               {vault.grades.map((g) => (
-                <div key={g.id} className="px-3 py-2 flex items-center justify-between text-xs">
-                  <span className="font-mono text-[#111827]">
+                <div key={g.id} className="px-3.5 py-2.5 flex items-center justify-between text-xs bg-[#FAF8F5]">
+                  <span className="font-mono text-[#141923]">
                     <strong>{g.courseCode}</strong> · {g.creditHours} Cr · {g.letterGrade} ({g.gradePoint.toFixed(1)})
                   </span>
                   <button
@@ -644,19 +644,19 @@ export const ToolsAndProfileView: React.FC<Props> = ({
         </div>
 
         {/* Honors & CGPA Target Simulator */}
-        <div className="aura-glass rounded-lg p-4 space-y-3.5">
+        <div className="aura-glass rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827] flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-[#1E3A8A]" /> Honors Target Simulator
+            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#141923] flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-[#1D3B8B]" /> Honors Target Simulator
             </span>
-            <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#F3F4F6] border border-[#E5E7EB] text-[#111827] font-bold">
+            <span className="font-mono text-xs px-2.5 py-1 rounded-md bg-[#EFECE6] border border-[#E4E0D8] text-[#141923] font-bold">
               Target: {targetHonorsGpa.toFixed(2)}
             </span>
           </div>
 
           <div className="space-y-3">
             <div>
-              <label className="font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+              <label className="font-mono text-[10px] font-semibold text-[#646B78] uppercase">
                 Target Cumulative GPA
               </label>
               <div className="grid grid-cols-4 gap-1.5 mt-1">
@@ -665,10 +665,10 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                     key={g}
                     type="button"
                     onClick={() => setTargetHonorsGpa(g)}
-                    className={`py-1.5 rounded-md font-mono text-xs font-semibold transition-colors duration-150 border ${
+                    className={`py-1.5 rounded-lg font-mono text-xs font-semibold transition-colors duration-150 border ${
                       targetHonorsGpa === g
-                        ? 'bg-[#1E3A8A] border-[#1E3A8A] text-[#FFFFFF]'
-                        : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF]'
+                        ? 'bg-[#1D3B8B] border-[#1D3B8B] text-[#FFFFFF]'
+                        : 'bg-[#FFFFFF] border-[#E4E0D8] text-[#4B5563] hover:border-[#9CA3AF]'
                     }`}
                   >
                     {g.toFixed(2)}
@@ -678,9 +678,9 @@ export const ToolsAndProfileView: React.FC<Props> = ({
             </div>
 
             <div>
-              <div className="flex items-center justify-between font-mono text-[10px] font-semibold text-[#6B7280] uppercase">
+              <div className="flex items-center justify-between font-mono text-[10px] font-semibold text-[#646B78] uppercase">
                 <span>Remaining Credits</span>
-                <span className="text-[#111827]">{remainingCredits} Cr</span>
+                <span className="text-[#141923]">{remainingCredits} Cr</span>
               </div>
               <input
                 type="range"
@@ -689,20 +689,20 @@ export const ToolsAndProfileView: React.FC<Props> = ({
                 step="3"
                 value={remainingCredits}
                 onChange={(e) => setRemainingCredits(Number(e.target.value))}
-                className="w-full mt-1.5 accent-[#1E3A8A]"
+                className="w-full mt-1.5 accent-[#1D3B8B]"
               />
             </div>
           </div>
 
-          <div className="p-3 rounded-md bg-[#F9FAFB] border border-[#E5E7EB] flex items-center justify-between gap-3">
+          <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#E4E0D8] flex items-center justify-between gap-3">
             <div>
-              <div className="text-[11px] text-[#6B7280]">Required Future Average</div>
-              <div className="text-base font-mono font-bold text-[#111827]">
+              <div className="text-[11px] text-[#646B78]">Required Future Average</div>
+              <div className="text-base font-mono font-bold text-[#141923]">
                 {simulationStats.neededGpa} GPA
               </div>
             </div>
             <span
-              className={`px-2.5 py-1 rounded text-[11px] font-mono font-semibold border ${
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold border ${
                 simulationStats.isPossible
                   ? 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
                   : 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]'

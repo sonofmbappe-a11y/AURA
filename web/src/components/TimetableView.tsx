@@ -323,11 +323,26 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
     Math.max(0, packedTimeline.laneCount - 1) * laneGapPx +
     trackPaddingY * 2;
 
+  const weekDayStats = useMemo(() => {
+    return DAYS.map((d) => {
+      const slots = vault.lectures.filter((l) => l.dayOfWeek === d.num);
+      const mins = slots.reduce(
+        (acc, l) => acc + Math.max(0, parseMinutes(l.endTime) - parseMinutes(l.startTime)),
+        0
+      );
+      return {
+        ...d,
+        count: slots.length,
+        hours: +(mins / 60).toFixed(1)
+      };
+    });
+  }, [vault.lectures]);
+
   return (
     <div className="space-y-4">
-      {/* Editorial Academic Overview Card */}
-      <div className="aura-hero-card rounded-xl p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Desktop & Tablet Bento Overview Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="xl:col-span-8 aura-hero-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1.5 min-w-0">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md font-mono text-[10px] font-bold uppercase tracking-wider bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0]">
               {liveBanner ? liveBanner.badge : 'Academic Schedule'}
@@ -344,48 +359,71 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                 `${vault.profile.semester} · Weekly Timetable`
               )}
             </h2>
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
-              {liveBanner ? (
-                <p className="font-mono text-xs text-[#646B78]">
-                  {liveBanner.lecture.startTime}–{liveBanner.lecture.endTime} · {liveBanner.sub}
-                </p>
-              ) : (
-                <>
-                  <span className="px-2 py-0.5 rounded-md bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] font-semibold text-[#141923]">
-                    {workloadSummary.totalCredits} Credits
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] font-semibold text-[#141923]">
-                    {workloadSummary.lectureHrs}h Class Load
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] text-[#646B78]">
-                    {workloadSummary.recommendedSelfStudyHrs}h Study Target
-                  </span>
-                </>
-              )}
-            </div>
+            {liveBanner ? (
+              <p className="font-mono text-xs text-[#646B78] pt-0.5">
+                {liveBanner.lecture.startTime}–{liveBanner.lecture.endTime} · {liveBanner.sub}
+              </p>
+            ) : (
+              <p className="text-xs text-[#646B78] pt-0.5">
+                Manage weekly lectures, venues, walking buffers, and active course loads across desktop and mobile.
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               type="button"
               onClick={openAddCourse}
-              className="px-3 py-2 rounded-lg text-xs font-semibold bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#141923] flex items-center gap-1.5 transition-colors duration-150"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#141923] flex items-center gap-1.5 transition-colors duration-150"
             >
               <BookOpen className="w-3.5 h-3.5 text-[#1D3B8B]" /> Add Course
             </button>
             <button
               type="button"
               onClick={openAddLecture}
-              className="px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] flex items-center gap-1.5 transition-colors duration-150"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] flex items-center gap-1.5 transition-colors duration-150 shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" /> Add Class Slot
             </button>
           </div>
         </div>
+
+        {/* Academic Load KPI Strip */}
+        <div className="xl:col-span-4 grid grid-cols-3 gap-2.5">
+          <div className="aura-glass rounded-2xl p-3.5 flex flex-col justify-between">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#646B78]">
+              Credits
+            </span>
+            <div className="font-mono text-2xl font-bold text-[#141923] mt-1">
+              {workloadSummary.totalCredits}
+            </div>
+            <span className="text-[11px] text-[#646B78] truncate">
+              {vault.courses.length} active courses
+            </span>
+          </div>
+          <div className="aura-glass rounded-2xl p-3.5 flex flex-col justify-between">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#646B78]">
+              Lectures
+            </span>
+            <div className="font-mono text-2xl font-bold text-[#1D3B8B] mt-1">
+              {workloadSummary.lectureHrs}h
+            </div>
+            <span className="text-[11px] text-[#646B78] truncate">per week</span>
+          </div>
+          <div className="aura-glass rounded-2xl p-3.5 flex flex-col justify-between">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#646B78]">
+              Study Goal
+            </span>
+            <div className="font-mono text-2xl font-bold text-[#0F766E] mt-1">
+              {workloadSummary.recommendedSelfStudyHrs}h
+            </div>
+            <span className="text-[11px] text-[#646B78] truncate">recommended</span>
+          </div>
+        </div>
       </div>
 
       {/* Mode Switcher */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="aura-glass rounded-xl p-1.5 grid grid-cols-3 gap-1.5">
         {(
           [
             ['DAY', 'Daily View'],
@@ -397,10 +435,10 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             key={mode}
             type="button"
             onClick={() => setViewMode(mode)}
-            className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition-colors duration-150 ${
+            className={`py-2 px-3 rounded-lg text-xs font-semibold transition-colors duration-150 ${
               viewMode === mode
-                ? 'bg-[#EEF2FA] border-[#1D3B8B] text-[#1D3B8B]'
-                : 'bg-[#FFFFFF] border-[#E4E0D8] text-[#646B78] hover:border-[#9CA3AF] hover:text-[#141923]'
+                ? 'bg-[#1D3B8B] text-[#FFFFFF] shadow-xs'
+                : 'text-[#646B78] hover:bg-[#EFECE6] hover:text-[#141923]'
             }`}
           >
             {label}
@@ -423,7 +461,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                   onClick={() => setSelectedDay(d.num)}
                   className={`min-w-[66px] sm:min-w-0 shrink-0 py-2.5 px-2 rounded-xl text-center border transition-colors duration-150 ${
                     active
-                      ? 'bg-[#1D3B8B] text-[#FFFFFF] border-[#1D3B8B]'
+                      ? 'bg-[#1D3B8B] text-[#FFFFFF] border-[#1D3B8B] shadow-xs'
                       : 'bg-[#FFFFFF] text-[#141923] border-[#E4E0D8] hover:border-[#9CA3AF]'
                   }`}
                 >
@@ -444,7 +482,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
           </div>
 
           {/* Overlap-Proof Schedule Timeline Ribbon */}
-          <div className="aura-glass rounded-xl p-3.5 sm:p-4 space-y-2.5">
+          <div className="aura-glass rounded-2xl p-4 space-y-2.5">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-[#1D3B8B]" />
@@ -497,7 +535,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
 
                 {/* Interval-Packed Lanes Box */}
                 <div
-                  className="relative bg-[#FAF8F5] rounded-lg border border-[#E4E0D8] overflow-hidden"
+                  className="relative bg-[#FAF8F5] rounded-xl border border-[#E4E0D8] overflow-hidden"
                   style={{ height: `${trackContainerHeight}px` }}
                 >
                   {/* Vertical Hour Gridlines */}
@@ -527,7 +565,7 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
                         type="button"
                         onClick={() => openEditLecture(lec)}
                         title={`${lec.courseCode} (${lec.startTime}–${lec.endTime}) @ ${lec.venue || 'TBA'}`}
-                        className={`absolute rounded-md box-border px-2 py-1 text-left flex flex-col justify-center overflow-hidden transition-colors duration-150 ${
+                        className={`absolute rounded-lg box-border px-2.5 py-1 text-left flex flex-col justify-center overflow-hidden transition-colors duration-150 ${
                           isNow ? 'border-2 shadow-sm z-10' : 'border z-[5]'
                         }`}
                         style={{
@@ -580,85 +618,142 @@ export const TimetableView: React.FC<Props> = ({ vault, onUpdateVault }) => {
             </div>
           </div>
 
-          {dayLectures.length === 0 ? (
-            <div className="aura-glass rounded-xl p-8 text-center space-y-2">
-              <Calendar className="w-7 h-7 text-[#646B78] mx-auto" />
-              <div className="font-semibold text-sm text-[#141923]">
-                No lectures scheduled for {DAYS.find((d) => d.num === selectedDay)?.full}
-              </div>
-              <p className="text-xs text-[#646B78] max-w-sm mx-auto">
-                Use this open block for deep focus sprints, SM-2 card reviews, or team deliverables.
-              </p>
-            </div>
-          ) : (
-            <div className="aura-glass rounded-xl divide-y divide-[#E4E0D8] overflow-hidden">
-              {dayLectures.map((lec) => (
-                <div
-                  key={lec.id}
-                  className="p-3.5 sm:px-4 flex items-center justify-between gap-3 border-l-4 hover:bg-[#FAF8F5] transition-colors duration-150"
-                  style={{ borderLeftColor: lec.colorHex || '#1D3B8B' }}
-                >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <span className="px-2 py-0.5 rounded bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] font-bold text-[#141923]">
-                        {lec.courseCode}
-                      </span>
-                      <span className="font-mono text-xs font-semibold text-[#1D3B8B] flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        {lec.startTime}–{lec.endTime}
-                      </span>
-                    </div>
-                    <div className="font-semibold text-sm text-[#141923] truncate">{lec.courseName}</div>
-                    <div className="text-xs text-[#646B78] flex flex-wrap items-center gap-3">
-                      {lec.venue && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-[#4B5563]" /> {lec.venue}
-                        </span>
-                      )}
-                      {lec.lecturer && (
-                        <span className="inline-flex items-center gap-1">
-                          <UserCheck className="w-3.5 h-3.5 text-[#4B5563]" /> {lec.lecturer}
-                        </span>
-                      )}
-                      <span className="font-mono text-[11px] text-[#646B78]">
-                        {lec.walkingMinutes}m walk
-                      </span>
-                    </div>
+          {/* Desktop 2-Column Daily Split: Lecture List + Weekly Load Quick Switcher */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            <div className="lg:col-span-8">
+              {dayLectures.length === 0 ? (
+                <div className="aura-glass rounded-2xl p-8 text-center space-y-2.5">
+                  <Calendar className="w-7 h-7 text-[#646B78] mx-auto" />
+                  <div className="font-serif text-lg text-[#141923]">
+                    No lectures scheduled for {DAYS.find((d) => d.num === selectedDay)?.full}
                   </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => openEditLecture(lec)}
-                      aria-label="Edit class slot"
-                      className="p-2 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#9CA3AF] text-[#4B5563] hover:text-[#141923] transition-colors duration-150"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => deleteLecture(lec.id)}
-                      aria-label="Delete class slot"
-                      className="p-2 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#646B78] hover:text-[#DC2626] transition-colors duration-150"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <p className="text-xs text-[#646B78] max-w-sm mx-auto">
+                    Use this open block for deep focus sprints, SM-2 card reviews, or team deliverables.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openAddLecture}
+                    className="mt-1 px-4 py-2 rounded-lg bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] text-xs font-semibold inline-flex items-center gap-1.5 hover:bg-[#1D3B8B] hover:text-[#FFFFFF] transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Class for {DAYS.find((d) => d.num === selectedDay)?.short}
+                  </button>
                 </div>
-              ))}
+              ) : (
+                <div className="aura-glass rounded-2xl divide-y divide-[#E4E0D8] overflow-hidden">
+                  {dayLectures.map((lec) => (
+                    <div
+                      key={lec.id}
+                      className="p-4 flex items-center justify-between gap-3 border-l-4 hover:bg-[#FAF8F5] transition-colors duration-150"
+                      style={{ borderLeftColor: lec.colorHex || '#1D3B8B' }}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="px-2 py-0.5 rounded bg-[#EFECE6] border border-[#E4E0D8] font-mono text-[11px] font-bold text-[#141923]">
+                            {lec.courseCode}
+                          </span>
+                          <span className="font-mono text-xs font-semibold text-[#1D3B8B] flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {lec.startTime}–{lec.endTime}
+                          </span>
+                        </div>
+                        <div className="font-semibold text-sm text-[#141923] truncate">{lec.courseName}</div>
+                        <div className="text-xs text-[#646B78] flex flex-wrap items-center gap-3">
+                          {lec.venue && (
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-[#4B5563]" /> {lec.venue}
+                            </span>
+                          )}
+                          {lec.lecturer && (
+                            <span className="inline-flex items-center gap-1">
+                              <UserCheck className="w-3.5 h-3.5 text-[#4B5563]" /> {lec.lecturer}
+                            </span>
+                          )}
+                          <span className="font-mono text-[11px] text-[#646B78]">
+                            {lec.walkingMinutes}m walk
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => openEditLecture(lec)}
+                          aria-label="Edit class slot"
+                          className="p-2 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#9CA3AF] text-[#4B5563] hover:text-[#141923] transition-colors duration-150"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteLecture(lec.id)}
+                          aria-label="Delete class slot"
+                          className="p-2 rounded-lg border border-[#E4E0D8] bg-[#FFFFFF] hover:border-[#FECACA] hover:bg-[#FEF2F2] text-[#646B78] hover:text-[#DC2626] transition-colors duration-150"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Right Desktop Rail: Weekly Density + Course Quick Directory */}
+            <div className="lg:col-span-4 space-y-4">
+              <div className="aura-glass rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#141923]">
+                    Weekly Density
+                  </span>
+                  <span className="font-mono text-[10px] text-[#646B78]">Click day to jump</span>
+                </div>
+                <div className="space-y-2">
+                  {weekDayStats.map((w) => {
+                    const pct = Math.min(100, Math.round((w.hours / 8) * 100));
+                    const isSel = selectedDay === w.num;
+                    return (
+                      <button
+                        key={w.num}
+                        type="button"
+                        onClick={() => setSelectedDay(w.num)}
+                        className={`w-full text-left p-2 rounded-lg border transition-colors ${
+                          isSel
+                            ? 'bg-[#EEF2FA] border-[#C7D4F0]'
+                            : 'bg-[#FAF8F5] border-[#E4E0D8] hover:border-[#9CA3AF]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[11px] mb-1">
+                          <span className={`font-semibold ${isSel ? 'text-[#1D3B8B]' : 'text-[#141923]'}`}>
+                            {w.full}
+                          </span>
+                          <span className="font-mono text-[#646B78]">
+                            {w.count} {w.count === 1 ? 'slot' : 'slots'} · {w.hours}h
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-[#E4E0D8] overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${isSel ? 'bg-[#1D3B8B]' : 'bg-[#64748B]'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
       {viewMode === 'WEEK' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
           {DAYS.map((d) => {
             const slots = vault.lectures
               .filter((l) => l.dayOfWeek === d.num)
               .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime));
             return (
-              <div key={d.num} className="aura-glass rounded-xl p-4 space-y-2.5">
+              <div key={d.num} className="aura-glass rounded-2xl p-4 space-y-2.5">
                 <div className="flex items-center justify-between pb-2 border-b border-[#E4E0D8]">
                   <span className="font-mono font-bold text-xs text-[#1D3B8B] uppercase tracking-wider">
                     {d.full}

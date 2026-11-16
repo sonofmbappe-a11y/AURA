@@ -349,305 +349,315 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="aura-hero-card rounded-xl p-5 sm:p-6 text-center space-y-5">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="text-left">
-            <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0] inline-flex items-center gap-1.5">
-              <Flame className="w-3.5 h-3.5" /> Deep Focus Session
-            </span>
-            <h2 className="font-serif text-xl sm:text-2xl text-[#141923] mt-1">
-              Academic Focus Studio
-            </h2>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap font-mono text-[11px]">
-            <span className="px-2.5 py-1 rounded-md bg-[#EFECE6] border border-[#E4E0D8] text-[#141923] font-semibold">
-              {scholarStreakDays}d Streak
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] font-semibold">
-              {scholarRank}
-            </span>
-            <span className="px-2.5 py-1 rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-bold">
-              {(totalLoggedMins / 60).toFixed(1)}h Logged
-            </span>
-          </div>
-        </div>
-
-        {/* Course Selector + Custom Time Trigger */}
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <select
-            value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-3 py-1.5 rounded-md aura-input text-xs font-semibold"
-          >
-            {vault.courses.map((c) => (
-              <option key={c.id} value={c.code}>
-                {c.code} · {c.name}
-              </option>
-            ))}
-            <option value="GENERAL">GENERAL STUDY</option>
-          </select>
-
-          <button
-            onClick={() => setShowCustomModal(true)}
-            className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
-          >
-            <Sliders className="w-3.5 h-3.5 text-[#1E3A8A]" /> Custom Duration (10s – 12h)
-          </button>
-        </div>
-
-        {/* Circular Progress Dial */}
-        <div className="relative w-56 h-56 mx-auto flex items-center justify-center">
-          <svg className="w-full h-full -rotate-90" viewBox="0 0 240 240">
-            <circle
-              cx="120"
-              cy="120"
-              r="104"
-              fill="none"
-              stroke="#E5E7EB"
-              strokeWidth="10"
-            />
-            <circle
-              cx="120"
-              cy="120"
-              r="104"
-              fill="none"
-              stroke="#1E3A8A"
-              strokeWidth="10"
-              strokeLinecap="butt"
-              strokeDasharray={circumference}
-              strokeDashoffset={circumference * (1 - progress)}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <div className="text-4xl font-mono font-bold tracking-tight text-[#111827]">{formatted}</div>
-            <div className="font-mono text-[10px] uppercase tracking-widest text-[#6B7280] mt-1">
-              {isRunning ? 'Session Active' : 'Ready'}
-            </div>
-          </div>
-        </div>
-
-        {/* Presets */}
-        <div className="flex flex-wrap justify-center gap-2">
-          {[
-            ['25m', 25 * 60],
-            ['45m', 45 * 60],
-            ['60m', 60 * 60],
-            ['90m', 90 * 60],
-            ['2h', 120 * 60]
-          ].map(([label, sec]) => (
-            <button
-              key={label}
-              onClick={() => setPresetSeconds(sec as number)}
-              className={`px-3.5 py-1.5 rounded-md font-mono text-xs font-semibold border transition-colors duration-150 ${
-                totalSeconds === sec
-                  ? 'bg-[#1E3A8A] text-[#FFFFFF] border-[#1E3A8A]'
-                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#4B5563] hover:border-[#9CA3AF] hover:text-[#111827]'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Play / Pause / Reset */}
-        <div className="flex items-center justify-center gap-2.5">
-          <button
-            onClick={() => setIsRunning((r) => !r)}
-            className="px-6 py-2.5 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors duration-150"
-          >
-            {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            {isRunning ? 'Pause Session' : 'Start Focus'}
-          </button>
-          <button
-            onClick={() => {
-              setIsRunning(false);
-              setRemainingSeconds(totalSeconds);
-            }}
-            className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#4B5563] hover:text-[#111827] transition-colors duration-150"
-            title="Reset Timer"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Acoustic Focus Soundscapes */}
-      <div className="aura-glass rounded-lg p-4 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
-            <Headphones className="w-4 h-4 text-[#1E3A8A]" /> Acoustic Focus Synthesis
-            {soundMode !== 'OFF' && (
-              <span className="flex items-center gap-0.5 ml-1">
-                <span className="w-1 h-3 bg-[#1E3A8A] rounded-full animate-pulse" />
-                <span className="w-1 h-4 bg-[#1E3A8A] rounded-full animate-bounce" />
-                <span className="w-1 h-2 bg-[#1E3A8A] rounded-full animate-pulse" />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      {/* Left 7 Cols on Desktop: Focus Timer Console + Immediate Distraction Capture Pad */}
+      <div className="lg:col-span-7 space-y-4">
+        <div className="aura-hero-card rounded-2xl p-5 sm:p-6 text-center space-y-5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-left">
+              <span className="px-2 py-0.5 rounded font-mono text-[10px] font-semibold uppercase tracking-wider bg-[#EEF2FA] text-[#1D3B8B] border border-[#C7D4F0] inline-flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5" /> Deep Focus Session
               </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-xs text-[#6B7280]">
-              <Volume2 className="w-3.5 h-3.5" />
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.05"
-                value={soundVolume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-16 h-1 bg-[#E5E7EB] rounded-lg accent-[#1E3A8A] cursor-pointer"
-                title={`Volume: ${Math.round(soundVolume * 100)}%`}
-              />
-              <span className="font-mono text-[10px] w-7">{Math.round(soundVolume * 100)}%</span>
+              <h2 className="font-serif text-xl sm:text-2xl text-[#141923] mt-1">
+                Academic Focus Studio
+              </h2>
             </div>
-            {soundMode !== 'OFF' ? (
-              <Volume2 className="w-4 h-4 text-[#1E3A8A]" />
-            ) : (
-              <VolumeX className="w-4 h-4 text-[#9CA3AF]" />
-            )}
+            <div className="flex items-center gap-2 flex-wrap font-mono text-[11px]">
+              <span className="px-2.5 py-1 rounded-md bg-[#EFECE6] border border-[#E4E0D8] text-[#141923] font-semibold">
+                {scholarStreakDays}d Streak
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-[#EEF2FA] border border-[#C7D4F0] text-[#1D3B8B] font-semibold">
+                {scholarRank}
+              </span>
+              <span className="px-2.5 py-1 rounded-md bg-[#ECFDF5] border border-[#A7F3D0] text-[#065F46] font-bold">
+                {(totalLoggedMins / 60).toFixed(1)}h Logged
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-          {(
-            [
-              ['OFF', 'Silent'],
-              ['RAIN', 'Quad Rain'],
-              ['LIBRARY', 'Old Library'],
-              ['COFFEE', 'Campus Cafe'],
-              ['BROWN', 'Brown Noise'],
-              ['GAMMA', '40Hz Gamma']
-            ] as const
-          ).map(([mode, label]) => (
-            <button
-              key={mode}
-              onClick={() => applySoundscape(mode)}
-              className={`py-2 px-2.5 rounded-md text-xs font-semibold border transition-colors duration-150 ${
-                soundMode === mode
-                  ? 'bg-[#EFF6FF] border-[#1E3A8A] text-[#1E3A8A]'
-                  : 'bg-[#FFFFFF] border-[#E5E7EB] text-[#6B7280] hover:border-[#9CA3AF] hover:text-[#111827]'
-              }`}
+          {/* Course Selector + Custom Time Trigger */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <select
+              value={selectedCourse}
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              className="px-3 py-1.5 rounded-lg aura-input text-xs font-semibold"
             >
-              {label}
+              {vault.courses.map((c) => (
+                <option key={c.id} value={c.code}>
+                  {c.code} · {c.name}
+                </option>
+              ))}
+              <option value="GENERAL">GENERAL STUDY</option>
+            </select>
+
+            <button
+              onClick={() => setShowCustomModal(true)}
+              className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#141923] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors duration-150"
+            >
+              <Sliders className="w-3.5 h-3.5 text-[#1D3B8B]" /> Custom Duration (10s – 12h)
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Academic Burnout Sentinel & Energy Meter Card */}
-      <div className="aura-glass rounded-lg p-4 sm:p-5 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-[#1E3A8A]" />
-            <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
-              Academic Burnout Sentinel & Cognitive Meter
-            </h3>
-          </div>
-          <span
-            className="px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider border"
-            style={{
-              backgroundColor: sentinelStatus.bg,
-              borderColor: sentinelStatus.border,
-              color: sentinelStatus.color
-            }}
-          >
-            {sentinelStatus.label}
-          </span>
-        </div>
-
-        {/* Cognitive Energy Meter Gauge */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-[#4B5563]">Cognitive Energy Reserve</span>
-            <span className="font-mono font-bold" style={{ color: sentinelStatus.color }}>
-              {energyScore}%
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-[#E5E7EB] overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${energyScore}%`,
-                backgroundColor: sentinelStatus.color
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Academic Vitals Grid */}
-        <div className="grid grid-cols-3 gap-2.5 pt-1">
-          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
-            <div className="font-mono font-bold text-sm text-[#111827]">{todayFocusMinutes}m</div>
-            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">Today's Focus</div>
-          </div>
-          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
-            <div className="font-mono font-bold text-sm text-[#111827]">{upcomingDueIn48h}</div>
-            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">48h Deadlines</div>
-          </div>
-          <div className="p-2.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] text-center">
-            <div className="font-mono font-bold text-sm text-[#1E3A8A]">{scholarStreakDays}d</div>
-            <div className="text-[10px] text-[#6B7280] uppercase tracking-wider font-mono">Study Streak</div>
-          </div>
-        </div>
-
-        {/* Sentinel Physiological Guidance & Action */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-[#E5E7EB]">
-          <p className="text-xs text-[#6B7280] flex-1 min-w-[220px]">
-            {sentinelStatus.advice}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setBreathingPhase('INHALE');
-              setBreathingSecondsLeft(4);
-              setShowBreathingModal(true);
-            }}
-            className="px-3 py-1.5 rounded-md bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#9CA3AF] text-[#111827] text-xs font-semibold flex items-center gap-1.5 transition-colors duration-150 shrink-0"
-          >
-            <Wind className="w-3.5 h-3.5 text-[#1E3A8A]" />
-            4-7-8 Academic Reset
-          </button>
-        </div>
-      </div>
-
-      {/* Distraction Parking Pad */}
-      <div className="aura-glass rounded-lg p-4 space-y-3">
-        <div className="font-mono text-[11px] font-bold text-[#111827] uppercase tracking-wider">
-          Distraction Scratchpad
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={distractionInput}
-            onChange={(e) => setDistractionInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
-            placeholder="Capture a thought without breaking focus..."
-            className="flex-1 px-3 py-2 rounded-md aura-input text-xs"
-          />
-          <button
-            onClick={addDistraction}
-            className="px-3.5 py-2 rounded-md bg-[#1E3A8A] hover:bg-[#1E40AF] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150"
-          >
-            <Plus className="w-3.5 h-3.5" /> Capture
-          </button>
-        </div>
-        {vault.distractions.length > 0 && (
-          <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-md divide-y divide-[#E5E7EB]">
-            {vault.distractions.map((item, idx) => (
-              <div
-                key={`${item}_${idx}`}
-                className="px-3 py-2 flex items-center justify-between gap-2 text-xs text-[#111827]"
-              >
-                <span className="truncate">{item}</span>
-                <button
-                  onClick={() => promoteDistractionToNote(item, idx)}
-                  className="text-[11px] font-semibold text-[#1E3A8A] shrink-0 hover:underline"
-                >
-                  Move to Notes
-                </button>
+          {/* Circular Progress Dial */}
+          <div className="relative w-56 h-56 mx-auto flex items-center justify-center">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 240 240">
+              <circle
+                cx="120"
+                cy="120"
+                r="104"
+                fill="none"
+                stroke="#E4E0D8"
+                strokeWidth="10"
+              />
+              <circle
+                cx="120"
+                cy="120"
+                r="104"
+                fill="none"
+                stroke="#1D3B8B"
+                strokeWidth="10"
+                strokeLinecap="butt"
+                strokeDasharray={circumference}
+                strokeDashoffset={circumference * (1 - progress)}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <div className="text-4xl font-mono font-bold tracking-tight text-[#141923]">{formatted}</div>
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[#646B78] mt-1">
+                {isRunning ? 'Session Active' : 'Ready'}
               </div>
+            </div>
+          </div>
+
+          {/* Presets */}
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              ['25m', 25 * 60],
+              ['45m', 45 * 60],
+              ['60m', 60 * 60],
+              ['90m', 90 * 60],
+              ['2h', 120 * 60]
+            ].map(([label, sec]) => (
+              <button
+                key={label}
+                onClick={() => setPresetSeconds(sec as number)}
+                className={`px-3.5 py-1.5 rounded-lg font-mono text-xs font-semibold border transition-colors duration-150 ${
+                  totalSeconds === sec
+                    ? 'bg-[#1D3B8B] text-[#FFFFFF] border-[#1D3B8B]'
+                    : 'bg-[#FFFFFF] border-[#E4E0D8] text-[#4B5563] hover:border-[#9CA3AF] hover:text-[#141923]'
+                }`}
+              >
+                {label}
+              </button>
             ))}
           </div>
-        )}
+
+          {/* Play / Pause / Reset */}
+          <div className="flex items-center justify-center gap-2.5">
+            <button
+              onClick={() => setIsRunning((r) => !r)}
+              className="px-7 py-2.5 rounded-xl bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] font-semibold text-xs sm:text-sm inline-flex items-center gap-2 transition-colors duration-150 shadow-xs"
+            >
+              {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              {isRunning ? 'Pause Session' : 'Start Focus'}
+            </button>
+            <button
+              onClick={() => {
+                setIsRunning(false);
+                setRemainingSeconds(totalSeconds);
+              }}
+              className="p-2.5 rounded-xl bg-[#FFFFFF] border border-[#E4E0D8] hover:border-[#9CA3AF] text-[#4B5563] hover:text-[#141923] transition-colors duration-150"
+              title="Reset Timer"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Distraction Parking Pad directly beneath Timer */}
+        <div className="aura-glass rounded-2xl p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] font-bold text-[#141923] uppercase tracking-wider">
+              Distraction Scratchpad
+            </span>
+            <span className="font-mono text-[10px] text-[#646B78]">
+              {vault.distractions.length} captured
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={distractionInput}
+              onChange={(e) => setDistractionInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
+              placeholder="Capture a thought without breaking focus..."
+              className="flex-1 px-3 py-2 rounded-lg aura-input text-xs"
+            />
+            <button
+              onClick={addDistraction}
+              className="px-4 py-2 rounded-lg bg-[#1D3B8B] hover:bg-[#162F70] text-[#FFFFFF] text-xs font-semibold inline-flex items-center gap-1 transition-colors duration-150 shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" /> Capture
+            </button>
+          </div>
+          {vault.distractions.length > 0 && (
+            <div className="bg-[#FAF8F5] border border-[#E4E0D8] rounded-xl divide-y divide-[#E4E0D8]">
+              {vault.distractions.map((item, idx) => (
+                <div
+                  key={`${item}_${idx}`}
+                  className="px-3 py-2.5 flex items-center justify-between gap-2 text-xs text-[#141923]"
+                >
+                  <span className="truncate">{item}</span>
+                  <button
+                    onClick={() => promoteDistractionToNote(item, idx)}
+                    className="text-[11px] font-semibold text-[#1D3B8B] shrink-0 hover:underline"
+                  >
+                    Move to Notes
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right 5 Cols on Desktop: Acoustic Soundscape Mixer + Academic Burnout Sentinel */}
+      <div className="lg:col-span-5 space-y-4">
+        {/* Acoustic Focus Soundscapes */}
+        <div className="aura-glass rounded-2xl p-4 sm:p-5 space-y-3.5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider text-[#141923]">
+              <Headphones className="w-4 h-4 text-[#1D3B8B]" /> Acoustic Focus Synthesis
+              {soundMode !== 'OFF' && (
+                <span className="flex items-center gap-0.5 ml-1">
+                  <span className="w-1 h-3 bg-[#1D3B8B] rounded-full animate-pulse" />
+                  <span className="w-1 h-4 bg-[#1D3B8B] rounded-full animate-bounce" />
+                  <span className="w-1 h-2 bg-[#1D3B8B] rounded-full animate-pulse" />
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs text-[#646B78]">
+                {soundMode !== 'OFF' ? (
+                  <Volume2 className="w-3.5 h-3.5 text-[#1D3B8B]" />
+                ) : (
+                  <VolumeX className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                )}
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.05"
+                  value={soundVolume}
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className="w-20 h-1 bg-[#E4E0D8] rounded-lg accent-[#1D3B8B] cursor-pointer"
+                  title={`Volume: ${Math.round(soundVolume * 100)}%`}
+                />
+                <span className="font-mono text-[10px] w-7">{Math.round(soundVolume * 100)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
+            {(
+              [
+                ['OFF', 'Silent'],
+                ['RAIN', 'Quad Rain'],
+                ['LIBRARY', 'Old Library'],
+                ['COFFEE', 'Campus Cafe'],
+                ['BROWN', 'Brown Noise'],
+                ['GAMMA', '40Hz Gamma']
+              ] as const
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                onClick={() => applySoundscape(mode)}
+                className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition-colors duration-150 ${
+                  soundMode === mode
+                    ? 'bg-[#EEF2FA] border-[#1D3B8B] text-[#1D3B8B]'
+                    : 'bg-[#FFFFFF] border-[#E4E0D8] text-[#646B78] hover:border-[#9CA3AF] hover:text-[#141923]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Academic Burnout Sentinel & Energy Meter Card */}
+        <div className="aura-glass rounded-2xl p-4 sm:p-5 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#1D3B8B]" />
+              <h3 className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#141923]">
+                Burnout Sentinel
+              </h3>
+            </div>
+            <span
+              className="px-2.5 py-0.5 rounded font-mono text-[10px] font-bold uppercase tracking-wider border"
+              style={{
+                backgroundColor: sentinelStatus.bg,
+                borderColor: sentinelStatus.border,
+                color: sentinelStatus.color
+              }}
+            >
+              {sentinelStatus.label}
+            </span>
+          </div>
+
+          {/* Cognitive Energy Meter Gauge */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-[#4B5563]">Cognitive Energy Reserve</span>
+              <span className="font-mono font-bold" style={{ color: sentinelStatus.color }}>
+                {energyScore}%
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-[#E4E0D8] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${energyScore}%`,
+                  backgroundColor: sentinelStatus.color
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Academic Vitals Grid */}
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E4E0D8] text-center">
+              <div className="font-mono font-bold text-sm text-[#141923]">{todayFocusMinutes}m</div>
+              <div className="text-[10px] text-[#646B78] uppercase tracking-wider font-mono">Today</div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E4E0D8] text-center">
+              <div className="font-mono font-bold text-sm text-[#141923]">{upcomingDueIn48h}</div>
+              <div className="text-[10px] text-[#646B78] uppercase tracking-wider font-mono">48h Due</div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#E4E0D8] text-center">
+              <div className="font-mono font-bold text-sm text-[#1D3B8B]">{scholarStreakDays}d</div>
+              <div className="text-[10px] text-[#646B78] uppercase tracking-wider font-mono">Streak</div>
+            </div>
+          </div>
+
+          {/* Sentinel Physiological Guidance & Action */}
+          <div className="space-y-2.5 pt-2 border-t border-[#E4E0D8]">
+            <p className="text-xs text-[#646B78] leading-relaxed">
+              {sentinelStatus.advice}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setBreathingPhase('INHALE');
+                setBreathingSecondsLeft(4);
+                setShowBreathingModal(true);
+              }}
+              className="w-full py-2 px-3 rounded-xl bg-[#FAF8F5] border border-[#E4E0D8] hover:border-[#1D3B8B] text-[#141923] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors duration-150"
+            >
+              <Wind className="w-3.5 h-3.5 text-[#1D3B8B]" />
+              Start 4-7-8 Academic Reset
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Custom Time Picker Modal */}
