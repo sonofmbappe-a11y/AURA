@@ -1206,6 +1206,7 @@ export const LiveStudyStage: React.FC<Props> = ({
       setBoardDirty(false);
       setSelectedRoomId(roomId);
       try {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
         await upsertMyPresence(createdStub, 'FOCUSING', false, '', payload.cityBadge);
       } catch (presenceErr) {
         console.warn('Initial presence upsert warning:', presenceErr);
