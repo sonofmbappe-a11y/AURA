@@ -321,7 +321,7 @@ export const CitationGeneratorView: React.FC<Props> = ({
             <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-[#111827]">
               Preview
             </span>
-            <div className="flex items-center justify-end gap-1 flex-wrap">
+            <div className="flex items-center gap-1">
               {(['APA', 'MLA', 'HARVARD', 'CHICAGO', 'IEEE'] as CitationStyle[]).map((st) => (
                 <button
                   key={st}

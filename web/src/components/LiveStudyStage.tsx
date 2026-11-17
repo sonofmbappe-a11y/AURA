@@ -61,6 +61,7 @@ import {
   Zap
 } from 'lucide-react';
 import {
+  buildJitsiEmbedUrl,
   buildJitsiVoiceUrl,
   db,
   detectBrowserPlatform,
@@ -1004,7 +1005,10 @@ export const LiveStudyStage: React.FC<Props> = ({
     await setDoc(pRef, {
       roomId: room.id,
       roomOwnerId: room.ownerId,
-      roomVisibility: room.visibility === 'UNLISTED' ? 'UNLISTED' : 'CAMPUS',
+      roomVisibility:
+        room.visibility === 'UNLISTED' || room.visibility === 'PRIVATE'
+          ? room.visibility
+          : 'CAMPUS',
       userId: user.uid,
       displayName,
       cityOrCampus: city,
@@ -1141,8 +1145,12 @@ export const LiveStudyStage: React.FC<Props> = ({
     const mins = Math.trunc(Math.max(5, Math.min(360, Number(payload.activeMinutes) || 50)));
     const ownerName =
       (currentUser.displayName || vault.profile.name || 'Scholar').trim().slice(0, 80) || 'Scholar';
+    const safeCourse = (payload.courseCode || 'GEN 101').trim().slice(0, 24) || 'GEN 101';
+    const rawTitle = (payload.roomTitle || '').trim();
+    const safeTitle = (rawTitle.length >= 2 ? rawTitle : `${safeCourse} Live Study Session`).slice(0, 120);
+    const safeTopic = (payload.focusTopic || '').trim().slice(0, 240);
     const voiceUrl = buildJitsiVoiceUrl(code, roomId);
-    const welcomeBoard = `Welcome to ${payload.roomTitle}! Drop formulas, past-paper notes, or sprint goals here.`.slice(
+    const welcomeBoard = `Welcome to ${safeTitle}! Drop formulas, past-paper notes, or sprint goals here.`.slice(
       0,
       2000
     );
@@ -1151,9 +1159,9 @@ export const LiveStudyStage: React.FC<Props> = ({
       await setDoc(doc(db, 'study_rooms', roomId), {
         ownerId: currentUser.uid,
         ownerName,
-        courseCode: payload.courseCode.slice(0, 24),
-        roomTitle: payload.roomTitle.slice(0, 120),
-        focusTopic: payload.focusTopic.slice(0, 240),
+        courseCode: safeCourse,
+        roomTitle: safeTitle,
+        focusTopic: safeTopic,
         status: 'ACTIVE',
         visibility: payload.visibility,
         activeMinutes: mins,
@@ -1179,9 +1187,9 @@ export const LiveStudyStage: React.FC<Props> = ({
         id: roomId,
         ownerId: currentUser.uid,
         ownerName,
-        courseCode: payload.courseCode,
-        roomTitle: payload.roomTitle,
-        focusTopic: payload.focusTopic,
+        courseCode: safeCourse,
+        roomTitle: safeTitle,
+        focusTopic: safeTopic,
         status: 'ACTIVE',
         visibility: payload.visibility,
         activeMinutes: mins,
@@ -1206,10 +1214,15 @@ export const LiveStudyStage: React.FC<Props> = ({
       setBoardDirty(false);
       setSelectedRoomId(roomId);
       try {
-        await new Promise<void>((resolve) => window.setTimeout(resolve, 400));
+        await new Promise((r) => setTimeout(r, 350));
         await upsertMyPresence(createdStub, 'FOCUSING', false, '', payload.cityBadge);
-      } catch (presenceErr) {
-        console.warn('Initial presence upsert warning:', presenceErr);
+      } catch {
+        try {
+          await new Promise((r) => setTimeout(r, 400));
+          await upsertMyPresence(createdStub, 'FOCUSING', false, '', payload.cityBadge);
+        } catch (presenceErr) {
+          console.warn('Initial presence upsert warning:', presenceErr);
+        }
       }
       onNotify(`Room Live: share code ${code} or QR link with Android & iPhone classmates.`);
     } catch (e: unknown) {
@@ -2198,10 +2211,7 @@ export const LiveStudyStage: React.FC<Props> = ({
 
                     {/* External Tab Popout */}
                     <a
-                      href={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                        .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
-                        .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
-                        + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                      href={buildJitsiEmbedUrl(liveRoom.voiceRoomUrl, displayCode, liveRoom.id)}
                       target="_blank"
                       rel="noreferrer"
                       className="p-1.5 rounded-lg bg-[#1F2937] text-[#D1D5DB] hover:text-[#FFFFFF] border border-[#374151]"
@@ -2219,10 +2229,7 @@ export const LiveStudyStage: React.FC<Props> = ({
                   {!isJitsiApiReady && (
                     <iframe
                       id="jitsi_stage_iframe"
-                      src={(liveRoom.voiceRoomUrl || buildJitsiVoiceUrl(displayCode, liveRoom.id))
-                        .replace(/https?:\/\/(www\.)?meet\.jit\.si\//i, 'https://meet.element.io/')
-                        .replace(/https?:\/\/(www\.)?framatalk\.org(\/abc)?\//i, 'https://meet.element.io/')
-                        + (liveRoom.voiceRoomUrl?.includes('defaultLanguage') ? '' : "&config.defaultLanguage='en'")}
+                      src={buildJitsiEmbedUrl(liveRoom.voiceRoomUrl, displayCode, liveRoom.id)}
                       allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
                       className="w-full h-full border-0 absolute inset-0"
                       title={`AURA Live Stage - ${liveRoom.roomTitle}`}

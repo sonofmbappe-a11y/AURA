@@ -490,7 +490,7 @@ export const FocusView: React.FC<Props> = ({ vault, onUpdateVault }) => {
               onChange={(e) => setDistractionInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addDistraction()}
               placeholder="Capture a thought without breaking focus..."
-              className="flex-1 min-w-0 px-3 py-2 rounded-lg aura-input text-xs"
+              className="flex-1 px-3 py-2 rounded-lg aura-input text-xs"
             />
             <button
               onClick={addDistraction}
